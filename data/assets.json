@@ -1,0 +1,17 @@
+[
+  {
+    "id": "33333333-3333-4333-8333-333333333333",
+    "projectId": "11111111-1111-4111-8111-111111111111",
+    "assetType": "token",
+    "symbol": "SYN",
+    "name": "Synthetic Horizon Token",
+    "decimals": 18,
+    "chainCode": "ethereum",
+    "contractAddress": "0x1111111111111111111111111111111111111111",
+    "providerIds": {
+      "synthetic": "synthetic-horizon-token"
+    },
+    "isPrimary": true,
+    "isActive": true
+  }
+]

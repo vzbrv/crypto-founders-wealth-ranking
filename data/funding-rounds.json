@@ -1,0 +1,16 @@
+[
+  {
+    "id": "66666666-6666-4666-8666-666666666666",
+    "projectId": "11111111-1111-4111-8111-111111111111",
+    "eventDate": "2025-01-10",
+    "roundType": "seed",
+    "originalAmount": "2500000",
+    "originalCurrency": "USD",
+    "amountUsdAtEvent": "2500000",
+    "conversionMethod": "Already denominated in USD.",
+    "includeInCapitalDeduction": true,
+    "status": "active",
+    "reviewedAt": "2026-07-27T12:00:00Z",
+    "notes": "Synthetic funding event for validation only."
+  }
+]

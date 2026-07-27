@@ -7,6 +7,7 @@
     "node": ">=22"
   },
   "scripts": {
+    "prebuild": "pnpm validate:data",
     "build": "turbo run build",
     "dev": "turbo run dev",
     "format": "prettier --write .",
@@ -17,6 +18,7 @@
     "test:unit": "turbo run test",
     "e2e": "pnpm test:e2e",
     "test:e2e": "pnpm --filter @crypto-founders/web test:e2e",
+    "validate:data": "pnpm --filter @crypto-founders/curated-data validate",
     "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test:unit && pnpm build"
   },
   "devDependencies": {
@@ -27,6 +29,7 @@
     "eslint-config-next": "16.2.12",
     "prettier": "3.9.6",
     "turbo": "2.10.7",
+    "tsx": "4.23.1",
     "typescript": "6.0.3",
     "typescript-eslint": "8.65.0",
     "vitest": "4.1.10"
