@@ -26,6 +26,10 @@ const phaseEightMigrationUrl = new URL(
   "../../../supabase/migrations/202607280008_phase_8_solana_wallet_sync.sql",
   import.meta.url,
 );
+const phaseTenMigrationUrl = new URL(
+  "../../../supabase/migrations/202607280009_phase_10_production_hardening.sql",
+  import.meta.url,
+);
 const seedUrl = new URL("../../../supabase/seed.sql", import.meta.url);
 const migrationSql = [
   await readFile(phaseThreeMigrationUrl, "utf8"),
@@ -33,6 +37,7 @@ const migrationSql = [
   await readFile(phaseFiveMigrationUrl, "utf8"),
   await readFile(phaseSevenMigrationUrl, "utf8"),
   await readFile(phaseEightMigrationUrl, "utf8"),
+  await readFile(phaseTenMigrationUrl, "utf8"),
 ].join("\n");
 const seedSql = await readFile(seedUrl, "utf8");
 
@@ -62,6 +67,7 @@ const expectedViews = [
   "current_project_scores",
   "public_data_freshness",
   "public_project_details",
+  "public_provider_status",
 ];
 
 const databases: PGlite[] = [];
@@ -156,6 +162,13 @@ describe("Phase 3 database", () => {
       ) values
         ('91111111-1111-4111-8111-111111111111', 'hidden-project', 'Hidden', 'Hidden fixture', 'protocol', 'liquid_token', 'hidden', 'high', 'Test', 'https://example.com/hidden', now()),
         ('91111111-1111-4111-8111-111111111112', 'research-project', 'Research', 'Research fixture', 'protocol', 'liquid_token', 'research', 'high', 'Test', 'https://example.com/research', now());
+
+      insert into provider_health (
+        provider, checked_at, status, latency_ms, error_code, error_message
+      ) values (
+        'synthetic-provider', now(), 'failed', 950,
+        'UPSTREAM_SECRET', 'Raw upstream diagnostic'
+      );
     `);
 
     await database.exec("set role anon");
@@ -168,6 +181,27 @@ describe("Phase 3 database", () => {
       );
       expect(projects.rows).toEqual([{ slug: "synthetic-horizon" }]);
       expect(publicDetails.rows).toEqual([{ slug: "synthetic-horizon" }]);
+
+      const providerStatus = await database.query<{
+        provider: string;
+        status: string;
+        freshness: string;
+        latency_ms: number;
+      }>(
+        "select provider, status, freshness, latency_ms from public_provider_status",
+      );
+      expect(providerStatus.rows).toEqual([
+        {
+          provider: "synthetic-provider",
+          status: "failed",
+          freshness: "current",
+          latency_ms: 950,
+        },
+      ]);
+
+      await expect(
+        database.query("select error_code, error_message from provider_health"),
+      ).rejects.toThrow();
 
       await expect(
         database.exec(
@@ -728,5 +762,56 @@ describe("Phase 8 Solana wallet sync", () => {
         normalized_balance: "20.000000000000000000",
       },
     ]);
+  });
+});
+
+describe("Phase 10 production hardening", () => {
+  it("removes expired telemetry while preserving each latest observation", async () => {
+    const database = await createDatabase(true);
+    await database.exec(`
+      insert into market_observations (
+        asset_id, provider, observed_at, price_usd
+      ) values
+        ('33333333-3333-4333-8333-333333333333', 'retention-provider', '2026-05-01T00:00:00Z', 1),
+        ('33333333-3333-4333-8333-333333333333', 'retention-provider', '2026-07-28T11:00:00Z', 2);
+
+      insert into wallet_balance_observations (
+        tracked_wallet_id, asset_id, provider, observed_at, raw_balance, normalized_balance
+      ) values
+        ('55555555-5555-4555-8555-555555555555', '33333333-3333-4333-8333-333333333333',
+          'retention-provider', '2026-05-01T00:00:00Z', 1000000000000000000, 1),
+        ('55555555-5555-4555-8555-555555555555', '33333333-3333-4333-8333-333333333333',
+          'retention-provider', '2026-07-28T11:00:00Z', 2000000000000000000, 2);
+
+      insert into provider_health (provider, checked_at, status) values
+        ('retention-provider', '2026-05-01T00:00:00Z', 'failed'),
+        ('retention-provider', '2026-07-28T11:00:00Z', 'healthy'),
+        ('old-only-provider', '2026-05-01T00:00:00Z', 'degraded');
+    `);
+
+    const deleted = await database.query<{
+      market: number;
+      providers: number;
+      wallets: number;
+    }>(`
+      select
+        (result->>'marketObservations')::int as market,
+        (result->>'walletObservations')::int as wallets,
+        (result->>'providerHealth')::int as providers
+      from (select run_observation_retention('2026-07-28T12:00:00Z') as result)
+    `);
+    const remaining = await database.query<{
+      market: number;
+      providers: number;
+      wallets: number;
+    }>(`
+      select
+        (select count(*)::int from market_observations where provider = 'retention-provider') as market,
+        (select count(*)::int from wallet_balance_observations where provider = 'retention-provider') as wallets,
+        (select count(*)::int from provider_health where provider in ('retention-provider', 'old-only-provider')) as providers
+    `);
+
+    expect(deleted.rows[0]).toEqual({ market: 1, providers: 1, wallets: 1 });
+    expect(remaining.rows[0]).toEqual({ market: 1, providers: 2, wallets: 1 });
   });
 });

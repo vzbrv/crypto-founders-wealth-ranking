@@ -4,11 +4,11 @@ Phase 8 implements CoinGecko market data, Ethereum native/ERC-20 balances throug
 
 | Domain       | Candidate adapter | Intended data                 | Status                     |
 | ------------ | ----------------- | ----------------------------- | -------------------------- |
-| Market       | CoinGecko         | price, circulating supply     | implemented in Phase 4     |
-| EVM          | viem + JSON-RPC   | native and ERC-20 balances    | implemented in Phase 7     |
-| EVM explorer | Etherscan         | public address links          | implemented in Phase 6     |
-| Solana       | JSON-RPC          | native account balances       | implemented in Phase 8     |
+| Market       | CoinGecko         | price, circulating supply     | implemented                |
+| EVM          | viem + JSON-RPC   | native and ERC-20 balances    | implemented                |
+| EVM explorer | Etherscan         | public address links          | implemented                |
+| Solana       | JSON-RPC          | native account balances       | implemented                |
 | Substrate    | Subscan           | public account and asset data | interface placeholder only |
 | TON          | TON Center        | public account and token data | interface placeholder only |
 
-Every material curated claim must later carry a direct source, retrieval date, and review state. Secondary sources may guide research but do not replace claim-level evidence.
+Every material curated claim must carry a direct source, retrieval date, and review state. Secondary sources may guide research but do not replace claim-level evidence.

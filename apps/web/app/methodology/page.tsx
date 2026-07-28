@@ -6,6 +6,7 @@ export const metadata: Metadata = {
   title: "Methodology",
   description:
     "How the Crypto Founders Wealth Ranking is calculated and sourced.",
+  alternates: { canonical: "/methodology/" },
 };
 
 const sections = [
@@ -59,7 +60,11 @@ export default function MethodologyPage() {
   return (
     <>
       <SiteNav />
-      <main className="content-page methodology-page">
+      <main
+        className="content-page methodology-page"
+        id="main-content"
+        tabIndex={-1}
+      >
         <header className="page-header">
           <p className="eyebrow">Version 1.0 · Updated July 28, 2026</p>
           <h1>Methodology</h1>
