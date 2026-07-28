@@ -42,7 +42,7 @@ const sections = [
     "Fully diluted valuation and total value locked are not used in the core score. FDV counts non-circulating supply; TVL often includes user deposits and can double-count capital.",
   ],
   [
-    "Confidence",
+    "Confidence system",
     "High, medium, low, and insufficient labels summarize evidence completeness and material uncertainty. Missing required inputs or blocking validation failures keep an entry unranked rather than substituting zero.",
   ],
   [
