@@ -10,6 +10,7 @@ import {
   type RawLeaderboardRow,
   type RawProjectDetail,
 } from "../lib/ranking";
+import { SiteNav } from "./site-nav";
 
 const DISCLAIMER =
   "Scores are estimates based on public market data and public information about project-affiliated holdings and funding. Wallet attribution and circulating-supply classifications may be incomplete or disputed. The ranking does not measure personal net worth, realized investor profit, total social benefit, or investment performance.";
@@ -51,7 +52,14 @@ function movement(value: number | null): { label: string; className: string } {
 
 function ProjectNames({ entry }: { entry: RankingEntry }) {
   return entry.projects.length ? (
-    <span>{entry.projects.map(({ name }) => name).join(", ")}</span>
+    <span>
+      {entry.projects.map(({ name, slug }, index) => (
+        <span key={slug}>
+          {index > 0 ? ", " : ""}
+          <a href={`/project/${slug}/`}>{name}</a>
+        </span>
+      ))}
+    </span>
   ) : (
     <span className="muted">Pending mapping</span>
   );
@@ -72,8 +80,8 @@ function LeaderboardTable({ entries }: { entries: RankingEntry[] }) {
   if (!entries.length)
     return <p className="empty">No ranked entries match these filters.</p>;
   return (
-    <div className="table-shell">
-      <table>
+    <div className="table-shell ranking-shell">
+      <table className="ranking-table">
         <thead>
           <tr>
             <th>Rank</th>
@@ -223,15 +231,7 @@ export function RankingDashboard() {
 
   return (
     <main>
-      <nav aria-label="Primary navigation">
-        <a className="wordmark" href="#top">
-          <span>CF</span> Wealth Index
-        </a>
-        <div>
-          <a href="#ranking">Ranking</a>
-          <a href="#methodology">Methodology</a>
-        </div>
-      </nav>
+      <SiteNav />
 
       <header className="hero" id="top">
         <p className="eyebrow">Outside-holder value · Public beta</p>

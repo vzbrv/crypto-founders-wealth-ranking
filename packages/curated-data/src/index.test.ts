@@ -47,6 +47,13 @@ describe("curated data validation", () => {
     const broken = structuredClone(validData);
     broken.recordSources[0]!.sourceId = "99999999-9999-4999-8999-999999999999";
     expectInvalid(broken, "Missing source");
+
+    const missingClaim = structuredClone(validData);
+    missingClaim.recordSources = missingClaim.recordSources.filter(
+      ({ recordType, field }) =>
+        !(recordType === "tracked_wallet" && field === "classification"),
+    );
+    expectInvalid(missingClaim, "field classification");
   });
 
   it("rejects malformed URLs and dates", () => {

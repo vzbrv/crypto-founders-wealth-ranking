@@ -231,24 +231,29 @@ section {
   box-shadow: 0 0 0 2px rgba(121, 231, 174, 0.15);
 }
 
-.table-shell {
+.ranking-shell,
+.evidence-shell {
   overflow-x: auto;
   border: 1px solid var(--border);
   background: var(--surface);
 }
-table {
+.ranking-table,
+.evidence-table {
   width: 100%;
   min-width: 75rem;
   border-collapse: collapse;
 }
-th,
-td {
+.ranking-table th,
+.ranking-table td,
+.evidence-table th,
+.evidence-table td {
   padding: 1rem 0.85rem;
   border-bottom: 1px solid var(--border);
   text-align: left;
   vertical-align: middle;
 }
-th {
+.ranking-table th,
+.evidence-table th {
   position: sticky;
   top: 0;
   background: #0a1512;
@@ -257,10 +262,12 @@ th {
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
-tbody tr:last-child td {
+.ranking-table tbody tr:last-child td,
+.evidence-table tbody tr:last-child td {
   border-bottom: 0;
 }
-tbody tr:hover {
+.ranking-table tbody tr:hover,
+.evidence-table tbody tr:hover {
   background: var(--surface-raised);
 }
 .number {
@@ -403,6 +410,172 @@ tbody tr:hover {
   color: var(--accent);
 }
 
+.detail-page,
+.content-page {
+  padding-bottom: 6rem;
+}
+.detail-hero,
+.page-header {
+  padding-block: clamp(3.5rem, 8vw, 7rem) 3rem;
+}
+.detail-hero h1,
+.page-header h1 {
+  font-size: clamp(3rem, 7vw, 6.5rem);
+}
+.detail-hero p:last-child,
+.page-header p:last-child {
+  max-width: 52rem;
+  color: var(--muted);
+  font-size: 1.08rem;
+  line-height: 1.7;
+}
+.metric-strip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  padding-block: 0;
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+.metric-strip > div {
+  min-height: 6.5rem;
+  padding: 1.2rem;
+  border-right: 1px solid var(--border);
+}
+.metric-strip > div:last-child {
+  border: 0;
+}
+.metric-strip span,
+.formula-grid span,
+.evidence-summary span {
+  display: block;
+  margin-bottom: 0.45rem;
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 750;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+.metric-strip strong,
+.formula-grid strong,
+.evidence-summary strong {
+  font-variant-numeric: tabular-nums;
+}
+.panel,
+.warning-panel {
+  border-top: 1px solid var(--border);
+}
+.formula-statement {
+  max-width: 68rem;
+  color: var(--muted);
+  line-height: 1.6;
+}
+.formula-grid,
+.evidence-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-block: 1.5rem;
+}
+.formula-grid > div,
+.evidence-summary > div {
+  padding: 1.15rem;
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+.equation {
+  padding: 1.25rem;
+  border-left: 3px solid var(--accent);
+  background: var(--surface-raised);
+  color: var(--accent);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: clamp(0.9rem, 2vw, 1.15rem);
+  overflow-wrap: anywhere;
+}
+.evidence-table {
+  min-width: 68rem;
+}
+.evidence-table small {
+  display: block;
+  max-width: 34rem;
+  margin-top: 0.4rem;
+  color: var(--muted);
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+.evidence-table code {
+  color: var(--accent);
+  overflow-wrap: anywhere;
+}
+.warning-panel {
+  color: var(--muted);
+  line-height: 1.7;
+}
+.warning-panel h2 {
+  color: var(--text);
+  font-family: Georgia, serif;
+  font-size: clamp(2rem, 4vw, 3.5rem);
+  font-weight: 500;
+}
+.warning-text {
+  color: var(--danger);
+}
+.source-filters {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+.source-filters label {
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.source-filters select {
+  display: block;
+  width: 100%;
+  min-height: 3.2rem;
+  margin-top: 0.45rem;
+  padding: 0 1rem;
+  border: 1px solid var(--border);
+  border-radius: 0;
+  background: var(--surface);
+  color: var(--text);
+}
+.registry-count {
+  margin-block: 1rem;
+  color: var(--muted);
+}
+.methodology-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+.methodology-card {
+  display: grid;
+  grid-template-columns: 2.5rem 1fr;
+  gap: 1rem;
+  padding: 1.4rem;
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+.methodology-card > span {
+  color: var(--accent);
+  font-family: Georgia, serif;
+  font-size: 1.25rem;
+}
+.methodology-card h2 {
+  margin-bottom: 0.65rem;
+  font-family: Georgia, serif;
+  font-size: 1.6rem;
+  font-weight: 500;
+}
+.methodology-card p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.65;
+}
+
 footer {
   display: flex;
   justify-content: space-between;
@@ -452,6 +625,11 @@ footer p:first-child {
   .formula b {
     text-align: right;
   }
+  .metric-strip,
+  .formula-grid,
+  .evidence-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 700px) {
@@ -484,24 +662,24 @@ footer p:first-child {
     grid-column: auto;
   }
 
-  .table-shell {
+  .ranking-shell {
     overflow: visible;
     border: 0;
     background: transparent;
   }
-  table,
-  tbody {
+  .ranking-table,
+  .ranking-table tbody {
     display: block;
     min-width: 0;
   }
-  thead {
+  .ranking-table thead {
     display: none;
   }
-  tbody {
+  .ranking-table tbody {
     display: grid;
     gap: 0.65rem;
   }
-  tbody tr {
+  .ranking-table tbody tr {
     display: grid;
     grid-template-columns: 2.4rem minmax(0, 1fr) auto;
     gap: 0.25rem 0.75rem;
@@ -509,7 +687,7 @@ footer p:first-child {
     border: 1px solid var(--border);
     background: var(--surface);
   }
-  td {
+  .ranking-table td {
     display: block;
     padding: 0;
     border: 0;
@@ -565,6 +743,20 @@ footer p:first-child {
   }
   .formula b {
     text-align: left;
+  }
+  .metric-strip,
+  .formula-grid,
+  .evidence-summary,
+  .source-filters,
+  .methodology-grid {
+    grid-template-columns: 1fr;
+  }
+  .metric-strip > div {
+    border-right: 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .metric-strip > div:last-child {
+    border-bottom: 0;
   }
   footer {
     display: block;

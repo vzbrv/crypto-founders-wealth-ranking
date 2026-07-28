@@ -116,3 +116,105 @@ test("fits the public ranking on a mobile viewport", async ({ page }) => {
     ),
   ).toBe(true);
 });
+
+test("shows a reproducible project score and its evidence", async ({
+  page,
+}) => {
+  await page.route("**/rest/v1/public_project_details**", (route) =>
+    route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify([
+        {
+          id: "11111111-1111-4111-8111-111111111111",
+          slug: "synthetic-horizon",
+          market_cap_usd: "1000000000",
+          price_usd: "2",
+          circulating_supply: "500000000",
+          excluded_supply: "75000000",
+          excluded_value_usd: "150000000",
+          outside_holder_supply: "425000000",
+          capital_raised_usd: "50000000",
+          calculated_at: now,
+        },
+      ]),
+    }),
+  );
+  await page.route("**/rest/v1/public_wallet_evidence**", (route) =>
+    route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify([
+        {
+          wallet_id: "55555555-5555-4555-8555-555555555555",
+          balance: "100000000",
+          balance_observed_at: now,
+          balance_provider: "mock provider",
+          deductible_balance: "75000000",
+          deductible_value_usd: "150000000",
+        },
+      ]),
+    }),
+  );
+  await page.route("**/rest/v1/current_leaderboard**", (route) =>
+    route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify([
+        {
+          rank: 1,
+          score_usd: "800000000",
+          confidence_label: "high",
+          project_breakdown: [
+            {
+              projectId: "11111111-1111-4111-8111-111111111111",
+              attributionFraction: 1,
+            },
+          ],
+        },
+      ]),
+    }),
+  );
+
+  await page.goto("/project/synthetic-horizon/");
+
+  await expect(
+    page.getByRole("heading", { name: "Synthetic Horizon Protocol" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Score breakdown" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Wallet deductions" }),
+  ).toBeVisible();
+  await expect(page.getByTestId("score-equation")).toHaveText(
+    "$1,000,000,000.00 − $150,000,000.00 − $50,000,000.00 = $800,000,000.00",
+  );
+  await expect(page.getByText("mock provider", { exact: false })).toBeVisible();
+});
+
+test("filters the claim-level source registry", async ({ page }) => {
+  await page.goto("/sources/?project=synthetic-horizon");
+
+  await expect(page.getByRole("heading", { name: "Sources" })).toBeVisible();
+  await expect(
+    page.getByText("Showing 20 of 20 claim-source links."),
+  ).toBeVisible();
+  await page
+    .getByRole("combobox", { name: "Claim" })
+    .selectOption("classification");
+  await expect(
+    page.getByText("Showing 1 of 20 claim-source links."),
+  ).toBeVisible();
+});
+
+test("documents the public methodology", async ({ page }) => {
+  await page.goto("/methodology/");
+
+  await expect(
+    page.getByRole("heading", { name: "Methodology" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Circulation assumptions" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Confidence system" }),
+  ).toBeVisible();
+});

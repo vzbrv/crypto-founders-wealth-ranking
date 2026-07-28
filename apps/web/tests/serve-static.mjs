@@ -16,21 +16,41 @@ createServer(async (request, response) => {
   const pathname = decodeURIComponent(
     new URL(request.url, "http://localhost").pathname,
   );
-  const relativePath =
-    pathname === "/" ? "index.html" : pathname.replace(/^\/+/, "");
-  let file = new URL(relativePath, root);
+  const relativePath = pathname.replace(/^\/+|\/+$/g, "");
+  const candidates =
+    pathname === "/"
+      ? [new URL("index.html", root)]
+      : relativePath.split("/").at(-1)?.includes(".")
+        ? [new URL(relativePath, root)]
+        : [
+            new URL(`${relativePath}.html`, root),
+            new URL(`${relativePath}/index.html`, root),
+          ];
 
-  if (!file.pathname.startsWith(root.pathname)) {
+  if (
+    candidates.some(
+      (candidate) => !candidate.pathname.startsWith(root.pathname),
+    )
+  ) {
     response.writeHead(400).end("Bad request");
     return;
   }
 
   try {
-    if ((await stat(file)).isDirectory()) {
-      file = new URL(
-        "index.html",
-        file.pathname.endsWith("/") ? file : `${file}/`,
-      );
+    let file;
+    for (const candidate of candidates) {
+      try {
+        if ((await stat(candidate)).isFile()) {
+          file = candidate;
+          break;
+        }
+      } catch {
+        // Try the next static-export path shape.
+      }
+    }
+
+    if (!file) {
+      throw new Error("Not found");
     }
 
     const extension = file.pathname.slice(file.pathname.lastIndexOf("."));

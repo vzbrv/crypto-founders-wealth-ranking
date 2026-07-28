@@ -412,6 +412,88 @@ export const curatedDataBundleSchema = curatedDataBundleBaseSchema.superRefine(
         });
       }
     }
+
+    const requiredSourceClaims = [
+      ...bundle.projects.flatMap(
+        ({ id }) =>
+          [
+            ["project", id, "identity"],
+            ["project", id, "methodologyNotes"],
+          ] as const,
+      ),
+      ...bundle.foundingUnits.flatMap(
+        (unit) =>
+          [
+            ["founding_unit", unit.id, "identity"],
+            ...unit.projectLinks.flatMap(
+              (_, index) =>
+                [
+                  [
+                    "founding_unit",
+                    unit.id,
+                    `projectLinks[${index}].attributionFraction`,
+                  ],
+                  [
+                    "founding_unit",
+                    unit.id,
+                    `projectLinks[${index}].attributionMethod`,
+                  ],
+                ] as const,
+            ),
+          ] as const,
+      ),
+      ...bundle.assets.flatMap(
+        (asset) =>
+          [
+            ["asset", asset.id, "identity"],
+            ["asset", asset.id, "providerIds"],
+            ["asset", asset.id, "chainCode"],
+            ...(asset.contractAddress
+              ? [["asset", asset.id, "contractAddress"] as const]
+              : []),
+          ] as const,
+      ),
+      ...bundle.wallets.flatMap(
+        ({ id }) =>
+          [
+            ["tracked_wallet", id, "ownership"],
+            ["tracked_wallet", id, "classification"],
+            ["tracked_wallet", id, "ownershipConfidence"],
+            ["tracked_wallet", id, "circulatingInclusionFraction"],
+            ["tracked_wallet", id, "affectsScore"],
+          ] as const,
+      ),
+      ...bundle.fundingRounds.flatMap(
+        (round) =>
+          [
+            ["funding_round", round.id, "eventDate"],
+            ["funding_round", round.id, "roundType"],
+            ...(round.originalAmount !== undefined
+              ? [["funding_round", round.id, "originalAmount"] as const]
+              : []),
+            ["funding_round", round.id, "amountUsdAtEvent"],
+            ...(round.conversionMethod
+              ? [["funding_round", round.id, "conversionMethod"] as const]
+              : []),
+            ["funding_round", round.id, "includeInCapitalDeduction"],
+          ] as const,
+      ),
+    ] as const;
+    for (const [recordType, recordId, field] of requiredSourceClaims) {
+      if (
+        !bundle.recordSources.some(
+          (link) =>
+            link.recordType === recordType &&
+            link.recordId === recordId &&
+            link.field === field,
+        )
+      ) {
+        context.addIssue({
+          code: "custom",
+          message: `Missing source for ${recordType} ${recordId} field ${field}`,
+        });
+      }
+    }
   },
 );
 
