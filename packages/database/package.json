@@ -7,7 +7,18 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "lint": "eslint src",
+    "sync:curated-data": "tsx src/sync-curated-data.ts",
+    "test:migrations": "vitest run src/database.test.ts",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run --passWithNoTests"
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@crypto-founders/curated-data": "workspace:*",
+    "@crypto-founders/schemas": "workspace:*",
+    "drizzle-orm": "0.45.2",
+    "postgres": "3.4.8"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "0.3.14"
   }
 }
