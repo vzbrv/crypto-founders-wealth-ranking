@@ -1,7 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
+import {
+  calculateEntryLiveEstimate,
+  type LiveEstimate,
+} from "../lib/live-prices";
 import {
   buildRankingEntries,
   filterEntries,
@@ -10,6 +14,7 @@ import {
   type RawLeaderboardRow,
   type RawProjectDetail,
 } from "../lib/ranking";
+import { useLivePrices } from "../lib/use-live-prices";
 import { SiteNav } from "./site-nav";
 
 const DISCLAIMER =
@@ -76,7 +81,15 @@ function FreshnessBadge({ date }: { date: string }) {
   );
 }
 
-function LeaderboardTable({ entries }: { entries: RankingEntry[] }) {
+function LeaderboardTable({
+  entries,
+  liveEstimates,
+  sortEpoch,
+}: {
+  entries: RankingEntry[];
+  liveEstimates: ReadonlyMap<string, LiveEstimate>;
+  sortEpoch: number;
+}) {
   if (!entries.length)
     return <p className="empty">No ranked entries match these filters.</p>;
   return (
@@ -84,7 +97,7 @@ function LeaderboardTable({ entries }: { entries: RankingEntry[] }) {
       <table className="ranking-table">
         <thead>
           <tr>
-            <th>Rank</th>
+            <th>Canonical rank</th>
             <th>Move</th>
             <th>Founder or team</th>
             <th>Project</th>
@@ -96,12 +109,21 @@ function LeaderboardTable({ entries }: { entries: RankingEntry[] }) {
             <th>Freshness</th>
           </tr>
         </thead>
-        <tbody>
+        <tbody
+          key={sortEpoch}
+          className={sortEpoch ? "live-resort" : undefined}
+        >
           {entries.map((entry) => {
             const rankMovement = movement(entry.rankChange);
+            const liveEstimate = liveEstimates.get(entry.foundingUnitId);
             return (
               <tr key={entry.foundingUnitId}>
-                <td className="rank cell-rank">{entry.rank}</td>
+                <td
+                  className="rank cell-rank"
+                  aria-label={`Canonical rank ${entry.rank}`}
+                >
+                  {entry.rank}
+                </td>
                 <td className={`${rankMovement.className} cell-rank-move`}>
                   {rankMovement.label}
                 </td>
@@ -112,7 +134,19 @@ function LeaderboardTable({ entries }: { entries: RankingEntry[] }) {
                   <ProjectNames entry={entry} />
                 </td>
                 <td className="number score cell-score">
-                  {money(entry.scoreUsd)}
+                  <strong>
+                    {money(liveEstimate?.scoreUsd ?? entry.scoreUsd)}
+                  </strong>
+                  <span className={liveEstimate?.stale ? "stale" : undefined}>
+                    {liveEstimate
+                      ? liveEstimate.stale
+                        ? "Last live estimate"
+                        : "Live estimate"
+                      : "Canonical score"}
+                  </span>
+                  {liveEstimate ? (
+                    <small>Canonical {money(entry.scoreUsd)}</small>
+                  ) : null}
                 </td>
                 <td
                   className="number muted cell-market-change"
@@ -198,6 +232,9 @@ export function RankingDashboard() {
   const [query, setQuery] = useState("");
   const [confidence, setConfidence] = useState("all");
   const [project, setProject] = useState("all");
+  const [liveSorting, setLiveSorting] = useState(true);
+  const [liveOrder, setLiveOrder] = useState<string[]>([]);
+  const [sortEpoch, setSortEpoch] = useState(0);
 
   useEffect(() => {
     loadRanking()
@@ -210,12 +247,69 @@ export function RankingDashboard() {
       .finally(() => setLoading(false));
   }, []);
 
+  const { prices, connectionState, rejectedCount, supportedProductCount } =
+    useLivePrices(entries);
+  const liveEstimates = useMemo(() => {
+    const estimates = new Map<string, LiveEstimate>();
+    for (const entry of entries) {
+      const estimate = calculateEntryLiveEstimate(entry, prices);
+      if (estimate) estimates.set(entry.foundingUnitId, estimate);
+    }
+    return estimates;
+  }, [entries, prices]);
+
   const filtered = useMemo(
     () => filterEntries(entries, query, confidence, project),
     [entries, query, confidence, project],
   );
   const ranked = filtered.filter(({ status }) => status === "ranked");
   const research = filtered.filter(({ status }) => status === "research");
+  const rankedRef = useRef(ranked);
+  const liveEstimatesRef = useRef(liveEstimates);
+
+  useEffect(() => {
+    rankedRef.current = ranked;
+    liveEstimatesRef.current = liveEstimates;
+  }, [ranked, liveEstimates]);
+
+  useEffect(() => {
+    if (!liveSorting) return;
+    const sortNow = () => {
+      const hasFreshLiveEstimate = [...liveEstimatesRef.current.values()].some(
+        ({ stale }) => !stale,
+      );
+      if (!hasFreshLiveEstimate) return;
+      const nextOrder = [...rankedRef.current]
+        .sort((left, right) => {
+          const leftScore =
+            liveEstimatesRef.current.get(left.foundingUnitId)?.scoreUsd ??
+            left.scoreUsd ??
+            Number.NEGATIVE_INFINITY;
+          const rightScore =
+            liveEstimatesRef.current.get(right.foundingUnitId)?.scoreUsd ??
+            right.scoreUsd ??
+            Number.NEGATIVE_INFINITY;
+          return rightScore - leftScore || (left.rank ?? 0) - (right.rank ?? 0);
+        })
+        .map(({ foundingUnitId }) => foundingUnitId);
+      setLiveOrder(nextOrder);
+      setSortEpoch((current) => current + 1);
+    };
+    sortNow();
+    const timer = window.setInterval(sortNow, 10_000);
+    return () => window.clearInterval(timer);
+  }, [liveSorting]);
+
+  const displayedRanked = useMemo(() => {
+    if (!liveOrder.length) return ranked;
+    const position = new Map(liveOrder.map((id, index) => [id, index]));
+    return [...ranked].sort(
+      (left, right) =>
+        (position.get(left.foundingUnitId) ?? Number.MAX_SAFE_INTEGER) -
+          (position.get(right.foundingUnitId) ?? Number.MAX_SAFE_INTEGER) ||
+        (left.rank ?? 0) - (right.rank ?? 0),
+    );
+  }, [liveOrder, ranked]);
   const projects = Array.from(
     new Map(
       entries.flatMap((entry) => entry.projects.map((item) => [item.id, item])),
@@ -228,6 +322,14 @@ export function RankingDashboard() {
   const status = newestObservation
     ? freshnessLabel(newestObservation)
     : "Offline";
+  const liveStatus =
+    supportedProductCount === 0
+      ? "No supported pairs"
+      : connectionState === "live"
+        ? "Connected"
+        : connectionState === "reconnecting"
+          ? "Reconnecting"
+          : "Connecting";
 
   return (
     <main>
@@ -241,8 +343,8 @@ export function RankingDashboard() {
           <em>ranked by value created.</em>
         </h1>
         <p className="summary">
-          A live ranking of crypto founders and founding teams by the estimated
-          current market wealth their projects have created for outside holders.
+          A canonical ranking of crypto founders and founding teams, with live
+          market-price estimates for supported assets.
         </p>
         <div className="status-strip" aria-label="Ranking status">
           <div>
@@ -260,6 +362,10 @@ export function RankingDashboard() {
           <div>
             <span>In research</span>
             <strong>{research.length}</strong>
+          </div>
+          <div>
+            <span>Live price overlay</span>
+            <strong>{liveStatus}</strong>
           </div>
         </div>
       </header>
@@ -317,7 +423,24 @@ export function RankingDashboard() {
               ))}
             </select>
           </label>
+          <div className="sort-control">
+            <span>Live sorting</span>
+            <button
+              type="button"
+              aria-pressed={liveSorting}
+              onClick={() => setLiveSorting((current) => !current)}
+            >
+              {liveSorting ? "Pause" : "Resume"}
+            </button>
+          </div>
         </div>
+
+        {rejectedCount ? (
+          <p className="overlay-warning" role="status">
+            Live overlay disabled for {rejectedCount} price pair
+            {rejectedCount === 1 ? "" : "s"} because variance exceeded 20%.
+          </p>
+        ) : null}
 
         {loading ? (
           <div className="notice" role="status">
@@ -326,11 +449,17 @@ export function RankingDashboard() {
         ) : null}
         {error ? (
           <div className="notice warning" role="alert">
-            <strong>Live data unavailable.</strong> {error} The site will never
-            substitute fabricated values.
+            <strong>Canonical data unavailable.</strong> {error} The site will
+            never substitute fabricated values.
           </div>
         ) : null}
-        {!loading && !error ? <LeaderboardTable entries={ranked} /> : null}
+        {!loading && !error ? (
+          <LeaderboardTable
+            entries={displayedRanked}
+            liveEstimates={liveEstimates}
+            sortEpoch={sortEpoch}
+          />
+        ) : null}
       </section>
 
       <section className="research-section" aria-labelledby="research-heading">
@@ -369,7 +498,8 @@ export function RankingDashboard() {
           Market observations, public wallet attribution, circulating-supply
           classifications, and funding records feed the canonical calculation.
           Freshness labels reflect the latest market observation supporting each
-          score.
+          score. Public exchange prices may update a clearly labeled live
+          estimate, but never replace the authoritative canonical score.
         </p>
       </section>
 

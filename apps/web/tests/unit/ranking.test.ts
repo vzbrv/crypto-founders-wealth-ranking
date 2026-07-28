@@ -56,6 +56,11 @@ const projects: RawProjectDetail[] = [
     market_cap_usd: "2000000000",
     outside_holder_value_usd: "1600000000",
     capital_raised_usd: "100000000",
+    score_usd: "1500000000",
+    price_usd: "2",
+    circulating_supply: "1000000000",
+    excluded_supply: "200000000",
+    outside_holder_supply: "800000000",
     data_freshness: { marketObservedAt: "2026-07-28T11:58:00.000Z" },
     calculated_at: calculatedAt,
   },
@@ -81,6 +86,13 @@ describe("ranking data", () => {
       excludedHoldingsUsd: 200_000_000,
       capitalDeductedUsd: 50_000_000,
       freshestObservationAt: "2026-07-28T11:58:00.000Z",
+      projects: [
+        expect.objectContaining({
+          attributionFraction: 0.5,
+          canonicalPriceUsd: 2,
+          outsideHolderSupply: 800_000_000,
+        }),
+      ],
     });
     expect(entries[1]).toMatchObject({
       rank: null,

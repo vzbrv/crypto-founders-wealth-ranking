@@ -117,6 +117,116 @@ test("fits the public ranking on a mobile viewport", async ({ page }) => {
   ).toBe(true);
 });
 
+test("updates supported live scores and preserves them during reconnect", async ({
+  page,
+}) => {
+  await page.addInitScript(
+    ({ observedAt }) => {
+      let connectionCount = 0;
+      class MockWebSocket {
+        static readonly OPEN = 1;
+        readyState = 0;
+        onopen: ((event: Event) => void) | null = null;
+        onmessage: ((event: MessageEvent<string>) => void) | null = null;
+        onclose: ((event: Event) => void) | null = null;
+        onerror: ((event: Event) => void) | null = null;
+
+        constructor() {
+          connectionCount += 1;
+          if (connectionCount !== 1) return;
+          window.setTimeout(() => {
+            this.readyState = MockWebSocket.OPEN;
+            this.onopen?.(new Event("open"));
+            window.setTimeout(() => {
+              this.onmessage?.(
+                new MessageEvent("message", {
+                  data: JSON.stringify({
+                    channel: "ticker_batch",
+                    timestamp: observedAt,
+                    events: [
+                      {
+                        tickers: [{ product_id: "ETH-USD", price: "2.1" }],
+                      },
+                    ],
+                  }),
+                }),
+              );
+              window.setTimeout(() => this.close(), 40);
+            }, 10);
+          }, 0);
+        }
+
+        send() {}
+
+        close() {
+          if (this.readyState === 3) return;
+          this.readyState = 3;
+          this.onclose?.(new Event("close"));
+        }
+      }
+
+      Object.defineProperty(window, "WebSocket", {
+        configurable: true,
+        value: MockWebSocket,
+      });
+    },
+    { observedAt: now },
+  );
+  await page.route("**/rest/v1/current_leaderboard**", (route) =>
+    route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify([
+        {
+          rank: 1,
+          previous_rank: 1,
+          rank_change: 0,
+          score_usd: "800000000",
+          confidence_label: "high",
+          calculated_at: now,
+          founding_unit_id: "unit-ethereum",
+          slug: "ethereum-founders",
+          display_name: "Ethereum Founders",
+          project_breakdown: [
+            { projectId: "project-ethereum", attributionFraction: 1 },
+          ],
+          warnings: [],
+        },
+      ]),
+    }),
+  );
+  await page.route("**/rest/v1/public_project_details**", (route) =>
+    route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify([
+        {
+          id: "project-ethereum",
+          slug: "ethereum",
+          name: "Ethereum",
+          symbol: "ETH",
+          score_usd: "800000000",
+          price_usd: "2",
+          circulating_supply: "500000000",
+          excluded_supply: "75000000",
+          outside_holder_supply: "425000000",
+          capital_raised_usd: "50000000",
+          data_freshness: { marketObservedAt: now },
+          calculated_at: now,
+        },
+      ]),
+    }),
+  );
+
+  await page.goto("/");
+
+  await expect(page.getByText("$842.5M", { exact: true })).toBeVisible();
+  await expect(page.getByText("Live estimate", { exact: true })).toBeVisible();
+  await expect(
+    page.getByText("Canonical $800M", { exact: true }),
+  ).toBeVisible();
+  await expect(page.getByText("Reconnecting", { exact: true })).toBeVisible();
+  await expect(page.getByText("$842.5M", { exact: true })).toBeVisible();
+});
+
 test("shows a reproducible project score and its evidence", async ({
   page,
 }) => {
