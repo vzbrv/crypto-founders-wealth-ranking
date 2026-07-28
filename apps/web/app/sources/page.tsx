@@ -8,13 +8,14 @@ import { getAllSourceClaims } from "../../lib/transparency";
 export const metadata: Metadata = {
   title: "Source registry",
   description: "Claim-level sources behind the Crypto Founders Wealth Ranking.",
+  alternates: { canonical: "/sources/" },
 };
 
 export default function SourcesPage() {
   return (
     <>
       <SiteNav />
-      <main className="content-page">
+      <main className="content-page" id="main-content" tabIndex={-1}>
         <header className="page-header">
           <p className="eyebrow">Public evidence register</p>
           <h1>Sources</h1>

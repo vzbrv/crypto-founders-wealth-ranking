@@ -1,17 +1,41 @@
-# Deployment
+# Production deployment
 
-The web build is compatible with static hosting: `pnpm build` writes `apps/web/out`. Phases 4, 7, and 8 provide `market-sync` plus Ethereum and Solana `wallet-sync` ingestion with five-minute Supabase Cron migrations; connecting production projects remains an operator action.
+The public application is a static Next.js export. `pnpm build` writes `apps/web/out`; Supabase hosts persistence, read-only public data, Edge Functions, and recurring jobs.
 
-## Free deployment path
+## Prerequisites
 
-1. GitHub pull-request CI validates formatting, lint, types, unit tests, the static build, browser tests, and dependency audit.
-2. Cloudflare Pages builds the repository with `pnpm install --frozen-lockfile && pnpm build` and publishes `apps/web/out`.
-3. A gated GitHub Actions deployment applies Supabase migrations, deploys Edge Functions, validates curated data, performs idempotent sync, and runs health checks.
+- Node.js 22 and pnpm 11.9.0
+- a Supabase project with CLI access
+- a static web host such as Cloudflare Pages
+- the GitHub repository with Actions enabled
 
-Cloudflare Pages must use the Next.js Static HTML Export preset or equivalent settings. No GitHub Actions job should poll providers every five minutes; recurring jobs belong to Supabase Cron.
+Set deployment values from `.env.example`. Only `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `NEXT_PUBLIC_SITE_URL`, and the optional error-reporting endpoint may enter the browser bundle. Service-role, provider, database, Supabase, and hosting credentials remain secret.
 
-Before applying the schedule migrations, add `project_url` and `service_role_key` to Supabase Vault. Deploy functions with `supabase functions deploy market-sync` and `supabase functions deploy wallet-sync`, then apply all migrations in order. The Edge runtime supplies `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`; `COINGECKO_DEMO_API_KEY` is optional, `EVM_ETHEREUM_RPC_URL` is required when Ethereum wallets are configured, and `SOLANA_RPC_URL` is recommended for production Solana syncs. Without it, Solana uses the public mainnet RPC endpoint.
+Before schedule migrations, store `project_url` and `service_role_key` in Supabase Vault. Configure `EVM_ETHEREUM_RPC_URL`; configure `SOLANA_RPC_URL` rather than relying on the public endpoint. `COINGECKO_DEMO_API_KEY` is optional.
 
-Required secret names are documented in `.env.example`. Values must be supplied by the deployment platform and must never be committed.
+## Release order
 
-Only `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` may enter the browser bundle. Service-role, provider, cron, database, Supabase deployment, and Cloudflare deployment credentials remain secret.
+1. Run `pnpm install --frozen-lockfile` and `pnpm check`.
+2. Apply Supabase migrations in filename order. This creates the sanitized provider-status view before the site uses it.
+3. Deploy Edge Functions:
+
+   ```bash
+   supabase functions deploy market-sync
+   supabase functions deploy wallet-sync
+   ```
+
+4. Validate and synchronize curated data with `pnpm validate:data` and `pnpm sync:curated-data`.
+5. Run one idempotent market and wallet sync; confirm provider health and calculation output.
+6. Build with `pnpm build` and publish `apps/web/out` using the Next.js Static HTML Export preset.
+7. Configure GitHub variable `NEXT_PUBLIC_SUPABASE_URL` and secret `SUPABASE_PUBLISHABLE_KEY` for the provider monitor.
+
+## Post-deployment checks
+
+- `/`, `/methodology`, `/sources`, and one project route load without client errors.
+- `/status` displays current provider data or an explicit unknown state.
+- `/robots.txt`, `/sitemap.xml`, `/manifest.webmanifest`, and `/opengraph-image` respond successfully.
+- canonical and Open Graph URLs use the production `NEXT_PUBLIC_SITE_URL`.
+- anonymous users can read published ranking views and `public_provider_status`, but cannot read raw `provider_health` diagnostics or write data.
+- scheduled sync, retention, and provider-monitor jobs are active.
+
+Do not release when migrations, deterministic tests, the static build, or anonymous-access checks fail. See [operations.md](operations.md) for incident response and rollback.

@@ -10,6 +10,7 @@ export function SiteNav() {
         <Link href="/#ranking">Ranking</Link>
         <Link href="/methodology/">Methodology</Link>
         <Link href="/sources/">Sources</Link>
+        <Link href="/status/">Status</Link>
       </div>
     </nav>
   );

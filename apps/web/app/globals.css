@@ -42,6 +42,36 @@ a {
   color: inherit;
 }
 
+.skip-link {
+  position: fixed;
+  z-index: 100;
+  top: 0.75rem;
+  left: 0.75rem;
+  padding: 0.75rem 1rem;
+  transform: translateY(-160%);
+  background: var(--accent);
+  color: var(--background);
+  font-weight: 800;
+}
+.skip-link:focus {
+  transform: translateY(0);
+}
+:focus-visible {
+  outline: 3px solid var(--warm);
+  outline-offset: 3px;
+}
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 main {
   min-height: 100vh;
 }
@@ -633,6 +663,71 @@ section {
   line-height: 1.65;
 }
 
+.status-panel {
+  border-top: 1px solid var(--border);
+}
+.status-summary {
+  display: grid;
+  grid-template-columns: minmax(12rem, 0.5fr) minmax(0, 1.5fr);
+  gap: 2rem;
+  padding-block: 1.5rem;
+  border-bottom: 1px solid var(--border);
+}
+.status-summary span,
+.status-label {
+  display: block;
+}
+.status-summary span {
+  margin-bottom: 0.5rem;
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.status-summary p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.6;
+}
+.status-label {
+  font-family: Georgia, serif;
+  font-size: 2rem;
+  font-weight: 500;
+}
+.status-label.operational {
+  color: var(--accent);
+}
+.status-label.degraded,
+.status-label.unknown {
+  color: var(--warm);
+}
+.status-label.disrupted {
+  color: var(--danger);
+}
+.status-panel h2 {
+  margin-block: 2rem 1rem;
+  font-family: Georgia, serif;
+  font-size: 2rem;
+  font-weight: 500;
+}
+.provider-table {
+  min-width: 48rem;
+}
+.provider-table th[scope="row"] {
+  color: var(--text);
+  text-transform: none;
+}
+.primary-button {
+  min-height: 3rem;
+  padding-inline: 1rem;
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: var(--background);
+  cursor: pointer;
+  font-weight: 800;
+}
+
 footer {
   display: flex;
   justify-content: space-between;
@@ -693,6 +788,9 @@ footer p:first-child {
 }
 
 @media (max-width: 700px) {
+  .status-summary {
+    grid-template-columns: 1fr;
+  }
   nav,
   header,
   section,

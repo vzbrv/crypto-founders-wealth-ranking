@@ -1,14 +1,37 @@
-name: Provider smoke tests
+name: Provider status monitor
 
 on:
+  schedule:
+    - cron: "*/15 * * * *"
   workflow_dispatch:
+
+concurrency:
+  group: provider-status-monitor
+  cancel-in-progress: true
 
 permissions:
   contents: read
 
 jobs:
-  deferred:
+  monitor:
     runs-on: ubuntu-latest
+    timeout-minutes: 3
+    env:
+      SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
+      SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
     steps:
-      - name: Phase 0 boundary
-        run: echo "Provider smoke tests begin after provider adapters are implemented."
+      - name: Validate monitor configuration
+        run: |
+          test -n "$SUPABASE_URL"
+          test -n "$SUPABASE_PUBLISHABLE_KEY"
+
+      - name: Check sanitized provider status
+        run: |
+          curl --fail --silent --show-error \
+            --header "apikey: $SUPABASE_PUBLISHABLE_KEY" \
+            "$SUPABASE_URL/rest/v1/public_provider_status?select=provider,status,freshness,checked_at" \
+            --output provider-status.json
+          jq --exit-status '
+            length > 0 and
+            all(.[]; .status == "healthy" and .freshness == "current")
+          ' provider-status.json

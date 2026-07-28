@@ -20,6 +20,12 @@ export async function generateMetadata({
     ? {
         title: `${evidence.project.name} calculation transparency`,
         description: evidence.project.description,
+        alternates: { canonical: `/project/${slug}/` },
+        openGraph: {
+          title: `${evidence.project.name} calculation transparency`,
+          description: evidence.project.description,
+          url: `/project/${slug}/`,
+        },
       }
     : { title: "Project not found" };
 }

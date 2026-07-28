@@ -52,6 +52,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@crypto-founders/observability':
+        specifier: workspace:*
+        version: link:../../packages/observability
       next:
         specifier: 16.2.12
         version: 16.2.12(@babel/core@7.29.7)(@playwright/test@1.62.0)(@types/node@25.0.9)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)

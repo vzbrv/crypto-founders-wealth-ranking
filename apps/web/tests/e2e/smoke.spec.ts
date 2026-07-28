@@ -328,3 +328,39 @@ test("documents the public methodology", async ({ page }) => {
     page.getByRole("heading", { name: "Confidence system" }),
   ).toBeVisible();
 });
+
+test("shows sanitized provider monitoring state", async ({ page }) => {
+  await page.route("**/rest/v1/public_provider_status**", (route) =>
+    route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify([
+        {
+          provider: "coinbase-market-data",
+          checked_at: now,
+          status: "healthy",
+          latency_ms: 120,
+          freshness: "current",
+        },
+      ]),
+    }),
+  );
+  await page.goto("/status/");
+
+  await expect(
+    page.getByRole("heading", { name: "System status" }),
+  ).toBeVisible();
+  await expect(page.getByText("Operational", { exact: true })).toBeVisible();
+  await expect(
+    page.getByRole("rowheader", { name: "Coinbase Market Data" }),
+  ).toBeVisible();
+});
+
+test("supports keyboard navigation to main content", async ({ page }) => {
+  await page.goto("/methodology/");
+  const skipLink = page.getByRole("link", { name: "Skip to content" });
+
+  await page.keyboard.press("Tab");
+  await expect(skipLink).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(page.locator("#main-content")).toBeFocused();
+});

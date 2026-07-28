@@ -332,7 +332,7 @@ export function RankingDashboard() {
           : "Connecting";
 
   return (
-    <main>
+    <main id="main-content" tabIndex={-1}>
       <SiteNav />
 
       <header className="hero" id="top">

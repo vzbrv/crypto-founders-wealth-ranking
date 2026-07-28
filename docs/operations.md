@@ -1,47 +1,64 @@
-# Operations
+# Production operations
 
-Phase 8 implements the market, EVM wallet, and Solana wallet jobs:
+## Scheduled work
 
-| Job                  | Intended cadence    | Role                                                          |
-| -------------------- | ------------------- | ------------------------------------------------------------- |
-| `market-sync`        | Every 5 minutes     | Refresh CoinGecko prices and supply, then recalculate         |
-| `wallet-sync`        | Every 5 minutes     | Refresh Ethereum and native Solana balances, then recalculate |
-| `calculate-rankings` | Internal dependency | Recompute canonical results after successful ingestion        |
-| `provider-health`    | Every 15 minutes    | Record provider freshness and failures                        |
+| Job                              | Cadence            | Owner          | Purpose                                                |
+| -------------------------------- | ------------------ | -------------- | ------------------------------------------------------ |
+| `market-sync-every-five-minutes` | Every 5 minutes    | Supabase Cron  | Ingest CoinGecko observations and recalculate rankings |
+| `wallet-sync-every-five-minutes` | Every 5 minutes    | Supabase Cron  | Refresh configured Ethereum and Solana balances        |
+| `phase-10-observation-retention` | Daily at 03:17 UTC | Supabase Cron  | Delete raw telemetry older than 30 days                |
+| `Provider smoke`                 | Every 15 minutes   | GitHub Actions | Check the sanitized public provider-status view        |
 
-Supabase Cron invokes `market-sync` and `wallet-sync`; GitHub Actions does not provide the recurring scheduler. Market ingestion batches up to 200 asset IDs. EVM ingestion pins reads to one latest block and batches ERC-20 calls with Multicall. Solana ingestion records each finalized slot and blockhash. Both adapters retry bounded provider failures.
-
-## Market failure behavior
-
-- Each valid provider observation is append-only.
-- Invalid, missing, duplicate, future-dated, or stale observations are rejected.
-- Failed provider calls record health without replacing the last valid value.
-- Rankings recalculate only when at least one new observation is accepted.
-
-Inspect recent state with:
+Confirm the database schedule with:
 
 ```sql
-select * from provider_health order by checked_at desc limit 20;
-select * from market_observations where is_valid order by observed_at desc limit 20;
-select * from wallet_balance_observations where is_valid order by observed_at desc limit 20;
-select * from calculation_runs order by started_at desc limit 20;
-select jobname, schedule, active from cron.job where jobname in ('market-sync-every-five-minutes', 'wallet-sync-every-five-minutes');
+select jobname, schedule, active
+from cron.job
+order by jobname;
 ```
 
-## Freshness and retention
+The retention function keeps the newest row for each provider or observed subject even when it is older than 30 days. It removes only raw `market_observations`, `wallet_balance_observations`, and `provider_health` rows; canonical ranking records and curated evidence are not deleted.
 
-- Show a stale-data banner when freshness exceeds 20 minutes.
-- Retain five-minute history for 30 days, hourly rollups for one year, and daily rollups indefinitely.
-- Run nightly rollup and cleanup jobs.
-- Keep the last canonical value during an outage; never fabricate a replacement.
+## Monitoring and alerts
 
-Later implementation phases must additionally define:
+The public `/status` page reads `public_provider_status`. That view exposes only provider name, check time, status, latency, and derived freshness. Raw diagnostics in `provider_health` remain privileged.
 
-- separate refresh schedules for curated and canonical calculation data;
-- provider-specific rate limiting;
-- stale-data behavior that preserves the last canonical value and exposes freshness;
-- outage handling with no fabricated fallback values;
-- manual replay and reconciliation procedures;
-- quota monitoring, structured logs, health checks, and alert thresholds.
+The `Provider smoke` workflow fails when the view is unavailable, empty, stale for more than 20 minutes, or contains a non-healthy provider. Configure:
 
-Scheduled provider smoke tests remain separate from deterministic pull-request CI. Tests inject provider responses and never call CoinGecko, Ethereum, or Solana RPC endpoints live.
+- repository variable `NEXT_PUBLIC_SUPABASE_URL`;
+- repository secret `SUPABASE_PUBLISHABLE_KEY`.
+
+A failed scheduled workflow is the alert. Enable GitHub Actions failure notifications for the operating account. Never replace missing or failed observations with fabricated values; the public product must retain the last valid canonical value and show its freshness.
+
+Privileged investigation queries:
+
+```sql
+select * from provider_health order by checked_at desc limit 50;
+select * from market_observations where is_valid order by observed_at desc limit 50;
+select * from wallet_balance_observations where is_valid order by observed_at desc limit 50;
+select * from calculation_runs order by started_at desc limit 20;
+```
+
+## Incident response
+
+1. Confirm whether the failure is the provider, Edge Function, database, or monitor configuration.
+2. Inspect the latest provider-health row and the corresponding Edge Function logs.
+3. Check Supabase Cron history and quotas. Do not repeatedly replay jobs while a provider is rate-limiting.
+4. Correct configuration or provider access, then invoke the affected sync once.
+5. Confirm a new healthy status, a valid observation, and a successful calculation run.
+6. Record the incident window, affected providers, stale-data duration, and remediation.
+
+If only monitoring is broken, keep the product available and report status as unknown. If data validity is uncertain, stop the affected ingestion path and preserve the last verified canonical result.
+
+## Error reporting
+
+The browser error boundary sends a bounded, redacted JSON report only when `NEXT_PUBLIC_ERROR_REPORTING_ENDPOINT` is configured. Reports omit credentials and stack traces. The receiving service must enforce rate limits, restrict retention and access, and avoid storing request headers or IP addresses unless explicitly required and disclosed. Leaving the variable empty disables remote client reporting while preserving the local recovery UI.
+
+## Recovery and rollback
+
+- Application rollback: redeploy the previous verified Git commit.
+- Database rollback: migrations are forward-only. Apply a reviewed corrective migration; do not edit an applied migration.
+- Scheduler rollback: disable the affected `cron.job` before applying a corrective migration.
+- Data recovery: use Supabase backups appropriate to the selected plan and test restoration before an incident.
+
+Run `select public.run_observation_retention();` manually only with the service role and only after confirming the intended 30-day cutoff.

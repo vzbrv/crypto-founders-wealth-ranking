@@ -2,7 +2,7 @@
 
 ## Architecture boundary
 
-The repository is a pnpm/Turborepo monorepo with a statically exported Next.js public app, focused TypeScript packages, and Supabase persistence/functions. Through Phase 8 it implements curated-data validation, Decimal calculations, the core database schema, CoinGecko market ingestion, calculation transparency, Ethereum wallet ingestion, and native Solana balance ingestion. Auth, admin UI, Bitcoin and other non-EVM providers, and production curated data remain outside the current boundary.
+The repository is a pnpm/Turborepo monorepo with a statically exported Next.js public app, focused TypeScript packages, and Supabase persistence/functions. Through Phase 10 it implements curated-data validation, Decimal calculations, the core database schema, market and wallet ingestion, calculation transparency, public ranking routes, monitoring, retention, SEO, and production runbooks. Auth, admin UI, Bitcoin and other non-EVM providers, and production curated data remain outside the current boundary.
 
 ## Approved all-free topology
 
@@ -23,13 +23,13 @@ No authentication or admin application is planned. Curated changes enter through
 
 Calculations consume validated normalized inputs. The UI consumes persisted canonical results and may later overlay provisional live values without silently replacing the canonical score.
 
-## Planned Supabase model
+## Supabase model
 
 Tables: `projects`, `founding_units`, `founding_unit_members`, `assets`, `asset_price_snapshots`, `wallets`, `wallet_balance_snapshots`, `founder_asset_allocations`, `funding_rounds`, `calculation_runs`, `founder_wealth_results`, `founder_wealth_history`, `sources`, `claim_sources`, `ingestion_runs`, and `provider_health`.
 
 Public read views: `public_leaderboard`, `public_founder_profile`, `public_project_profile`, `public_methodology_summary`, and `public_provider_status`.
 
-The implemented schema uses the Phase 3 names in `supabase/migrations`; remaining names above are design targets for later phases.
+The versioned implementation is authoritative in `supabase/migrations`; some conceptual names above map to normalized tables and views there.
 
 ## Repository map
 

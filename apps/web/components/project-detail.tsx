@@ -199,7 +199,7 @@ export function ProjectDetail({ evidence }: { evidence: ProjectEvidence }) {
   ].filter((item): item is string => Boolean(item));
 
   return (
-    <main className="detail-page">
+    <main className="detail-page" id="main-content" tabIndex={-1}>
       <header className="detail-hero">
         <p className="eyebrow">Project evidence</p>
         <h1>{evidence.project.name}</h1>

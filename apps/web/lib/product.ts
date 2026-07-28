@@ -1,1 +1,1 @@
-export const productStage = "Phase 6: calculation transparency" as const;
+export const productStage = "Phase 10: production hardening" as const;
