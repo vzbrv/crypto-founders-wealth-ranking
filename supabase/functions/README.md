@@ -1,10 +1,12 @@
 # Edge Functions
 
+Implemented functions:
+
+- `market-sync`: batched CoinGecko refresh, validated ingestion, provider health, and calculation trigger
+
 Planned functions:
 
-- `sync-market-data`: five-minute market refresh
 - `sync-wallet-balances`: provider-aware five-to-fifteen-minute balance refresh
-- `calculate-rankings`: internal calculation after successful ingestion
 - `provider-health`: fifteen-minute provider status check
 
-Phase 0 contains no executable function or provider call. Functions must use server-side secrets, bounded concurrency, idempotent writes, structured run records, and explicit failure states.
+`market-sync` accepts authenticated POST requests using the service-role bearer token. It uses only fixed provider and Supabase endpoints, keeps secrets server-side, and persists observations through `ingest_market_sync`.

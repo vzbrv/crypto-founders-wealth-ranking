@@ -104,7 +104,11 @@ importers:
         specifier: 0.3.14
         version: 0.3.14
 
-  packages/market-adapters: {}
+  packages/market-adapters:
+    dependencies:
+      decimal.js:
+        specifier: ^10.6.0
+        version: 10.6.0
 
   packages/observability: {}
 

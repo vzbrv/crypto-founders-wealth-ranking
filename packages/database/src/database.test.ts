@@ -6,12 +6,19 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import { createCuratedImportStatements } from "./curated-import.js";
 
-const migrationUrl = new URL(
+const phaseThreeMigrationUrl = new URL(
   "../../../supabase/migrations/202607270001_phase_3_database.sql",
   import.meta.url,
 );
+const phaseFourMigrationUrl = new URL(
+  "../../../supabase/migrations/202607280002_phase_4_market_sync.sql",
+  import.meta.url,
+);
 const seedUrl = new URL("../../../supabase/seed.sql", import.meta.url);
-const migrationSql = await readFile(migrationUrl, "utf8");
+const migrationSql = [
+  await readFile(phaseThreeMigrationUrl, "utf8"),
+  await readFile(phaseFourMigrationUrl, "utf8"),
+].join("\n");
 const seedSql = await readFile(seedUrl, "utf8");
 
 const expectedTables = [
@@ -256,6 +263,137 @@ describe("Phase 3 database", () => {
       project_scores: 2,
       founding_scores: 2,
       failures: 1,
+    });
+  });
+});
+
+describe("Phase 4 market sync", () => {
+  async function prepareWalletObservation(database: PGlite): Promise<void> {
+    await database.exec(`
+      insert into wallet_balance_observations (
+        tracked_wallet_id, asset_id, provider, observed_at, raw_balance, normalized_balance
+      ) values (
+        '55555555-5555-4555-8555-555555555555',
+        '33333333-3333-4333-8333-333333333333', 'synthetic-provider',
+        now() - interval '1 minute', 250000000000000000000, 250
+      )
+    `);
+  }
+
+  async function ingest(
+    database: PGlite,
+    observations: unknown[],
+    status: "healthy" | "degraded" | "failed" = "healthy",
+  ) {
+    return database.query<{
+      accepted_count: number;
+      calculation_run_id: string | null;
+    }>("select * from ingest_market_sync($1::jsonb, $2::jsonb)", [
+      JSON.stringify(observations),
+      JSON.stringify({
+        provider: "coingecko",
+        status,
+        checkedAt: new Date().toISOString(),
+      }),
+    ]);
+  }
+
+  function observation(priceUsd: string, observedAt: Date) {
+    return {
+      assetId: "33333333-3333-4333-8333-333333333333",
+      coingeckoId: "synthetic-horizon-token",
+      provider: "coingecko",
+      observedAt: observedAt.toISOString(),
+      fetchedAt: new Date().toISOString(),
+      priceUsd,
+      circulatingSupply: "1000000",
+      marketCapUsd: String(Number(priceUsd) * 1_000_000),
+      rawPayload: { fixture: true },
+    };
+  }
+
+  it("persists a valid batch and recalculates the ranking", async () => {
+    const database = await createDatabase(true);
+    await prepareWalletObservation(database);
+
+    const result = await ingest(database, [
+      observation("3", new Date(Date.now() - 60_000)),
+    ]);
+    const score = await database.query<{
+      score_usd: string;
+      run_status: string;
+    }>(`
+      select ps.score_usd::text, cr.status as run_status
+      from current_project_scores ps
+      join calculation_runs cr on cr.id = ps.calculation_run_id
+    `);
+
+    expect(result.rows[0]?.accepted_count).toBe(1);
+    expect(result.rows[0]?.calculation_run_id).not.toBeNull();
+    expect(score.rows).toEqual([
+      { score_usd: "499437.50000000", run_status: "completed" },
+    ]);
+  });
+
+  it("does not overwrite valid data with invalid or stale observations", async () => {
+    const database = await createDatabase(true);
+    await prepareWalletObservation(database);
+    const firstObservedAt = new Date(Date.now() - 60_000);
+    await ingest(database, [observation("3", firstObservedAt)]);
+
+    const invalid = observation("-1", new Date());
+    invalid.marketCapUsd = "0";
+    const invalidResult = await ingest(database, [invalid], "degraded");
+    const staleResult = await ingest(
+      database,
+      [observation("4", new Date(firstObservedAt.getTime() - 1_000))],
+      "degraded",
+    );
+    const state = await database.query<{
+      observations: number;
+      runs: number;
+      price_usd: string;
+    }>(`
+      select
+        (select count(*)::int from market_observations) as observations,
+        (select count(*)::int from calculation_runs) as runs,
+        (select price_usd::text from current_project_scores) as price_usd
+    `);
+
+    expect(invalidResult.rows[0]).toEqual({
+      accepted_count: 0,
+      calculation_run_id: null,
+    });
+    expect(staleResult.rows[0]).toEqual({
+      accepted_count: 0,
+      calculation_run_id: null,
+    });
+    expect(state.rows[0]).toEqual({
+      observations: 1,
+      runs: 1,
+      price_usd: "3.000000000000000000",
+    });
+  });
+
+  it("records provider failure while retaining the last valid score", async () => {
+    const database = await createDatabase(true);
+    await prepareWalletObservation(database);
+    await ingest(database, [observation("3", new Date(Date.now() - 60_000))]);
+
+    const failure = await ingest(database, [], "failed");
+    const state = await database.query<{ score_usd: string; status: string }>(`
+      select
+        (select score_usd::text from current_project_scores) as score_usd,
+        (select status from provider_health order by checked_at desc, id desc limit 1) as status
+    `);
+
+    expect(failure.rows[0]).toEqual({
+      accepted_count: 0,
+      calculation_run_id: null,
+    });
+    expect(state.rows[0]).toEqual({
+      score_usd: "499437.50000000",
+      status: "failed",
     });
   });
 });

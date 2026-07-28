@@ -1,8 +1,8 @@
 # Architecture
 
-## Phase 0 boundary
+## Architecture boundary
 
-The repository is a pnpm/Turborepo monorepo with a statically exported Next.js public app and focused TypeScript packages. Phase 0 deliberately implements no domain data, database schema, provider calls, auth, admin UI, or write endpoints.
+The repository is a pnpm/Turborepo monorepo with a statically exported Next.js public app, focused TypeScript packages, and Supabase persistence/functions. Through Phase 4 it implements curated-data validation, Decimal calculations, the core database schema, and CoinGecko market ingestion. Auth, admin UI, wallet providers, and production curated data remain outside the current boundary.
 
 ## Approved all-free topology
 
@@ -29,7 +29,7 @@ Tables: `projects`, `founding_units`, `founding_unit_members`, `assets`, `asset_
 
 Public read views: `public_leaderboard`, `public_founder_profile`, `public_project_profile`, `public_methodology_summary`, and `public_provider_status`.
 
-The names above are design targets, not Phase 0 migrations. Schema, keys, indexes, constraints, policies, and synthetic fixtures start only in their approved implementation phase.
+The implemented schema uses the Phase 3 names in `supabase/migrations`; remaining names above are design targets for later phases.
 
 ## Repository map
 
