@@ -1,1 +1,1 @@
-export const productStage = "Phase 0: repository foundation" as const;
+export const productStage = "Phase 5: public ranking experience" as const;

@@ -20,7 +20,8 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: "pnpm build && node tests/serve-static.mjs",
+    command:
+      "NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:3000 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=test-public-key pnpm build && node tests/serve-static.mjs",
     url: "http://127.0.0.1:3000",
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
