@@ -45,18 +45,19 @@ insert into project_founding_units (
 
 insert into assets (
   id, project_id, asset_type, symbol, name, decimals, chain_code,
-  contract_address, provider_ids, is_primary, is_active
+  contract_address, coingecko_id, provider_ids, is_primary, is_active
 ) values (
   '33333333-3333-4333-8333-333333333333',
   '11111111-1111-4111-8111-111111111111', 'token', 'SYN',
   'Synthetic Horizon Token', 18, 'ethereum',
   '0x1111111111111111111111111111111111111111',
-  '{"synthetic":"synthetic-horizon-token"}', true, true
+  'synthetic-horizon-token', '{"synthetic":"synthetic-horizon-token"}', true, true
 ) on conflict (id) do update set
   project_id = excluded.project_id, asset_type = excluded.asset_type,
   symbol = excluded.symbol, name = excluded.name, decimals = excluded.decimals,
   chain_code = excluded.chain_code,
   contract_address = excluded.contract_address,
+  coingecko_id = excluded.coingecko_id,
   provider_ids = excluded.provider_ids, is_primary = excluded.is_primary,
   is_active = excluded.is_active, updated_at = now();
 
