@@ -2,7 +2,7 @@
 
 ## Architecture boundary
 
-The repository is a pnpm/Turborepo monorepo with a statically exported Next.js public app, focused TypeScript packages, and Supabase persistence/functions. Through Phase 7 it implements curated-data validation, Decimal calculations, the core database schema, CoinGecko market ingestion, calculation transparency, and Ethereum wallet ingestion. Auth, admin UI, non-EVM wallet providers, and production curated data remain outside the current boundary.
+The repository is a pnpm/Turborepo monorepo with a statically exported Next.js public app, focused TypeScript packages, and Supabase persistence/functions. Through Phase 8 it implements curated-data validation, Decimal calculations, the core database schema, CoinGecko market ingestion, calculation transparency, Ethereum wallet ingestion, and native Solana balance ingestion. Auth, admin UI, Bitcoin and other non-EVM providers, and production curated data remain outside the current boundary.
 
 ## Approved all-free topology
 

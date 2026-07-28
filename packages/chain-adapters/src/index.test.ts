@@ -2,8 +2,12 @@ import { describe, expect, it, vi } from "vitest";
 
 import {
   EvmBalanceAdapter,
+  SolanaBalanceAdapter,
+  SolanaJsonRpcClient,
   type EvmBalanceQuery,
   type EvmReadClient,
+  type SolanaBalanceQuery,
+  type SolanaReadClient,
 } from "./index.js";
 
 const block = {
@@ -153,5 +157,122 @@ describe("EvmBalanceAdapter", () => {
     expect(result.observations).toHaveLength(1);
     expect(result.rejections).toHaveLength(1);
     expect(result.health.status).toBe("degraded");
+  });
+});
+
+const solanaWallet = "11111111111111111111111111111111";
+const solanaBlockhash = "5".repeat(44);
+
+function solanaQuery(
+  overrides: Partial<SolanaBalanceQuery> = {},
+): SolanaBalanceQuery {
+  return {
+    trackedWalletId: "85555555-5555-4555-8555-555555555555",
+    assetId: "83333333-3333-4333-8333-333333333333",
+    chainCode: "solana",
+    walletAddress: solanaWallet,
+    balanceQueryType: "native",
+    configuredDecimals: 9,
+    ...overrides,
+  };
+}
+
+function solanaClient(
+  overrides: Partial<SolanaReadClient> = {},
+): SolanaReadClient {
+  return {
+    getBalance: vi.fn().mockResolvedValue({
+      context: { slot: 333_000_000 },
+      value: 10_500_000_000n,
+    }),
+    getBlock: vi.fn().mockResolvedValue({
+      blockhash: solanaBlockhash,
+      blockTime: 1_785_235_200,
+    }),
+    ...overrides,
+  };
+}
+
+describe("SolanaBalanceAdapter", () => {
+  it("stores native SOL balance with the finalized slot and blockhash", async () => {
+    const readClient = solanaClient();
+    const result = await new SolanaBalanceAdapter({ client: readClient }).sync([
+      solanaQuery(),
+    ]);
+
+    expect(readClient.getBlock).toHaveBeenCalledWith({
+      slot: 333_000_000,
+      commitment: "finalized",
+    });
+    expect(result.observations[0]).toMatchObject({
+      provider: "solana-rpc",
+      rawBalance: "10500000000",
+      decimals: 9,
+      normalizedBalance: "10.5",
+      blockNumber: "333000000",
+      blockHash: solanaBlockhash,
+    });
+    expect(result.health.status).toBe("healthy");
+  });
+
+  it("preserves an exact u64 balance from a JSON-RPC number", async () => {
+    const fetchImplementation = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(
+          '{"jsonrpc":"2.0","id":1,"result":{"context":{"slot":333000000},"value":18446744073709551615}}',
+        ),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            jsonrpc: "2.0",
+            id: 1,
+            result: { blockhash: solanaBlockhash, blockTime: 1_785_235_200 },
+          }),
+        ),
+      );
+    const client = new SolanaJsonRpcClient(
+      "https://rpc.example.invalid",
+      fetchImplementation,
+    );
+    const result = await new SolanaBalanceAdapter({ client }).sync([
+      solanaQuery(),
+    ]);
+
+    expect(result.observations[0]?.rawBalance).toBe("18446744073709551615");
+  });
+
+  it.each([
+    [solanaQuery({ walletAddress: "invalid" }), "invalid_address"],
+    [solanaQuery({ chainCode: "ethereum" }), "unsupported_chain"],
+    [solanaQuery({ configuredDecimals: 8 }), "decimals_mismatch"],
+  ])("rejects invalid Solana mappings", async (item, code) => {
+    const readClient = solanaClient();
+    const result = await new SolanaBalanceAdapter({ client: readClient }).sync([
+      item,
+    ]);
+
+    expect(result.rejections[0]?.code).toBe(code);
+    expect(readClient.getBalance).not.toHaveBeenCalled();
+  });
+
+  it("retries provider failures without writing a zero fallback", async () => {
+    const getBalance = vi.fn().mockRejectedValue(new Error("secret RPC URL"));
+    const sleep = vi.fn().mockResolvedValue(undefined);
+    const result = await new SolanaBalanceAdapter({
+      client: solanaClient({ getBalance }),
+      sleep,
+      maxRetries: 2,
+    }).sync([solanaQuery()]);
+
+    expect(getBalance).toHaveBeenCalledTimes(3);
+    expect(result.observations).toEqual([]);
+    expect(result.health).toMatchObject({
+      status: "failed",
+      errorMessage: "One or more Solana RPC reads failed",
+      metadata: { preservedPriorBalances: true },
+    });
+    expect(JSON.stringify(result)).not.toContain("secret RPC URL");
   });
 });

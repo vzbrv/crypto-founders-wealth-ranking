@@ -1,15 +1,15 @@
 # Operations
 
-Phase 7 implements the market and EVM wallet jobs:
+Phase 8 implements the market, EVM wallet, and Solana wallet jobs:
 
-| Job                  | Intended cadence    | Role                                                      |
-| -------------------- | ------------------- | --------------------------------------------------------- |
-| `market-sync`        | Every 5 minutes     | Refresh CoinGecko prices and supply, then recalculate     |
-| `wallet-sync`        | Every 5 minutes     | Refresh Ethereum native/ERC-20 balances, then recalculate |
-| `calculate-rankings` | Internal dependency | Recompute canonical results after successful ingestion    |
-| `provider-health`    | Every 15 minutes    | Record provider freshness and failures                    |
+| Job                  | Intended cadence    | Role                                                          |
+| -------------------- | ------------------- | ------------------------------------------------------------- |
+| `market-sync`        | Every 5 minutes     | Refresh CoinGecko prices and supply, then recalculate         |
+| `wallet-sync`        | Every 5 minutes     | Refresh Ethereum and native Solana balances, then recalculate |
+| `calculate-rankings` | Internal dependency | Recompute canonical results after successful ingestion        |
+| `provider-health`    | Every 15 minutes    | Record provider freshness and failures                        |
 
-Supabase Cron invokes `market-sync` and `wallet-sync`; GitHub Actions does not provide the recurring scheduler. Market ingestion batches up to 200 asset IDs. EVM ingestion pins reads to one latest block, batches ERC-20 calls with Multicall, and retries bounded provider failures.
+Supabase Cron invokes `market-sync` and `wallet-sync`; GitHub Actions does not provide the recurring scheduler. Market ingestion batches up to 200 asset IDs. EVM ingestion pins reads to one latest block and batches ERC-20 calls with Multicall. Solana ingestion records each finalized slot and blockhash. Both adapters retry bounded provider failures.
 
 ## Market failure behavior
 
@@ -44,4 +44,4 @@ Later implementation phases must additionally define:
 - manual replay and reconciliation procedures;
 - quota monitoring, structured logs, health checks, and alert thresholds.
 
-Scheduled provider smoke tests remain separate from deterministic pull-request CI. Tests inject provider responses and never call CoinGecko or Ethereum RPC endpoints live.
+Scheduled provider smoke tests remain separate from deterministic pull-request CI. Tests inject provider responses and never call CoinGecko, Ethereum, or Solana RPC endpoints live.

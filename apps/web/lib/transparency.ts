@@ -201,5 +201,6 @@ export function calculateScoreBreakdown(input: {
 export function explorerUrl(chainCode: string, address: string): string | null {
   if (chainCode === "ethereum")
     return `https://etherscan.io/address/${address}`;
+  if (chainCode === "solana") return `https://solscan.io/account/${address}`;
   return null;
 }

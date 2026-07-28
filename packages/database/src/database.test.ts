@@ -22,12 +22,17 @@ const phaseSevenMigrationUrl = new URL(
   "../../../supabase/migrations/202607280006_phase_7_evm_wallet_sync.sql",
   import.meta.url,
 );
+const phaseEightMigrationUrl = new URL(
+  "../../../supabase/migrations/202607280008_phase_8_solana_wallet_sync.sql",
+  import.meta.url,
+);
 const seedUrl = new URL("../../../supabase/seed.sql", import.meta.url);
 const migrationSql = [
   await readFile(phaseThreeMigrationUrl, "utf8"),
   await readFile(phaseFourMigrationUrl, "utf8"),
   await readFile(phaseFiveMigrationUrl, "utf8"),
   await readFile(phaseSevenMigrationUrl, "utf8"),
+  await readFile(phaseEightMigrationUrl, "utf8"),
 ].join("\n");
 const seedSql = await readFile(seedUrl, "utf8");
 
@@ -561,5 +566,167 @@ describe("Phase 7 EVM wallet sync", () => {
       calculation_run_id: null,
     });
     expect(count.rows[0]?.observations).toBe(0);
+  });
+});
+
+describe("Phase 8 Solana wallet sync", () => {
+  const foundingUnitId = "88888888-8888-4888-8888-888888888881";
+  const projectId = "88888888-8888-4888-8888-888888888882";
+  const assetId = "88888888-8888-4888-8888-888888888883";
+  const walletId = "88888888-8888-4888-8888-888888888884";
+
+  async function seedSolanaFixture(database: PGlite) {
+    await database.exec(`
+      insert into founding_units (
+        id, slug, display_name, description, entity_type, status, research_reviewed_at
+      ) values (
+        '${foundingUnitId}', 'solana-team', 'Solana Team', 'Phase 8 fixture',
+        'team', 'active', now()
+      );
+
+      insert into projects (
+        id, slug, name, description, project_type, calculation_category, status,
+        confidence_level, methodology_notes, website_url, research_reviewed_at
+      ) values (
+        '${projectId}', 'solana-project', 'Solana Project', 'Phase 8 fixture',
+        'blockchain', 'liquid_token', 'active', 'high', 'Phase 8 fixture',
+        'https://example.com/solana-project', now()
+      );
+
+      insert into project_founding_units (
+        project_id, founding_unit_id, attribution_fraction, attribution_method
+      ) values ('${projectId}', '${foundingUnitId}', 1, 'team_collective');
+
+      insert into assets (
+        id, project_id, asset_type, symbol, name, decimals, chain_code,
+        contract_address, is_primary, is_active
+      ) values (
+        '${assetId}', '${projectId}', 'native', 'SOLX', 'Solana Fixture', 9,
+        'solana', null, true, true
+      );
+
+      insert into market_observations (
+        asset_id, provider, observed_at, price_usd, circulating_supply, market_cap_usd
+      ) values (
+        '${assetId}', 'synthetic-provider', now() - interval '3 minutes',
+        2, 1000000, 2000000
+      );
+
+      insert into tracked_wallets (
+        id, project_id, founding_unit_id, chain_code, address, normalized_address,
+        label, classification, ownership_confidence, circulating_inclusion_fraction,
+        affects_score, status, research_reviewed_at
+      ) values (
+        '${walletId}', '${projectId}', '${foundingUnitId}', 'solana',
+        '11111111111111111111111111111111', '11111111111111111111111111111111',
+        'Solana team wallet', 'team', 'high', 1, true, 'active', now()
+      );
+
+      insert into wallet_asset_mappings (
+        tracked_wallet_id, asset_id, balance_query_type, token_identifier
+      ) values ('${walletId}', '${assetId}', 'native', null);
+    `);
+  }
+
+  async function ingest(
+    database: PGlite,
+    rawBalance: string,
+    blockNumber: string,
+    blockHash: string,
+    observedAt: Date,
+  ) {
+    return database.query<{
+      accepted_count: number;
+      calculation_run_id: string | null;
+    }>("select * from ingest_wallet_sync($1::jsonb, $2::jsonb)", [
+      JSON.stringify([
+        {
+          trackedWalletId: walletId,
+          assetId,
+          provider: "solana-rpc",
+          blockNumber,
+          blockHash,
+          observedAt: observedAt.toISOString(),
+          fetchedAt: new Date(observedAt.getTime() + 10_000).toISOString(),
+          rawBalance,
+          decimals: 9,
+          normalizedBalance: (BigInt(rawBalance) / 1_000_000_000n).toString(),
+          rawPayload: { balanceQueryType: "native", commitment: "finalized" },
+        },
+      ]),
+      JSON.stringify({
+        provider: "solana-rpc",
+        status: "healthy",
+        checkedAt: new Date().toISOString(),
+      }),
+    ]);
+  }
+
+  it("stores finalized ledger identity and recalculates after balance changes", async () => {
+    const database = await createDatabase();
+    await seedSolanaFixture(database);
+    const now = Date.now();
+
+    const first = await ingest(
+      database,
+      "10000000000",
+      "333000000",
+      "5".repeat(44),
+      new Date(now - 120_000),
+    );
+    const firstScore = await database.query<{ score_usd: string }>(`
+      select score_usd::text
+      from current_project_scores
+      where project_id = '${projectId}'
+    `);
+
+    const second = await ingest(
+      database,
+      "20000000000",
+      "333000001",
+      "6".repeat(44),
+      new Date(now - 60_000),
+    );
+    const state = await database.query<{
+      provider: string;
+      block_number: string;
+      block_hash: string;
+      raw_balance: string;
+      normalized_balance: string;
+    }>(`
+      select provider, block_number::text, block_hash, raw_balance::text,
+        normalized_balance::text
+      from wallet_balance_observations
+      where tracked_wallet_id = '${walletId}'
+      order by block_number
+    `);
+    const secondScore = await database.query<{ score_usd: string }>(`
+      select score_usd::text
+      from current_project_scores
+      where project_id = '${projectId}'
+    `);
+
+    expect(first.rows[0]?.accepted_count).toBe(1);
+    expect(first.rows[0]?.calculation_run_id).not.toBeNull();
+    expect(firstScore.rows[0]?.score_usd).toBe("1999980.00000000");
+    expect(second.rows[0]?.accepted_count).toBe(1);
+    expect(second.rows[0]?.calculation_run_id).not.toBeNull();
+    expect(secondScore.rows[0]?.score_usd).toBe("1999960.00000000");
+    expect(state.rows).toEqual([
+      {
+        provider: "solana-rpc",
+        block_number: "333000000",
+        block_hash: "5".repeat(44),
+        raw_balance: "10000000000",
+        normalized_balance: "10.000000000000000000",
+      },
+      {
+        provider: "solana-rpc",
+        block_number: "333000001",
+        block_hash: "6".repeat(44),
+        raw_balance: "20000000000",
+        normalized_balance: "20.000000000000000000",
+      },
+    ]);
   });
 });
