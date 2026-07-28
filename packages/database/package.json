@@ -10,7 +10,7 @@
     "sync:curated-data": "tsx src/sync-curated-data.ts",
     "test:migrations": "vitest run src/database.test.ts",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run src"
   },
   "dependencies": {
     "@crypto-founders/curated-data": "workspace:*",

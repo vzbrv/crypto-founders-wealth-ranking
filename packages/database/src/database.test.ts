@@ -18,11 +18,16 @@ const phaseFiveMigrationUrl = new URL(
   "../../../supabase/migrations/202607280004_phase_5_public_ranking.sql",
   import.meta.url,
 );
+const phaseSevenMigrationUrl = new URL(
+  "../../../supabase/migrations/202607280006_phase_7_evm_wallet_sync.sql",
+  import.meta.url,
+);
 const seedUrl = new URL("../../../supabase/seed.sql", import.meta.url);
 const migrationSql = [
   await readFile(phaseThreeMigrationUrl, "utf8"),
   await readFile(phaseFourMigrationUrl, "utf8"),
   await readFile(phaseFiveMigrationUrl, "utf8"),
+  await readFile(phaseSevenMigrationUrl, "utf8"),
 ].join("\n");
 const seedSql = await readFile(seedUrl, "utf8");
 
@@ -441,5 +446,120 @@ describe("Phase 5 public ranking", () => {
         score_usd: null,
       },
     ]);
+  });
+});
+
+describe("Phase 7 EVM wallet sync", () => {
+  async function ingest(
+    database: PGlite,
+    observations: unknown[],
+    status: "healthy" | "degraded" | "failed" = "healthy",
+  ) {
+    return database.query<{
+      accepted_count: number;
+      calculation_run_id: string | null;
+    }>("select * from ingest_wallet_sync($1::jsonb, $2::jsonb)", [
+      JSON.stringify(observations),
+      JSON.stringify({
+        provider: "ethereum-rpc",
+        status,
+        checkedAt: new Date().toISOString(),
+      }),
+    ]);
+  }
+
+  function observation(overrides: Record<string, unknown> = {}) {
+    const observedAt = new Date(Date.now() - 60_000).toISOString();
+    return {
+      trackedWalletId: "55555555-5555-4555-8555-555555555555",
+      assetId: "33333333-3333-4333-8333-333333333333",
+      provider: "ethereum-rpc",
+      blockNumber: "24000000",
+      blockHash: `0x${"a".repeat(64)}`,
+      observedAt,
+      fetchedAt: new Date().toISOString(),
+      rawBalance: "250000000000000000000",
+      decimals: 18,
+      normalizedBalance: "250",
+      rawPayload: { balanceQueryType: "erc20" },
+      ...overrides,
+    };
+  }
+
+  it("stores raw units, decimals, and block identity before recalculating", async () => {
+    const database = await createDatabase(true);
+    await database.exec(`
+      insert into market_observations (
+        asset_id, provider, observed_at, price_usd, circulating_supply, market_cap_usd
+      ) values (
+        '33333333-3333-4333-8333-333333333333', 'synthetic-provider',
+        now() - interval '1 minute', 2, 1000000, 2000000
+      )
+    `);
+
+    const result = await ingest(database, [observation()]);
+    const stored = await database.query<{
+      raw_balance: string;
+      decimals: number;
+      normalized_balance: string;
+      block_hash: string;
+    }>(`
+      select raw_balance::text, decimals, normalized_balance::text, block_hash
+      from wallet_balance_observations
+    `);
+
+    expect(result.rows[0]?.accepted_count).toBe(1);
+    expect(result.rows[0]?.calculation_run_id).not.toBeNull();
+    expect(stored.rows).toEqual([
+      {
+        raw_balance: "250000000000000000000",
+        decimals: 18,
+        normalized_balance: "250.000000000000000000",
+        block_hash: `0x${"a".repeat(64)}`,
+      },
+    ]);
+  });
+
+  it("records provider failure without erasing the prior valid balance", async () => {
+    const database = await createDatabase(true);
+    await ingest(database, [observation()]);
+
+    const failure = await ingest(database, [], "failed");
+    const state = await database.query<{
+      observations: number;
+      normalized_balance: string;
+      status: string;
+    }>(`
+      select
+        (select count(*)::int from wallet_balance_observations) as observations,
+        (select normalized_balance::text from wallet_balance_observations) as normalized_balance,
+        (select status from provider_health order by checked_at desc, id desc limit 1) as status
+    `);
+
+    expect(failure.rows[0]).toEqual({
+      accepted_count: 0,
+      calculation_run_id: null,
+    });
+    expect(state.rows[0]).toEqual({
+      observations: 1,
+      normalized_balance: "250.000000000000000000",
+      status: "failed",
+    });
+  });
+
+  it("rejects a decimals mismatch without changing stored balances", async () => {
+    const database = await createDatabase(true);
+    const result = await ingest(database, [
+      observation({ decimals: 6, normalizedBalance: "250000000000000" }),
+    ]);
+    const count = await database.query<{ observations: number }>(
+      "select count(*)::int as observations from wallet_balance_observations",
+    );
+
+    expect(result.rows[0]).toEqual({
+      accepted_count: 0,
+      calculation_run_id: null,
+    });
+    expect(count.rows[0]?.observations).toBe(0);
   });
 });

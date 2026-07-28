@@ -202,11 +202,13 @@ export const walletBalanceObservations = pgTable(
       .references(() => assets.id),
     provider: text().notNull(),
     blockNumber: bigint("block_number", { mode: "number" }),
+    blockHash: text("block_hash"),
     observedAt: timestamp("observed_at", { withTimezone: true }).notNull(),
     fetchedAt: timestamp("fetched_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
     rawBalance: numeric("raw_balance", { precision: 78, scale: 0 }).notNull(),
+    decimals: integer(),
     normalizedBalance: numeric("normalized_balance", {
       precision: 78,
       scale: 18,
