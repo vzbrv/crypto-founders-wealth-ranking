@@ -89,13 +89,13 @@ test("loads, filters, and separates research entries", async ({ page }) => {
   await expect(page.getByRole("cell", { name: "Alice Founder" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Beta Team" })).toBeVisible();
 
-  await page.getByLabel("Search").fill("Beta");
+  await page.getByRole("searchbox", { name: "Search" }).fill("Beta");
   await expect(page.getByRole("cell", { name: "Alice Founder" })).toHaveCount(
     0,
   );
   await expect(page.getByRole("heading", { name: "Beta Team" })).toBeVisible();
 
-  await page.getByLabel("Confidence").selectOption("high");
+  await page.getByRole("combobox", { name: "Confidence" }).selectOption("high");
   await expect(
     page.getByText("No research entries match these filters."),
   ).toBeVisible();
@@ -106,9 +106,10 @@ test("fits the public ranking on a mobile viewport", async ({ page }) => {
   await mockPublicData(page);
   await page.goto("/");
   await expect(page.getByRole("cell", { name: "Alice Founder" })).toBeVisible();
-  await expect(
-    page.getByRole("columnheader", { name: "Confidence" }),
-  ).toBeVisible();
+  const rankingRow = page
+    .getByRole("row")
+    .filter({ has: page.getByRole("cell", { name: "Alice Founder" }) });
+  await expect(rankingRow.getByText("high", { exact: true })).toBeVisible();
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= window.innerWidth,
