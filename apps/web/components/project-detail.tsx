@@ -134,7 +134,7 @@ export function ProjectDetail({ evidence }: { evidence: ProjectEvidence }) {
         if (!response.ok) throw new Error("Wallet evidence unavailable");
         return response.json() as Promise<ApiWalletEvidence[]>;
       }),
-      fetch(`${baseUrl}/rest/v1/current_leaderboard?select=*`, {
+      fetch(`${baseUrl}/rest/v1/public_leaderboard?select=*`, {
         headers,
       }).then((response) => {
         if (!response.ok) throw new Error("Leaderboard unavailable");

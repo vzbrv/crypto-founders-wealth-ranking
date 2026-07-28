@@ -1,8 +1,14 @@
 import { beforeAll, describe, expect, it } from "vitest";
+import { fileURLToPath } from "node:url";
 
 import type { CuratedDataBundle } from "@crypto-founders/schemas";
 
-import { loadCuratedData, validateCuratedData } from "./index.js";
+import {
+  defaultDataDirectory,
+  loadCuratedData,
+  loadProductionCuratedData,
+  validateCuratedData,
+} from "./index.js";
 
 let validData: CuratedDataBundle;
 
@@ -121,5 +127,27 @@ describe("curated data validation", () => {
     const data = structuredClone(validData);
     delete data.fundingRounds[0]!.amountUsdAtEvent;
     expectInvalid(data, "Included funding requires amountUsdAtEvent");
+  });
+});
+
+describe("production curated data", () => {
+  it("requires an explicit production directory", async () => {
+    await expect(loadProductionCuratedData()).rejects.toThrow(
+      "CURATED_DATA_DIR must explicitly identify reviewed production data",
+    );
+    await expect(
+      loadProductionCuratedData(defaultDataDirectory),
+    ).rejects.toThrow("contains synthetic fixtures");
+  });
+
+  it("accepts the marked reviewed production directory", async () => {
+    const directory = fileURLToPath(
+      new URL("../../../data/production/", import.meta.url),
+    );
+    const data = await loadProductionCuratedData(directory);
+
+    expect(Object.values(data).every((records) => records.length === 0)).toBe(
+      true,
+    );
   });
 });

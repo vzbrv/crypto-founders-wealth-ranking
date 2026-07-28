@@ -11,6 +11,7 @@
     "build": "tsc -p tsconfig.json",
     "lint": "eslint src",
     "validate": "tsx src/cli.ts",
+    "validate:production": "tsx src/production-cli.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run src --passWithNoTests"
   }

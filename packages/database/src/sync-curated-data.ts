@@ -1,4 +1,4 @@
-import { loadCuratedData } from "@crypto-founders/curated-data";
+import { loadProductionCuratedData } from "@crypto-founders/curated-data";
 import postgres from "postgres";
 
 import {
@@ -11,7 +11,7 @@ if (!databaseUrl) {
   throw new Error("DATABASE_URL is required");
 }
 
-const bundle = await loadCuratedData(process.env.CURATED_DATA_DIR);
+const bundle = await loadProductionCuratedData(process.env.CURATED_DATA_DIR);
 const statements = createCuratedImportStatements(bundle);
 const sql = postgres(databaseUrl, { max: 1, prepare: false });
 

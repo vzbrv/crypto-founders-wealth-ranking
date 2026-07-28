@@ -3,7 +3,7 @@ import { expect, test, type Page } from "@playwright/test";
 const now = new Date().toISOString();
 
 async function mockPublicData(page: Page) {
-  await page.route("**/rest/v1/current_leaderboard**", (route) =>
+  await page.route("**/rest/v1/public_leaderboard**", (route) =>
     route.fulfill({
       contentType: "application/json",
       body: JSON.stringify([
@@ -172,7 +172,7 @@ test("updates supported live scores and preserves them during reconnect", async 
     },
     { observedAt: now },
   );
-  await page.route("**/rest/v1/current_leaderboard**", (route) =>
+  await page.route("**/rest/v1/public_leaderboard**", (route) =>
     route.fulfill({
       contentType: "application/json",
       body: JSON.stringify([
@@ -264,7 +264,7 @@ test("shows a reproducible project score and its evidence", async ({
       ]),
     }),
   );
-  await page.route("**/rest/v1/current_leaderboard**", (route) =>
+  await page.route("**/rest/v1/public_leaderboard**", (route) =>
     route.fulfill({
       contentType: "application/json",
       body: JSON.stringify([

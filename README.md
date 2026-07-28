@@ -21,4 +21,4 @@ pnpm test:e2e
 
 `pnpm build` emits the static site to `apps/web/out`.
 
-See [docs/architecture.md](docs/architecture.md) for the repository map, [docs/methodology.md](docs/methodology.md) for ranking rules, [docs/deployment.md](docs/deployment.md) for releases, and [docs/operations.md](docs/operations.md) for monitoring and incident response.
+See [docs/architecture.md](docs/architecture.md) for the repository map, [docs/methodology.md](docs/methodology.md) for ranking rules, [docs/deployment.md](docs/deployment.md) for Supabase releases, [docs/cloudflare-pages.md](docs/cloudflare-pages.md) for exact web hosting settings, and [docs/production-checklist.md](docs/production-checklist.md) for human deployment steps.

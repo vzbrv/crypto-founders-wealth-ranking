@@ -28,6 +28,8 @@ const rows: RawLeaderboardRow[] = [
       { projectId: "project-alpha", attributionFraction: 0.5 },
     ],
     warnings: [],
+    is_stale: true,
+    stale_reason: "market_data_stale",
   },
   {
     rank: null,
@@ -86,6 +88,8 @@ describe("ranking data", () => {
       excludedHoldingsUsd: 200_000_000,
       capitalDeductedUsd: 50_000_000,
       freshestObservationAt: "2026-07-28T11:58:00.000Z",
+      isStale: true,
+      staleReason: "market_data_stale",
       projects: [
         expect.objectContaining({
           attributionFraction: 0.5,
