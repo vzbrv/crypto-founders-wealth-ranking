@@ -1,0 +1,13 @@
+[
+  {
+    "id": "44444444-4444-4444-8444-444444444444",
+    "title": "Synthetic Horizon fixture source",
+    "url": "https://example.com/research/synthetic-horizon",
+    "publisher": "Example Research",
+    "sourceType": "official_documentation",
+    "publishedAt": "2026-07-26T09:00:00Z",
+    "accessedAt": "2026-07-27T12:00:00Z",
+    "description": "Fictional source used only to exercise claim-level provenance.",
+    "status": "active"
+  }
+]

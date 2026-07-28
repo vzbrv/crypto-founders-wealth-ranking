@@ -1,0 +1,14 @@
+name: Provider smoke tests
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deferred:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Phase 0 boundary
+        run: echo "Provider smoke tests begin after provider adapters are implemented."
