@@ -14,10 +14,15 @@ const phaseFourMigrationUrl = new URL(
   "../../../supabase/migrations/202607280002_phase_4_market_sync.sql",
   import.meta.url,
 );
+const phaseFiveMigrationUrl = new URL(
+  "../../../supabase/migrations/202607280004_phase_5_public_ranking.sql",
+  import.meta.url,
+);
 const seedUrl = new URL("../../../supabase/seed.sql", import.meta.url);
 const migrationSql = [
   await readFile(phaseThreeMigrationUrl, "utf8"),
   await readFile(phaseFourMigrationUrl, "utf8"),
+  await readFile(phaseFiveMigrationUrl, "utf8"),
 ].join("\n");
 const seedSql = await readFile(seedUrl, "utf8");
 
@@ -395,5 +400,46 @@ describe("Phase 4 market sync", () => {
       score_usd: "499437.50000000",
       status: "failed",
     });
+  });
+});
+
+describe("Phase 5 public ranking", () => {
+  it("publishes insufficient-confidence entries without assigning a rank", async () => {
+    const database = await createDatabase(true);
+    await database.exec(`
+      insert into calculation_runs (
+        id, completed_at, trigger_type, methodology_version, status
+      ) values (
+        '77777777-7777-4777-8777-777777777777', now(), 'test', 'phase-5', 'completed'
+      );
+
+      insert into founding_unit_scores (
+        calculation_run_id, founding_unit_id, score_usd, rank,
+        project_breakdown, confidence_label, warnings
+      ) values (
+        '77777777-7777-4777-8777-777777777777',
+        '22222222-2222-4222-8222-222222222222', null, null,
+        '[{"projectId":"11111111-1111-4111-8111-111111111111","attributionFraction":1}]',
+        'insufficient', '["Required inputs are incomplete."]'
+      );
+    `);
+
+    const result = await database.query<{
+      confidence_label: string;
+      rank: number | null;
+      score_usd: string | null;
+    }>(`
+      select rank, score_usd::text, confidence_label
+      from current_leaderboard
+      where founding_unit_id = '22222222-2222-4222-8222-222222222222'
+    `);
+
+    expect(result.rows).toEqual([
+      {
+        confidence_label: "insufficient",
+        rank: null,
+        score_usd: null,
+      },
+    ]);
   });
 });

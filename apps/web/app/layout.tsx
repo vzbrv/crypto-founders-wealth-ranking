@@ -4,8 +4,9 @@ import type { ReactNode } from "react";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Crypto Founders Wealth Ranking",
-  description: "Repository foundation for a transparent crypto wealth ranking.",
+  title: "Crypto Founders Wealth Index",
+  description:
+    "A transparent ranking of crypto founders and teams by estimated outside-holder wealth created.",
 };
 
 export default function RootLayout({
