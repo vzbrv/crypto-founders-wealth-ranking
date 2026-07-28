@@ -25,6 +25,11 @@ export interface RawProjectDetail {
   market_cap_usd: number | string | null;
   outside_holder_value_usd: number | string | null;
   capital_raised_usd: number | string | null;
+  score_usd?: number | string | null;
+  price_usd?: number | string | null;
+  circulating_supply?: number | string | null;
+  excluded_supply?: number | string | null;
+  outside_holder_supply?: number | string | null;
   data_freshness: unknown;
   calculated_at: string | null;
 }
@@ -46,6 +51,13 @@ export interface RankingEntry {
     slug: string;
     name: string;
     symbol: string | null;
+    attributionFraction: number;
+    canonicalScoreUsd: number | null;
+    canonicalPriceUsd: number | null;
+    circulatingSupply: number | null;
+    excludedSupply: number | null;
+    outsideHolderSupply: number | null;
+    capitalRaisedUsd: number | null;
   }>;
   excludedHoldingsUsd: number | null;
   capitalDeductedUsd: number | null;
@@ -138,6 +150,13 @@ export function buildRankingEntries(
             slug: project.slug,
             name: project.name,
             symbol: project.symbol,
+            attributionFraction,
+            canonicalScoreUsd: numberOrNull(project.score_usd),
+            canonicalPriceUsd: numberOrNull(project.price_usd),
+            circulatingSupply: numberOrNull(project.circulating_supply),
+            excludedSupply: numberOrNull(project.excluded_supply),
+            outsideHolderSupply: numberOrNull(project.outside_holder_supply),
+            capitalRaisedUsd: capitalRaised,
           },
         ];
       },
