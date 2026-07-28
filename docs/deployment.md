@@ -1,41 +1,82 @@
 # Production deployment
 
-The public application is a static Next.js export. `pnpm build` writes `apps/web/out`; Supabase hosts persistence, read-only public data, Edge Functions, and recurring jobs.
+The web app is a Next.js static export. Supabase provides PostgreSQL, read-only public REST access, Cron, and Edge Functions. Deployment is intentionally manual.
 
-## Prerequisites
+## Supabase
 
-- Node.js 22 and pnpm 11.9.0
-- a Supabase project with CLI access
-- a static web host such as Cloudflare Pages
-- the GitHub repository with Actions enabled
+Create a hosted project, install the Supabase CLI, then run from the repository root:
 
-Set deployment values from `.env.example`. Only `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `NEXT_PUBLIC_SITE_URL`, and the optional error-reporting endpoint may enter the browser bundle. Service-role, provider, database, Supabase, and hosting credentials remain secret.
+```bash
+export SUPABASE_PROJECT_REF="..."
+export SUPABASE_DB_PASSWORD="..."
+supabase login
+supabase link --project-ref "$SUPABASE_PROJECT_REF" --password "$SUPABASE_DB_PASSWORD"
+supabase db push --linked --password "$SUPABASE_DB_PASSWORD"
+```
 
-Before schedule migrations, store `project_url` and `service_role_key` in Supabase Vault. Configure `EVM_ETHEREUM_RPC_URL`; configure `SOLANA_RPC_URL` rather than relying on the public endpoint. `COINGECKO_DEMO_API_KEY` is optional.
+Do not pass `--include-seed`. `supabase/seed.sql` is a production-safe no-op; synthetic fixtures live only in `supabase/tests/seed.synthetic.sql`.
 
-## Release order
+Create one high-entropy `CRON_SECRET`. Set it both in Edge Function secrets and Vault, then deploy:
 
-1. Run `pnpm install --frozen-lockfile` and `pnpm check`.
-2. Apply Supabase migrations in filename order. This creates the sanitized provider-status view before the site uses it.
-3. Deploy Edge Functions:
+```bash
+supabase secrets set --project-ref "$SUPABASE_PROJECT_REF" \
+  CRON_SECRET="$CRON_SECRET" \
+  EVM_ETHEREUM_RPC_URL="$EVM_ETHEREUM_RPC_URL" \
+  SOLANA_RPC_URL="$SOLANA_RPC_URL" \
+  COINGECKO_DEMO_API_KEY="$COINGECKO_DEMO_API_KEY"
 
-   ```bash
-   supabase functions deploy market-sync
-   supabase functions deploy wallet-sync
-   ```
+psql "$DATABASE_URL" --set=ON_ERROR_STOP=1 \
+  --set=project_url="$SUPABASE_URL" \
+  --set=cron_secret="$CRON_SECRET" \
+  --file supabase/scripts/configure-vault.sql
 
-4. Validate and synchronize curated data with `pnpm validate:data` and `pnpm sync:curated-data`.
-5. Run one idempotent market and wallet sync; confirm provider health and calculation output.
-6. Build with `pnpm build` and publish `apps/web/out` using the Next.js Static HTML Export preset.
-7. Configure GitHub variable `NEXT_PUBLIC_SUPABASE_URL` and secret `SUPABASE_PUBLISHABLE_KEY` for the provider monitor.
+for function_name in sync-market-data sync-wallet-balances calculate-rankings provider-health; do
+  supabase functions deploy "$function_name" \
+    --project-ref "$SUPABASE_PROJECT_REF" --no-verify-jwt
+done
+```
 
-## Post-deployment checks
+Functions deliberately disable platform JWT verification because Supabase Cron authenticates with the server-only `x-cron-secret` header. Never expose `CRON_SECRET` to the browser.
 
-- `/`, `/methodology`, `/sources`, and one project route load without client errors.
-- `/status` displays current provider data or an explicit unknown state.
-- `/robots.txt`, `/sitemap.xml`, `/manifest.webmanifest`, and `/opengraph-image` respond successfully.
-- canonical and Open Graph URLs use the production `NEXT_PUBLIC_SITE_URL`.
-- anonymous users can read published ranking views and `public_provider_status`, but cannot read raw `provider_health` diagnostics or write data.
-- scheduled sync, retention, and provider-monitor jobs are active.
+## Curated production data
 
-Do not release when migrations, deterministic tests, the static build, or anonymous-access checks fail. See [operations.md](operations.md) for incident response and rollback.
+Populate `data/production` only with researched, source-backed records. The production marker and loader reject the repository's synthetic fixture directory.
+
+```bash
+CURATED_DATA_DIR=data/production pnpm validate:production-data
+DATABASE_URL="$DATABASE_URL" CURATED_DATA_DIR=data/production pnpm sync:curated-data
+```
+
+The sync is transactional and idempotent: stable record IDs are upserted and rerunning the command does not duplicate rows.
+
+## GitHub Actions
+
+The manually dispatched `deploy-supabase.yml` workflow validates, tests, builds, applies migrations, configures secrets, deploys all four functions, and synchronizes production data.
+
+Required GitHub production-environment secrets:
+
+- `SUPABASE_ACCESS_TOKEN`
+- `SUPABASE_PROJECT_REF`
+- `SUPABASE_DB_PASSWORD`
+- `SUPABASE_URL`
+- `DATABASE_URL` (direct PostgreSQL connection)
+- `CRON_SECRET`
+- `EVM_ETHEREUM_RPC_URL`
+- `SOLANA_RPC_URL`
+- `COINGECKO_DEMO_API_KEY` (may be empty when unused)
+
+The provider-smoke workflow separately uses repository variable `NEXT_PUBLIC_SUPABASE_URL` and secret `SUPABASE_PUBLISHABLE_KEY`.
+
+## Verification
+
+After Supabase and Cloudflare are live:
+
+```bash
+PUBLIC_SITE_URL="$PUBLIC_SITE_URL" \
+SUPABASE_URL="$SUPABASE_URL" \
+SUPABASE_PUBLISHABLE_KEY="$SUPABASE_PUBLISHABLE_KEY" \
+CRON_SECRET="$CRON_SECRET" \
+pnpm smoke:production
+```
+
+See [Cloudflare Pages](cloudflare-pages.md) and the [production checklist](production-checklist.md).

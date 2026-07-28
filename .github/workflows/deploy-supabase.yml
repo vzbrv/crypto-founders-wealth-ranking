@@ -1,0 +1,87 @@
+name: Deploy Supabase production
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: supabase-production
+  cancel-in-progress: false
+
+jobs:
+  validate-and-deploy:
+    environment: production
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm format:check
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test
+      - run: pnpm validate:data
+      - run: pnpm validate:production-data
+        env:
+          CURATED_DATA_DIR: data/production
+      - run: pnpm validate:database
+      - run: pnpm build
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Link and apply migrations
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+        run: |
+          supabase link --project-ref "$SUPABASE_PROJECT_REF" --password "$SUPABASE_DB_PASSWORD"
+          supabase db push --linked --password "$SUPABASE_DB_PASSWORD"
+      - name: Configure Vault schedule secrets
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+        run: >-
+          psql "$DATABASE_URL" --set=ON_ERROR_STOP=1
+          --set=project_url="$SUPABASE_URL"
+          --set=cron_secret="$CRON_SECRET"
+          --file supabase/scripts/configure-vault.sql
+      - name: Configure Edge Function secrets
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          EVM_ETHEREUM_RPC_URL: ${{ secrets.EVM_ETHEREUM_RPC_URL }}
+          SOLANA_RPC_URL: ${{ secrets.SOLANA_RPC_URL }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+        run: |
+          supabase secrets set --project-ref "$SUPABASE_PROJECT_REF" \
+            CRON_SECRET="$CRON_SECRET" \
+            EVM_ETHEREUM_RPC_URL="$EVM_ETHEREUM_RPC_URL" \
+            SOLANA_RPC_URL="$SOLANA_RPC_URL"
+      - name: Configure optional CoinGecko secret
+        env:
+          COINGECKO_DEMO_API_KEY: ${{ secrets.COINGECKO_DEMO_API_KEY }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+        run: |
+          if [ -n "$COINGECKO_DEMO_API_KEY" ]; then
+            supabase secrets set --project-ref "$SUPABASE_PROJECT_REF" \
+              COINGECKO_DEMO_API_KEY="$COINGECKO_DEMO_API_KEY"
+          fi
+      - name: Deploy Edge Functions
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+        run: |
+          for function_name in sync-market-data sync-wallet-balances calculate-rankings provider-health; do
+            supabase functions deploy "$function_name" --project-ref "$SUPABASE_PROJECT_REF" --no-verify-jwt
+          done
+      - name: Synchronize curated production data
+        env:
+          CURATED_DATA_DIR: data/production
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: pnpm sync:curated-data

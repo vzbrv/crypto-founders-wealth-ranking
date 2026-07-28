@@ -18,6 +18,10 @@ const phaseFiveMigrationUrl = new URL(
   "../../../supabase/migrations/202607280004_phase_5_public_ranking.sql",
   import.meta.url,
 );
+const phaseSixMigrationUrl = new URL(
+  "../../../supabase/migrations/202607280005_phase_6_transparency.sql",
+  import.meta.url,
+);
 const phaseSevenMigrationUrl = new URL(
   "../../../supabase/migrations/202607280006_phase_7_evm_wallet_sync.sql",
   import.meta.url,
@@ -30,14 +34,23 @@ const phaseTenMigrationUrl = new URL(
   "../../../supabase/migrations/202607280009_phase_10_production_hardening.sql",
   import.meta.url,
 );
-const seedUrl = new URL("../../../supabase/seed.sql", import.meta.url);
+const productionReadContractMigrationUrl = new URL(
+  "../../../supabase/migrations/202607280011_production_read_contract.sql",
+  import.meta.url,
+);
+const seedUrl = new URL(
+  "../../../supabase/tests/seed.synthetic.sql",
+  import.meta.url,
+);
 const migrationSql = [
   await readFile(phaseThreeMigrationUrl, "utf8"),
   await readFile(phaseFourMigrationUrl, "utf8"),
   await readFile(phaseFiveMigrationUrl, "utf8"),
+  await readFile(phaseSixMigrationUrl, "utf8"),
   await readFile(phaseSevenMigrationUrl, "utf8"),
   await readFile(phaseEightMigrationUrl, "utf8"),
   await readFile(phaseTenMigrationUrl, "utf8"),
+  await readFile(productionReadContractMigrationUrl, "utf8"),
 ].join("\n");
 const seedSql = await readFile(seedUrl, "utf8");
 
@@ -65,9 +78,13 @@ const expectedViews = [
   "current_founding_unit_scores",
   "current_leaderboard",
   "current_project_scores",
+  "current_scores",
   "public_data_freshness",
+  "public_leaderboard",
   "public_project_details",
   "public_provider_status",
+  "public_source_claims",
+  "public_wallet_evidence",
 ];
 
 const databases: PGlite[] = [];

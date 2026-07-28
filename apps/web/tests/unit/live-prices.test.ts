@@ -41,6 +41,8 @@ const entry: RankingEntry = {
   capitalDeductedUsd: 50_000_000,
   freshestObservationAt: "2026-07-28T12:00:00.000Z",
   warnings: [],
+  isStale: false,
+  staleReason: null,
   status: "ranked",
 };
 

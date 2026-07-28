@@ -1,0 +1,16 @@
+project_id = "crypto-founders-wealth-ranking"
+
+[db.seed]
+enabled = false
+
+[functions.sync-market-data]
+verify_jwt = false
+
+[functions.sync-wallet-balances]
+verify_jwt = false
+
+[functions.calculate-rankings]
+verify_jwt = false
+
+[functions.provider-health]
+verify_jwt = false

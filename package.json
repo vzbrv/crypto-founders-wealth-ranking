@@ -20,6 +20,8 @@
     "test:e2e": "pnpm --filter @crypto-founders/web test:e2e",
     "sync:curated-data": "pnpm --filter @crypto-founders/database sync:curated-data",
     "validate:data": "pnpm --filter @crypto-founders/curated-data validate",
+    "validate:production-data": "pnpm --filter @crypto-founders/curated-data validate:production",
+    "smoke:production": "node scripts/smoke-production.mjs",
     "validate:database": "pnpm --filter @crypto-founders/database test:migrations",
     "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test:unit && pnpm validate:database && pnpm build"
   },

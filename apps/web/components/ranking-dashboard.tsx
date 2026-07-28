@@ -74,10 +74,23 @@ function ConfidenceBadge({ value }: { value: RankingEntry["confidence"] }) {
   return <span className={`badge confidence ${value}`}>{value}</span>;
 }
 
-function FreshnessBadge({ date }: { date: string }) {
-  const label = freshnessLabel(date);
+function FreshnessBadge({
+  date,
+  isStale,
+  reason,
+}: {
+  date: string;
+  isStale: boolean;
+  reason: string | null;
+}) {
+  const label = isStale ? "Stale" : freshnessLabel(date);
   return (
-    <span className={`badge freshness ${label.toLowerCase()}`}>{label}</span>
+    <span
+      className={`badge freshness ${label.toLowerCase()}`}
+      title={reason ?? undefined}
+    >
+      {label}
+    </span>
   );
 }
 
@@ -164,7 +177,11 @@ function LeaderboardTable({
                   <ConfidenceBadge value={entry.confidence} />
                 </td>
                 <td className="cell-freshness">
-                  <FreshnessBadge date={entry.freshestObservationAt} />
+                  <FreshnessBadge
+                    date={entry.freshestObservationAt}
+                    isStale={entry.isStale}
+                    reason={entry.staleReason}
+                  />
                 </td>
               </tr>
             );
@@ -209,7 +226,7 @@ async function loadRanking(): Promise<RankingEntry[]> {
   const headers = { apikey: publicKey, Authorization: `Bearer ${publicKey}` };
   const [leaderboardResponse, projectResponse] = await Promise.all([
     fetch(
-      `${baseUrl}/rest/v1/current_leaderboard?select=*&order=rank.asc.nullslast`,
+      `${baseUrl}/rest/v1/public_leaderboard?select=*&order=rank.asc.nullslast`,
       { headers },
     ),
     fetch(`${baseUrl}/rest/v1/public_project_details?select=*`, { headers }),

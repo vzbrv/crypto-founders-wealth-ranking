@@ -1,14 +1,14 @@
 # Edge Functions
 
-Implemented functions:
+Deployable functions:
 
-- `market-sync`: batched CoinGecko refresh, validated ingestion, provider health, and calculation trigger
-- `wallet-sync`: Ethereum native/ERC-20 and Solana native-balance refresh, validated ingestion, provider health, and calculation trigger
+- `sync-market-data`: refreshes validated market observations
+- `sync-wallet-balances`: refreshes Ethereum and Solana wallet observations
+- `calculate-rankings`: runs the scheduled ranking calculation
+- `provider-health`: returns the current sanitized provider state
 
-Planned functions:
+All accept POST only and require `x-cron-secret` to equal the server-side `CRON_SECRET`. Supabase Cron reads the same value from Vault. Functions use the built-in `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`; provider credentials remain server-side.
 
-- `provider-health`: fifteen-minute provider status check
+Logs are one-line JSON with level, function, event, status/counts, and duration. They never log headers, keys, URLs containing credentials, or raw provider errors.
 
-`market-sync` accepts authenticated POST requests using the service-role bearer token. It uses only fixed provider and Supabase endpoints, keeps secrets server-side, and persists observations through `ingest_market_sync`.
-
-`wallet-sync` uses the same authentication boundary. It reads `EVM_ETHEREUM_RPC_URL` and `SOLANA_RPC_URL` only on the server, batches Ethereum ERC-20 reads with Multicall, reads Solana balances at finalized slots, and persists append-only observations through `ingest_wallet_sync`. Solana falls back to the public mainnet RPC endpoint when `SOLANA_RPC_URL` is unset.
+When a market or wallet refresh fails, the function records a sanitized failed provider-health result and leaves the last successful observations and rankings intact. Public views expose `is_stale` and `stale_reason` so the frontend can show degraded data.

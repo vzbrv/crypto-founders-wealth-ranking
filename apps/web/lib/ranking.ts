@@ -15,6 +15,8 @@ export interface RawLeaderboardRow {
   iq_wiki_slug: string | null;
   project_breakdown: unknown;
   warnings: unknown;
+  is_stale?: boolean;
+  stale_reason?: string | null;
 }
 
 export interface RawProjectDetail {
@@ -63,6 +65,8 @@ export interface RankingEntry {
   capitalDeductedUsd: number | null;
   freshestObservationAt: string;
   warnings: string[];
+  isStale: boolean;
+  staleReason: string | null;
   status: "ranked" | "research";
 }
 
@@ -180,6 +184,8 @@ export function buildRankingEntries(
       capitalDeductedUsd: hasCapitalDetail ? capitalDeductedUsd : null,
       freshestObservationAt: observations.sort().at(-1) ?? row.calculated_at,
       warnings: warnings(row.warnings),
+      isStale: row.is_stale ?? false,
+      staleReason: row.stale_reason ?? null,
       status:
         row.rank === null || normalizedConfidence === "insufficient"
           ? "research"
