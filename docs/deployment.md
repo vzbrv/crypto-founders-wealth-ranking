@@ -1,6 +1,6 @@
 # Deployment
 
-The web build is compatible with static hosting: `pnpm build` writes `apps/web/out`. Phases 4 and 7 provide `market-sync` and `wallet-sync` Edge Functions with five-minute Supabase Cron migrations; connecting production projects remains an operator action.
+The web build is compatible with static hosting: `pnpm build` writes `apps/web/out`. Phases 4, 7, and 8 provide `market-sync` plus Ethereum and Solana `wallet-sync` ingestion with five-minute Supabase Cron migrations; connecting production projects remains an operator action.
 
 ## Free deployment path
 
@@ -10,7 +10,7 @@ The web build is compatible with static hosting: `pnpm build` writes `apps/web/o
 
 Cloudflare Pages must use the Next.js Static HTML Export preset or equivalent settings. No GitHub Actions job should poll providers every five minutes; recurring jobs belong to Supabase Cron.
 
-Before applying the schedule migrations, add `project_url` and `service_role_key` to Supabase Vault. Deploy functions with `supabase functions deploy market-sync` and `supabase functions deploy wallet-sync`, then apply all migrations in order. The Edge runtime supplies `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`; `COINGECKO_DEMO_API_KEY` is optional and `EVM_ETHEREUM_RPC_URL` is required for wallet sync.
+Before applying the schedule migrations, add `project_url` and `service_role_key` to Supabase Vault. Deploy functions with `supabase functions deploy market-sync` and `supabase functions deploy wallet-sync`, then apply all migrations in order. The Edge runtime supplies `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`; `COINGECKO_DEMO_API_KEY` is optional, `EVM_ETHEREUM_RPC_URL` is required when Ethereum wallets are configured, and `SOLANA_RPC_URL` is recommended for production Solana syncs. Without it, Solana uses the public mainnet RPC endpoint.
 
 Required secret names are documented in `.env.example`. Values must be supplied by the deployment platform and must never be committed.
 

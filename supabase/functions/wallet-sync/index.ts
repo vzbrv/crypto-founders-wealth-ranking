@@ -2,8 +2,13 @@ import { createPublicClient, http, mainnet } from "viem";
 
 import {
   EvmBalanceAdapter,
+  SolanaBalanceAdapter,
+  SolanaJsonRpcClient,
   type EvmBalanceQuery,
   type EvmMulticallResult,
+  type EvmSyncResult,
+  type SolanaBalanceQuery,
+  type SolanaSyncResult,
 } from "../../../packages/chain-adapters/src/index.ts";
 
 interface WalletRow {
@@ -47,8 +52,7 @@ Deno.serve(async (request) => {
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  const rpcUrl = Deno.env.get("EVM_ETHEREUM_RPC_URL");
-  if (!supabaseUrl || !serviceRoleKey || !rpcUrl) {
+  if (!supabaseUrl || !serviceRoleKey) {
     return json({ error: "Server-side runtime secrets are unavailable" }, 500);
   }
   if (request.headers.get("authorization") !== `Bearer ${serviceRoleKey}`) {
@@ -67,9 +71,12 @@ Deno.serve(async (request) => {
   );
   mappingsUrl.searchParams.set("tracked_wallets.status", "eq.active");
   mappingsUrl.searchParams.set("tracked_wallets.affects_score", "eq.true");
-  mappingsUrl.searchParams.set("tracked_wallets.chain_code", "eq.ethereum");
+  mappingsUrl.searchParams.set(
+    "tracked_wallets.chain_code",
+    "in.(ethereum,solana)",
+  );
   mappingsUrl.searchParams.set("assets.is_active", "eq.true");
-  mappingsUrl.searchParams.set("assets.chain_code", "eq.ethereum");
+  mappingsUrl.searchParams.set("assets.chain_code", "in.(ethereum,solana)");
 
   const mappingsResponse = await fetch(mappingsUrl, { headers });
   if (!mappingsResponse.ok) {
@@ -82,23 +89,11 @@ Deno.serve(async (request) => {
     );
   }
 
-  const publicClient = createPublicClient({
-    chain: mainnet,
-    transport: http(rpcUrl),
-  });
-  const adapter = new EvmBalanceAdapter({
-    client: {
-      getBlock: () => publicClient.getBlock(),
-      getBalance: (args) => publicClient.getBalance(args),
-      multicall: async (args) =>
-        (await publicClient.multicall(args)) as readonly EvmMulticallResult[],
-    },
-  });
   const mappings = (await mappingsResponse.json()) as MappingRow[];
-  const queries = mappings.flatMap<EvmBalanceQuery>((mapping) => {
+  const evmQueries = mappings.flatMap<EvmBalanceQuery>((mapping) => {
     const wallet = related(mapping.tracked_wallets);
     const asset = related(mapping.assets);
-    if (!wallet || !asset) return [];
+    if (!wallet || !asset || wallet.chain_code !== "ethereum") return [];
     return [
       {
         trackedWalletId: mapping.tracked_wallet_id,
@@ -114,40 +109,111 @@ Deno.serve(async (request) => {
       },
     ];
   });
-  const result = await adapter.sync(queries);
-
-  const ingestResponse = await fetch(
-    new URL("/rest/v1/rpc/ingest_wallet_sync", supabaseUrl),
-    {
-      method: "POST",
-      headers,
-      body: JSON.stringify({
-        p_observations: result.observations,
-        p_health: result.health,
-      }),
-    },
-  );
-  if (!ingestResponse.ok) {
-    return json(
+  const solanaQueries = mappings.flatMap<SolanaBalanceQuery>((mapping) => {
+    const wallet = related(mapping.tracked_wallets);
+    const asset = related(mapping.assets);
+    if (
+      !wallet ||
+      !asset ||
+      wallet.chain_code !== "solana" ||
+      mapping.balance_query_type !== "native"
+    )
+      return [];
+    return [
       {
-        error: "Unable to persist wallet sync",
-        detail: await readError(ingestResponse),
+        trackedWalletId: mapping.tracked_wallet_id,
+        assetId: mapping.asset_id,
+        chainCode: wallet.chain_code,
+        walletAddress: wallet.address,
+        balanceQueryType: "native",
+        configuredDecimals: asset.decimals,
       },
-      502,
+    ];
+  });
+
+  const results: Array<EvmSyncResult | SolanaSyncResult> = [];
+  const evmRpcUrl = Deno.env.get("EVM_ETHEREUM_RPC_URL");
+  if (evmQueries.length > 0) {
+    if (!evmRpcUrl) return json({ error: "Ethereum RPC is unavailable" }, 500);
+    const publicClient = createPublicClient({
+      chain: mainnet,
+      transport: http(evmRpcUrl),
+    });
+    results.push(
+      await new EvmBalanceAdapter({
+        client: {
+          getBlock: () => publicClient.getBlock(),
+          getBalance: (args) => publicClient.getBalance(args),
+          multicall: async (args) =>
+            (await publicClient.multicall(
+              args,
+            )) as readonly EvmMulticallResult[],
+        },
+      }).sync(evmQueries),
+    );
+  }
+  if (solanaQueries.length > 0) {
+    const solanaRpcUrl =
+      Deno.env.get("SOLANA_RPC_URL") ?? "https://api.mainnet-beta.solana.com";
+    results.push(
+      await new SolanaBalanceAdapter({
+        client: new SolanaJsonRpcClient(solanaRpcUrl),
+      }).sync(solanaQueries),
     );
   }
 
-  const [ingestion] = (await ingestResponse.json()) as Array<{
+  const ingestions: Array<{
     accepted_count: number;
     calculation_run_id: string | null;
-  }>;
+  }> = [];
+  for (const result of results) {
+    const ingestResponse = await fetch(
+      new URL("/rest/v1/rpc/ingest_wallet_sync", supabaseUrl),
+      {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          p_observations: result.observations,
+          p_health: result.health,
+        }),
+      },
+    );
+    if (!ingestResponse.ok) {
+      return json(
+        {
+          error: "Unable to persist wallet sync",
+          detail: await readError(ingestResponse),
+        },
+        502,
+      );
+    }
+    const [ingestion] = (await ingestResponse.json()) as typeof ingestions;
+    if (ingestion) ingestions.push(ingestion);
+  }
+
+  const rejected = results.reduce(
+    (total, result) => total + result.rejections.length,
+    0,
+  );
+  const providerStatuses = results.map((result) => ({
+    provider: result.health.provider,
+    status: result.health.status,
+  }));
   const response = {
-    providerStatus: result.health.status,
-    mappings: queries.length,
-    accepted: ingestion?.accepted_count ?? 0,
-    rejected: result.rejections.length,
-    calculationRunId: ingestion?.calculation_run_id ?? null,
+    providerStatus: results.some(({ health }) => health.status === "failed")
+      ? "failed"
+      : results.some(({ health }) => health.status === "degraded")
+        ? "degraded"
+        : "healthy",
+    providers: providerStatuses,
+    mappings: evmQueries.length + solanaQueries.length,
+    accepted: ingestions.reduce(
+      (total, ingestion) => total + ingestion.accepted_count,
+      0,
+    ),
+    rejected,
+    calculationRunId: ingestions.at(-1)?.calculation_run_id ?? null,
   };
   console.log(JSON.stringify({ event: "wallet_sync_complete", ...response }));
-  return json(response, result.health.status === "failed" ? 502 : 200);
+  return json(response, response.providerStatus === "failed" ? 502 : 200);
 });
