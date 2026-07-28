@@ -2,7 +2,7 @@
 
 Monorepo foundation for a source-backed ranking of crypto founding units by estimated liquid crypto wealth.
 
-Phases 0–4 contain the monorepo foundation, curated-data schemas, Decimal calculation engine, Supabase persistence, and resilient CoinGecko market sync. The repository does not yet contain production curated data, wallet-provider integrations, authentication, or an admin system.
+Phases 0–7 contain the monorepo foundation, curated-data schemas, Decimal calculation engine, Supabase persistence, resilient CoinGecko market sync, calculation transparency, and scheduled EVM wallet synchronization. The repository does not yet contain production curated data, non-EVM wallet providers, authentication, or an admin system.
 
 The approved production target is all-free: GitHub for source and curated data, a statically exported Next.js site on Cloudflare Pages, and Supabase for PostgreSQL, public read-only REST/Realtime access, Cron, and Edge Functions.
 

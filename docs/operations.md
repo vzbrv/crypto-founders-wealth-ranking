@@ -1,15 +1,15 @@
 # Operations
 
-Phase 4 implements the market job. Later jobs remain planned:
+Phase 7 implements the market and EVM wallet jobs:
 
-| Job                    | Intended cadence    | Role                                                   |
-| ---------------------- | ------------------- | ------------------------------------------------------ |
-| `market-sync`          | Every 5 minutes     | Refresh CoinGecko prices and supply, then recalculate  |
-| `sync-wallet-balances` | Every 5-15 minutes  | Refresh public-chain balances within provider quotas   |
-| `calculate-rankings`   | Internal dependency | Recompute canonical results after successful ingestion |
-| `provider-health`      | Every 15 minutes    | Record provider freshness and failures                 |
+| Job                  | Intended cadence    | Role                                                      |
+| -------------------- | ------------------- | --------------------------------------------------------- |
+| `market-sync`        | Every 5 minutes     | Refresh CoinGecko prices and supply, then recalculate     |
+| `wallet-sync`        | Every 5 minutes     | Refresh Ethereum native/ERC-20 balances, then recalculate |
+| `calculate-rankings` | Internal dependency | Recompute canonical results after successful ingestion    |
+| `provider-health`    | Every 15 minutes    | Record provider freshness and failures                    |
 
-Supabase Cron invokes `market-sync`; GitHub Actions does not provide the recurring scheduler. The adapter batches up to 200 asset IDs, rate-limits requests, retries with jittered backoff, and opens a circuit breaker after repeated failures. Exact wallet cadence remains provider-specific.
+Supabase Cron invokes `market-sync` and `wallet-sync`; GitHub Actions does not provide the recurring scheduler. Market ingestion batches up to 200 asset IDs. EVM ingestion pins reads to one latest block, batches ERC-20 calls with Multicall, and retries bounded provider failures.
 
 ## Market failure behavior
 
@@ -23,8 +23,9 @@ Inspect recent state with:
 ```sql
 select * from provider_health order by checked_at desc limit 20;
 select * from market_observations where is_valid order by observed_at desc limit 20;
+select * from wallet_balance_observations where is_valid order by observed_at desc limit 20;
 select * from calculation_runs order by started_at desc limit 20;
-select jobname, schedule, active from cron.job where jobname = 'market-sync-every-five-minutes';
+select jobname, schedule, active from cron.job where jobname in ('market-sync-every-five-minutes', 'wallet-sync-every-five-minutes');
 ```
 
 ## Freshness and retention
@@ -36,11 +37,11 @@ select jobname, schedule, active from cron.job where jobname = 'market-sync-ever
 
 Later implementation phases must additionally define:
 
-- separate refresh schedules for market, chain, curated, and canonical calculation data;
-- bounded retries with backoff and provider-specific rate limiting;
+- separate refresh schedules for curated and canonical calculation data;
+- provider-specific rate limiting;
 - stale-data behavior that preserves the last canonical value and exposes freshness;
 - outage handling with no fabricated fallback values;
 - manual replay and reconciliation procedures;
 - quota monitoring, structured logs, health checks, and alert thresholds.
 
-Scheduled provider smoke tests remain separate from deterministic pull-request CI. Phase 4 tests inject provider responses and never call CoinGecko live.
+Scheduled provider smoke tests remain separate from deterministic pull-request CI. Tests inject provider responses and never call CoinGecko or Ethereum RPC endpoints live.

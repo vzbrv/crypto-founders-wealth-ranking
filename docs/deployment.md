@@ -1,6 +1,6 @@
 # Deployment
 
-The web build is compatible with static hosting: `pnpm build` writes `apps/web/out`. Phase 4 also provides the `market-sync` Edge Function and its five-minute Supabase Cron migration; connecting production projects remains an operator action.
+The web build is compatible with static hosting: `pnpm build` writes `apps/web/out`. Phases 4 and 7 provide `market-sync` and `wallet-sync` Edge Functions with five-minute Supabase Cron migrations; connecting production projects remains an operator action.
 
 ## Free deployment path
 
@@ -10,7 +10,7 @@ The web build is compatible with static hosting: `pnpm build` writes `apps/web/o
 
 Cloudflare Pages must use the Next.js Static HTML Export preset or equivalent settings. No GitHub Actions job should poll providers every five minutes; recurring jobs belong to Supabase Cron.
 
-Before applying `202607280003_phase_4_market_schedule.sql`, add `project_url` and `service_role_key` to Supabase Vault. Deploy the function with `supabase functions deploy market-sync`, then apply all migrations in order. The Edge runtime supplies `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`; `COINGECKO_DEMO_API_KEY` is optional.
+Before applying the schedule migrations, add `project_url` and `service_role_key` to Supabase Vault. Deploy functions with `supabase functions deploy market-sync` and `supabase functions deploy wallet-sync`, then apply all migrations in order. The Edge runtime supplies `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`; `COINGECKO_DEMO_API_KEY` is optional and `EVM_ETHEREUM_RPC_URL` is required for wallet sync.
 
 Required secret names are documented in `.env.example`. Values must be supplied by the deployment platform and must never be committed.
 
