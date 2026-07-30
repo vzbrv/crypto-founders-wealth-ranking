@@ -1,6 +1,10 @@
 import { readFile } from "node:fs/promises";
+import { fileURLToPath } from "node:url";
 
-import { loadCuratedData } from "@crypto-founders/curated-data";
+import {
+  loadCuratedData,
+  loadProductionCuratedData,
+} from "@crypto-founders/curated-data";
 import { PGlite } from "@electric-sql/pglite";
 import { afterEach, describe, expect, it } from "vitest";
 
@@ -58,6 +62,9 @@ const migrationSql = [
   await readFile(serviceRoleReadsMigrationUrl, "utf8"),
 ].join("\n");
 const seedSql = await readFile(seedUrl, "utf8");
+const productionDataDirectory = fileURLToPath(
+  new URL("../../../data/production/", import.meta.url),
+);
 
 const expectedTables = [
   "assets",
@@ -108,6 +115,14 @@ async function createDatabase(
 
 async function importCuratedData(database: PGlite): Promise<void> {
   const statements = createCuratedImportStatements(await loadCuratedData());
+  for (const statement of statements) {
+    await database.query(statement.text, [...statement.values]);
+  }
+}
+
+async function importProductionData(database: PGlite): Promise<void> {
+  const data = await loadProductionCuratedData(productionDataDirectory);
+  const statements = createCuratedImportStatements(data);
   for (const statement of statements) {
     await database.query(statement.text, [...statement.values]);
   }
@@ -176,6 +191,39 @@ describe("Phase 3 database", () => {
       assets: 1,
       wallets: 1,
       rounds: 1,
+    });
+  });
+
+  it("imports reviewed production data into a clean database idempotently", async () => {
+    const database = await createDatabase();
+    await importProductionData(database);
+    await importProductionData(database);
+
+    const result = await database.query<{
+      projects: number;
+      units: number;
+      assets: number;
+      wallets: number;
+      rounds: number;
+      sources: number;
+      links: number;
+    }>(`select
+      (select count(*)::int from projects) as projects,
+      (select count(*)::int from founding_units) as units,
+      (select count(*)::int from assets) as assets,
+      (select count(*)::int from tracked_wallets) as wallets,
+      (select count(*)::int from funding_rounds) as rounds,
+      (select count(*)::int from source_records) as sources,
+      (select count(*)::int from record_sources) as links`);
+
+    expect(result.rows[0]).toEqual({
+      projects: 3,
+      units: 3,
+      assets: 3,
+      wallets: 0,
+      rounds: 4,
+      sources: 17,
+      links: 49,
     });
   });
 

@@ -1,1 +1,45 @@
-[]
+[
+  {
+    "id": "cb61ccf6-26ba-4716-8cac-f5604546b3e0",
+    "slug": "ethereum",
+    "name": "Ethereum",
+    "symbol": "ETH",
+    "description": "Ethereum is a public blockchain launched in 2015 by a multi-person founding team.",
+    "projectType": "blockchain",
+    "calculationCategory": "liquid_token",
+    "status": "active",
+    "confidenceLevel": "insufficient",
+    "methodologyNotes": "Research-only and unranked. Primary sources establish the founding team, crowdsale, and genesis allocation, but do not attribute current founder-controlled wallets. No wallet row or zero balance is inferred. The crowdsale is excluded from capital deduction because the reviewed source states only an approximate historical USD value.",
+    "websiteUrl": "https://ethereum.org/",
+    "launchedAt": "2015-07-30",
+    "researchReviewedAt": "2026-07-30T16:00:00Z"
+  },
+  {
+    "id": "955b4b59-1908-484c-b13e-95740efb38d1",
+    "slug": "uniswap",
+    "name": "Uniswap",
+    "symbol": "UNI",
+    "description": "Uniswap is an Ethereum protocol created by Hayden Adams; UNI is its governance token.",
+    "projectType": "protocol",
+    "calculationCategory": "liquid_token",
+    "status": "active",
+    "confidenceLevel": "insufficient",
+    "methodologyNotes": "Research-only and unranked. Official sources document the founder, UNI allocation, contract, and two funding rounds, but allocation categories do not attribute a current founder-controlled wallet. No wallet row or zero balance is inferred. An earlier seed investment is acknowledged without a reviewed primary-source amount, so funding completeness is unresolved.",
+    "websiteUrl": "https://uniswap.org/",
+    "researchReviewedAt": "2026-07-30T16:00:00Z"
+  },
+  {
+    "id": "1cf70f95-81d3-454f-b381-f8a4ce1b980b",
+    "slug": "solana",
+    "name": "Solana",
+    "symbol": "SOL",
+    "description": "Solana is a public blockchain developed by a founding team assembled around Solana Labs.",
+    "projectType": "blockchain",
+    "calculationCategory": "liquid_token",
+    "status": "active",
+    "confidenceLevel": "insufficient",
+    "methodologyNotes": "Research-only and unranked. Official sources document the founding history, token-supply context, and a material private token sale, but do not attribute a current founder-controlled SOL wallet or establish a complete lifetime funding ledger. Foundation, company, market-making, and other allocation categories are not treated as founder property. No wallet row or zero balance is inferred.",
+    "websiteUrl": "https://solana.com/",
+    "researchReviewedAt": "2026-07-30T16:00:00Z"
+  }
+]

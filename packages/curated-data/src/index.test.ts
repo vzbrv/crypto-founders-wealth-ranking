@@ -146,8 +146,24 @@ describe("production curated data", () => {
     );
     const data = await loadProductionCuratedData(directory);
 
-    expect(Object.values(data).every((records) => records.length === 0)).toBe(
-      true,
-    );
+    expect({
+      projects: data.projects.length,
+      foundingUnits: data.foundingUnits.length,
+      assets: data.assets.length,
+      wallets: data.wallets.length,
+      fundingRounds: data.fundingRounds.length,
+      sources: data.sources.length,
+      recordSources: data.recordSources.length,
+    }).toEqual({
+      projects: 3,
+      foundingUnits: 3,
+      assets: 3,
+      wallets: 0,
+      fundingRounds: 4,
+      sources: 17,
+      recordSources: 49,
+    });
+
+    expect(JSON.stringify(data)).not.toContain("synthetic");
   });
 });

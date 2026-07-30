@@ -1,1 +1,443 @@
-[]
+[
+  {
+    "id": "29af9471-d5db-4bd8-9f75-88ef62f754e1",
+    "sourceId": "8eba8c50-ce98-4bf6-b711-d143fe137fe6",
+    "recordType": "project",
+    "recordId": "cb61ccf6-26ba-4716-8cac-f5604546b3e0",
+    "field": "identity",
+    "supportType": "primary",
+    "notes": "Official history identifies Ethereum and its founding team."
+  },
+  {
+    "id": "b71e1d60-d047-4f23-b89b-414c2f14ef78",
+    "sourceId": "8eba8c50-ce98-4bf6-b711-d143fe137fe6",
+    "recordType": "project",
+    "recordId": "cb61ccf6-26ba-4716-8cac-f5604546b3e0",
+    "field": "methodologyNotes",
+    "supportType": "primary",
+    "notes": "The history documents the crowdsale and allocation; it does not attribute current founder-controlled wallets."
+  },
+  {
+    "id": "9a354b16-f65c-49aa-905b-7274e88dc718",
+    "sourceId": "26b0bdc8-584f-4033-8b60-9f07e67a3094",
+    "recordType": "project",
+    "recordId": "955b4b59-1908-484c-b13e-95740efb38d1",
+    "field": "identity",
+    "supportType": "primary",
+    "notes": "Official history identifies Hayden Adams as Uniswap's creator."
+  },
+  {
+    "id": "fe036364-2825-4837-adfd-2135e163d85c",
+    "sourceId": "574d2a96-c361-4322-80cd-04282cf95103",
+    "recordType": "project",
+    "recordId": "955b4b59-1908-484c-b13e-95740efb38d1",
+    "field": "methodologyNotes",
+    "supportType": "primary",
+    "notes": "Official allocation categories do not establish current personal control by the founder."
+  },
+  {
+    "id": "71f08b1a-8616-44db-9990-e399b2055b74",
+    "sourceId": "6109f469-d730-4bc0-81ce-1971e82bff22",
+    "recordType": "project",
+    "recordId": "1cf70f95-81d3-454f-b381-f8a4ce1b980b",
+    "field": "identity",
+    "supportType": "primary",
+    "notes": "Official history identifies the team that developed Solana."
+  },
+  {
+    "id": "3aba21f0-341f-4dab-9db1-370cb6b3a841",
+    "sourceId": "820d3cb3-09db-4a36-96db-d3ca946df445",
+    "recordType": "project",
+    "recordId": "1cf70f95-81d3-454f-b381-f8a4ce1b980b",
+    "field": "methodologyNotes",
+    "supportType": "primary",
+    "notes": "Official supply disclosure separates market-making inventory from circulating supply and does not establish founder ownership."
+  },
+  {
+    "id": "43bf7555-fc18-44ad-8c2a-e2913fda344a",
+    "sourceId": "8eba8c50-ce98-4bf6-b711-d143fe137fe6",
+    "recordType": "founding_unit",
+    "recordId": "5c543047-6a47-41ea-89e6-463f8514d2ec",
+    "field": "identity",
+    "supportType": "primary",
+    "notes": "Official history names Ethereum's founding team."
+  },
+  {
+    "id": "87ca001d-2cd8-4b82-8015-f812128ddc38",
+    "sourceId": "755a3a1f-9e04-4a66-8468-35defcb5b168",
+    "recordType": "founding_unit",
+    "recordId": "5c543047-6a47-41ea-89e6-463f8514d2ec",
+    "field": "projectLinks[0].attributionFraction",
+    "supportType": "primary",
+    "notes": "Editorial aggregation assigns one project result to the research unit; this is not an ownership fraction."
+  },
+  {
+    "id": "1fed2ec6-6c83-4abf-a2f2-3c16997f2df3",
+    "sourceId": "755a3a1f-9e04-4a66-8468-35defcb5b168",
+    "recordType": "founding_unit",
+    "recordId": "5c543047-6a47-41ea-89e6-463f8514d2ec",
+    "field": "projectLinks[0].attributionMethod",
+    "supportType": "primary",
+    "notes": "Methodology permits collective founding-unit aggregation when individual division is unsupported."
+  },
+  {
+    "id": "cc1b7fbf-b857-4cbe-afcb-b15679249eab",
+    "sourceId": "26b0bdc8-584f-4033-8b60-9f07e67a3094",
+    "recordType": "founding_unit",
+    "recordId": "bab427e3-77d0-42b6-b1f5-7ee2a5320bfe",
+    "field": "identity",
+    "supportType": "primary",
+    "notes": "Official history identifies Hayden Adams as Uniswap's creator."
+  },
+  {
+    "id": "bbdae8a1-5937-43b0-b38b-1e6a002e8121",
+    "sourceId": "755a3a1f-9e04-4a66-8468-35defcb5b168",
+    "recordType": "founding_unit",
+    "recordId": "bab427e3-77d0-42b6-b1f5-7ee2a5320bfe",
+    "field": "projectLinks[0].attributionFraction",
+    "supportType": "primary",
+    "notes": "The sole founding unit receives the project result; this is not an equity or token-ownership assumption."
+  },
+  {
+    "id": "871f3545-4260-4adc-9839-61b63eb5b26e",
+    "sourceId": "755a3a1f-9e04-4a66-8468-35defcb5b168",
+    "recordType": "founding_unit",
+    "recordId": "bab427e3-77d0-42b6-b1f5-7ee2a5320bfe",
+    "field": "projectLinks[0].attributionMethod",
+    "supportType": "primary",
+    "notes": "Methodology assigns the project result to the documented sole founding unit."
+  },
+  {
+    "id": "393eef3e-241e-410c-b37b-7867d7bfb66d",
+    "sourceId": "6109f469-d730-4bc0-81ce-1971e82bff22",
+    "recordType": "founding_unit",
+    "recordId": "b4f2bf31-00fe-4b12-b513-eb9678150871",
+    "field": "identity",
+    "supportType": "primary",
+    "notes": "Official history supports a team-level founding unit."
+  },
+  {
+    "id": "929d3309-69a4-4928-a5ce-0ce7fb24e640",
+    "sourceId": "755a3a1f-9e04-4a66-8468-35defcb5b168",
+    "recordType": "founding_unit",
+    "recordId": "b4f2bf31-00fe-4b12-b513-eb9678150871",
+    "field": "projectLinks[0].attributionFraction",
+    "supportType": "primary",
+    "notes": "Editorial aggregation assigns one project result to the research unit; this is not an ownership fraction."
+  },
+  {
+    "id": "eab53411-d4d4-4272-a737-4038fa99013b",
+    "sourceId": "755a3a1f-9e04-4a66-8468-35defcb5b168",
+    "recordType": "founding_unit",
+    "recordId": "b4f2bf31-00fe-4b12-b513-eb9678150871",
+    "field": "projectLinks[0].attributionMethod",
+    "supportType": "primary",
+    "notes": "Methodology permits collective founding-unit aggregation when individual division is unsupported."
+  },
+  {
+    "id": "390ddf3f-e194-4951-80d5-4f0fa9527e05",
+    "sourceId": "d6b055f9-7526-4526-809f-ad07301d20ac",
+    "recordType": "asset",
+    "recordId": "a3f2760a-1c73-4750-aca9-7f7eb7b34ec5",
+    "field": "identity",
+    "supportType": "primary",
+    "notes": "Official documentation identifies ether as Ethereum's native cryptocurrency."
+  },
+  {
+    "id": "395449e7-678d-490f-98f7-a2c841e3a86f",
+    "sourceId": "f6f7c6be-f348-4332-b007-99cf90f37de7",
+    "recordType": "asset",
+    "recordId": "a3f2760a-1c73-4750-aca9-7f7eb7b34ec5",
+    "field": "providerIds",
+    "supportType": "primary",
+    "notes": "CoinGecko's live registry contains the ethereum identifier."
+  },
+  {
+    "id": "139e67e5-6607-4d8e-8f2b-e063701952b6",
+    "sourceId": "d6b055f9-7526-4526-809f-ad07301d20ac",
+    "recordType": "asset",
+    "recordId": "a3f2760a-1c73-4750-aca9-7f7eb7b34ec5",
+    "field": "chainCode",
+    "supportType": "primary",
+    "notes": "Official documentation identifies ETH as native to Ethereum."
+  },
+  {
+    "id": "0df2e276-9d7e-47fb-a54d-af5dba610ad5",
+    "sourceId": "574d2a96-c361-4322-80cd-04282cf95103",
+    "recordType": "asset",
+    "recordId": "92ed3359-3d9a-4633-8588-4d871f7f0d13",
+    "field": "identity",
+    "supportType": "primary",
+    "notes": "Official token launch identifies UNI as the Uniswap governance token."
+  },
+  {
+    "id": "149856e5-326b-49b1-967d-f83040a61f4a",
+    "sourceId": "6aa8e2a1-20f8-4f70-91be-9c3576d16725",
+    "recordType": "asset",
+    "recordId": "92ed3359-3d9a-4633-8588-4d871f7f0d13",
+    "field": "providerIds",
+    "supportType": "primary",
+    "notes": "CoinGecko's live registry contains the uniswap identifier and Ethereum platform."
+  },
+  {
+    "id": "fffcb57b-7a1d-4279-9691-436e1474f4b5",
+    "sourceId": "574d2a96-c361-4322-80cd-04282cf95103",
+    "recordType": "asset",
+    "recordId": "92ed3359-3d9a-4633-8588-4d871f7f0d13",
+    "field": "chainCode",
+    "supportType": "primary",
+    "notes": "Official token launch identifies UNI as an Ethereum token."
+  },
+  {
+    "id": "da3ed6f4-1128-4b86-adbd-9415f10a7d06",
+    "sourceId": "574d2a96-c361-4322-80cd-04282cf95103",
+    "recordType": "asset",
+    "recordId": "92ed3359-3d9a-4633-8588-4d871f7f0d13",
+    "field": "contractAddress",
+    "supportType": "primary",
+    "notes": "Official token launch publishes the UNI Ethereum contract address."
+  },
+  {
+    "id": "63db60c2-fe6b-4db9-b708-c3667307d73f",
+    "sourceId": "8a9eba69-a2f4-42c7-a76f-71132d60479b",
+    "recordType": "asset",
+    "recordId": "6ca70931-f1bb-4a6c-8df9-d18950590f0b",
+    "field": "identity",
+    "supportType": "primary",
+    "notes": "Official SDK documentation identifies SOL and its native base unit."
+  },
+  {
+    "id": "d6e0089c-ccc2-464c-a147-7cc4c18b53ba",
+    "sourceId": "917ce35f-aec5-41a9-8ac4-635babfbc6d1",
+    "recordType": "asset",
+    "recordId": "6ca70931-f1bb-4a6c-8df9-d18950590f0b",
+    "field": "providerIds",
+    "supportType": "primary",
+    "notes": "CoinGecko's live registry contains the solana identifier."
+  },
+  {
+    "id": "03e5b969-1feb-456d-b9ae-9821d35abca2",
+    "sourceId": "8a9eba69-a2f4-42c7-a76f-71132d60479b",
+    "recordType": "asset",
+    "recordId": "6ca70931-f1bb-4a6c-8df9-d18950590f0b",
+    "field": "chainCode",
+    "supportType": "primary",
+    "notes": "Official SDK documentation establishes SOL as Solana's native asset."
+  },
+  {
+    "id": "4b1da159-db53-49fd-b459-5b169a9c48c8",
+    "sourceId": "c625652c-e5e1-43da-825a-ec898ef6b9c1",
+    "recordType": "funding_round",
+    "recordId": "b4270875-5e3b-4dcd-bec4-c4c519c08c02",
+    "field": "eventDate",
+    "supportType": "primary",
+    "notes": "Official sale announcement establishes the launch date."
+  },
+  {
+    "id": "be87557d-a171-46af-b206-1da89c75913f",
+    "sourceId": "c625652c-e5e1-43da-825a-ec898ef6b9c1",
+    "recordType": "funding_round",
+    "recordId": "b4270875-5e3b-4dcd-bec4-c4c519c08c02",
+    "field": "roundType",
+    "supportType": "primary",
+    "notes": "Official announcement describes a public ether sale."
+  },
+  {
+    "id": "fa4d7239-b6dc-436e-b035-2bfd3c930c89",
+    "sourceId": "8eba8c50-ce98-4bf6-b711-d143fe137fe6",
+    "recordType": "funding_round",
+    "recordId": "b4270875-5e3b-4dcd-bec4-c4c519c08c02",
+    "field": "amountUsdAtEvent",
+    "supportType": "primary",
+    "notes": "Official history reports only an approximate $18 million value; the exact USD field is intentionally unset."
+  },
+  {
+    "id": "89ccffbc-d407-4aee-bfac-c0baf1746058",
+    "sourceId": "8eba8c50-ce98-4bf6-b711-d143fe137fe6",
+    "recordType": "funding_round",
+    "recordId": "b4270875-5e3b-4dcd-bec4-c4c519c08c02",
+    "field": "includeInCapitalDeduction",
+    "supportType": "primary",
+    "notes": "Excluded because the reviewed source does not provide an exact historical USD value; unknown is not zero."
+  },
+  {
+    "id": "4bf9ce1d-3af2-4616-ac55-340b3b31e687",
+    "sourceId": "45ee80b9-77c7-4a49-ab93-050ee795d37b",
+    "recordType": "funding_round",
+    "recordId": "c9959a25-035a-48e1-b681-5f3fc616b09c",
+    "field": "eventDate",
+    "supportType": "primary",
+    "notes": "Official Series A announcement date."
+  },
+  {
+    "id": "19c22888-2b8c-473d-b581-4592a0ff6954",
+    "sourceId": "45ee80b9-77c7-4a49-ab93-050ee795d37b",
+    "recordType": "funding_round",
+    "recordId": "c9959a25-035a-48e1-b681-5f3fc616b09c",
+    "field": "roundType",
+    "supportType": "primary",
+    "notes": "Official announcement identifies a Series A financing."
+  },
+  {
+    "id": "d9212344-692a-4b6e-acab-460db8a67986",
+    "sourceId": "45ee80b9-77c7-4a49-ab93-050ee795d37b",
+    "recordType": "funding_round",
+    "recordId": "c9959a25-035a-48e1-b681-5f3fc616b09c",
+    "field": "originalAmount",
+    "supportType": "primary",
+    "notes": "Official announcement states $11 million."
+  },
+  {
+    "id": "83e42ce4-de82-4d91-aee8-1bdf55a916a0",
+    "sourceId": "45ee80b9-77c7-4a49-ab93-050ee795d37b",
+    "recordType": "funding_round",
+    "recordId": "c9959a25-035a-48e1-b681-5f3fc616b09c",
+    "field": "amountUsdAtEvent",
+    "supportType": "primary",
+    "notes": "Official announcement states $11 million in USD."
+  },
+  {
+    "id": "8918166d-fe31-41e6-b4a2-64739778b501",
+    "sourceId": "45ee80b9-77c7-4a49-ab93-050ee795d37b",
+    "recordType": "funding_round",
+    "recordId": "c9959a25-035a-48e1-b681-5f3fc616b09c",
+    "field": "conversionMethod",
+    "supportType": "primary",
+    "notes": "No currency conversion is required for a USD-denominated disclosure."
+  },
+  {
+    "id": "d7adb518-ea15-4f11-98ad-bfbd85bb65ca",
+    "sourceId": "45ee80b9-77c7-4a49-ab93-050ee795d37b",
+    "recordType": "funding_round",
+    "recordId": "c9959a25-035a-48e1-b681-5f3fc616b09c",
+    "field": "includeInCapitalDeduction",
+    "supportType": "primary",
+    "notes": "Included as disclosed outside capital under the repository methodology."
+  },
+  {
+    "id": "be5c37a4-5832-4dfa-8b44-8abcfe02f744",
+    "sourceId": "b910f91a-8ee4-4c52-82ff-9b0ec0ab82ec",
+    "recordType": "funding_round",
+    "recordId": "507ebb8d-d0e0-443f-90c3-91a45ad1a9c4",
+    "field": "eventDate",
+    "supportType": "primary",
+    "notes": "Official Series B announcement date."
+  },
+  {
+    "id": "3b29ebb1-d68d-4649-baf6-b94116533fbb",
+    "sourceId": "b910f91a-8ee4-4c52-82ff-9b0ec0ab82ec",
+    "recordType": "funding_round",
+    "recordId": "507ebb8d-d0e0-443f-90c3-91a45ad1a9c4",
+    "field": "roundType",
+    "supportType": "primary",
+    "notes": "Official announcement identifies a Series B financing."
+  },
+  {
+    "id": "ea9bb835-bf27-4eed-b9a2-0cd5ecd1c81c",
+    "sourceId": "b910f91a-8ee4-4c52-82ff-9b0ec0ab82ec",
+    "recordType": "funding_round",
+    "recordId": "507ebb8d-d0e0-443f-90c3-91a45ad1a9c4",
+    "field": "originalAmount",
+    "supportType": "primary",
+    "notes": "Official announcement states $165 million."
+  },
+  {
+    "id": "a4fd2937-b71d-4b15-a34c-bd389d01ef3f",
+    "sourceId": "b910f91a-8ee4-4c52-82ff-9b0ec0ab82ec",
+    "recordType": "funding_round",
+    "recordId": "507ebb8d-d0e0-443f-90c3-91a45ad1a9c4",
+    "field": "amountUsdAtEvent",
+    "supportType": "primary",
+    "notes": "Official announcement states $165 million in USD."
+  },
+  {
+    "id": "263ff27e-1e84-482e-939e-dad0393a7bb7",
+    "sourceId": "b910f91a-8ee4-4c52-82ff-9b0ec0ab82ec",
+    "recordType": "funding_round",
+    "recordId": "507ebb8d-d0e0-443f-90c3-91a45ad1a9c4",
+    "field": "conversionMethod",
+    "supportType": "primary",
+    "notes": "No currency conversion is required for a USD-denominated disclosure."
+  },
+  {
+    "id": "e3345f42-ad09-4845-9efe-b198713f7138",
+    "sourceId": "b910f91a-8ee4-4c52-82ff-9b0ec0ab82ec",
+    "recordType": "funding_round",
+    "recordId": "507ebb8d-d0e0-443f-90c3-91a45ad1a9c4",
+    "field": "includeInCapitalDeduction",
+    "supportType": "primary",
+    "notes": "Included as disclosed outside capital under the repository methodology."
+  },
+  {
+    "id": "c5a034bb-b164-4665-8eac-6826c3158ca2",
+    "sourceId": "19e43fa1-7f26-45f7-8941-d7e165a3322d",
+    "recordType": "funding_round",
+    "recordId": "a145ac11-db1f-4115-8e85-dd6fe2dc9753",
+    "field": "eventDate",
+    "supportType": "primary",
+    "notes": "Official private token sale announcement date."
+  },
+  {
+    "id": "d5ffe1f0-a363-4a9c-b083-f691c0142dfb",
+    "sourceId": "19e43fa1-7f26-45f7-8941-d7e165a3322d",
+    "recordType": "funding_round",
+    "recordId": "a145ac11-db1f-4115-8e85-dd6fe2dc9753",
+    "field": "roundType",
+    "supportType": "primary",
+    "notes": "Official announcement identifies a private token sale."
+  },
+  {
+    "id": "a8c24584-6508-423c-b2cb-df69d8e666a4",
+    "sourceId": "19e43fa1-7f26-45f7-8941-d7e165a3322d",
+    "recordType": "funding_round",
+    "recordId": "a145ac11-db1f-4115-8e85-dd6fe2dc9753",
+    "field": "originalAmount",
+    "supportType": "primary",
+    "notes": "Official announcement states $314,159,265."
+  },
+  {
+    "id": "04f530ca-7a0e-43f4-b979-ff07a29358e8",
+    "sourceId": "19e43fa1-7f26-45f7-8941-d7e165a3322d",
+    "recordType": "funding_round",
+    "recordId": "a145ac11-db1f-4115-8e85-dd6fe2dc9753",
+    "field": "amountUsdAtEvent",
+    "supportType": "primary",
+    "notes": "Official announcement states $314,159,265 in USD."
+  },
+  {
+    "id": "0e0dc63c-b022-4de1-859b-e8951f394913",
+    "sourceId": "19e43fa1-7f26-45f7-8941-d7e165a3322d",
+    "recordType": "funding_round",
+    "recordId": "a145ac11-db1f-4115-8e85-dd6fe2dc9753",
+    "field": "conversionMethod",
+    "supportType": "primary",
+    "notes": "No currency conversion is required for a USD-denominated disclosure."
+  },
+  {
+    "id": "47fa8558-b467-4f18-a043-a6ce38731ded",
+    "sourceId": "19e43fa1-7f26-45f7-8941-d7e165a3322d",
+    "recordType": "funding_round",
+    "recordId": "a145ac11-db1f-4115-8e85-dd6fe2dc9753",
+    "field": "includeInCapitalDeduction",
+    "supportType": "primary",
+    "notes": "Included as disclosed outside capital under the repository methodology."
+  },
+  {
+    "id": "11b3ed44-6ba3-4e79-b3fd-8a5e3df6a208",
+    "sourceId": "935ac89e-9053-4d2e-952e-06597c4680ba",
+    "recordType": "asset",
+    "recordId": "92ed3359-3d9a-4633-8588-4d871f7f0d13",
+    "field": "contractAddress",
+    "supportType": "corroborating",
+    "notes": "Explorer record corroborates the official UNI contract address."
+  },
+  {
+    "id": "2c0f5908-91b2-459b-8a31-2201b7096707",
+    "sourceId": "18b65df4-317a-4872-acfd-f95c25485874",
+    "recordType": "project",
+    "recordId": "1cf70f95-81d3-454f-b381-f8a4ce1b980b",
+    "field": "methodologyNotes",
+    "supportType": "corroborating",
+    "notes": "Official disclosure separates Solana Foundation token holdings from Solana Labs and founders."
+  }
+]
