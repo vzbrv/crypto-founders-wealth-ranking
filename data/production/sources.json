@@ -1,1 +1,172 @@
-[]
+[
+  {
+    "id": "f6f7c6be-f348-4332-b007-99cf90f37de7",
+    "title": "CoinGecko Ethereum coin record",
+    "url": "https://api.coingecko.com/api/v3/coins/ethereum?localization=false&tickers=false&market_data=false&community_data=false&developer_data=false&sparkline=false",
+    "publisher": "CoinGecko",
+    "sourceType": "other",
+    "accessedAt": "2026-07-30T16:00:00Z",
+    "description": "Direct CoinGecko record used to verify the ethereum provider identifier.",
+    "status": "active"
+  },
+  {
+    "id": "6aa8e2a1-20f8-4f70-91be-9c3576d16725",
+    "title": "CoinGecko Uniswap coin record",
+    "url": "https://api.coingecko.com/api/v3/coins/uniswap?localization=false&tickers=false&market_data=false&community_data=false&developer_data=false&sparkline=false",
+    "publisher": "CoinGecko",
+    "sourceType": "other",
+    "accessedAt": "2026-07-30T16:00:00Z",
+    "description": "Direct CoinGecko record used to verify the uniswap provider identifier and Ethereum contract.",
+    "status": "active"
+  },
+  {
+    "id": "917ce35f-aec5-41a9-8ac4-635babfbc6d1",
+    "title": "CoinGecko Solana coin record",
+    "url": "https://api.coingecko.com/api/v3/coins/solana?localization=false&tickers=false&market_data=false&community_data=false&developer_data=false&sparkline=false",
+    "publisher": "CoinGecko",
+    "sourceType": "other",
+    "accessedAt": "2026-07-30T16:00:00Z",
+    "description": "Direct CoinGecko record used to verify the solana provider identifier.",
+    "status": "active"
+  },
+  {
+    "id": "8eba8c50-ce98-4bf6-b711-d143fe137fe6",
+    "title": "The history of Ethereum",
+    "url": "https://ethereum.org/en/ethereum-history-founder-and-ownership/",
+    "publisher": "ethereum.org",
+    "sourceType": "official_website",
+    "accessedAt": "2026-07-30T16:00:00Z",
+    "description": "Official history identifying Ethereum's founders and describing the 2014 crowdsale and initial allocation.",
+    "status": "active"
+  },
+  {
+    "id": "c625652c-e5e1-43da-825a-ec898ef6b9c1",
+    "title": "Launching the Ether Sale",
+    "url": "https://blog.ethereum.org/2014/07/22/launching-the-ether-sale",
+    "publisher": "Ethereum Foundation Blog",
+    "sourceType": "official_blog",
+    "accessedAt": "2026-07-30T16:00:00Z",
+    "description": "Official launch announcement for Ethereum's public ether sale and sale mechanics.",
+    "status": "active"
+  },
+  {
+    "id": "d6b055f9-7526-4526-809f-ad07301d20ac",
+    "title": "Introduction to Ethereum",
+    "url": "https://ethereum.org/en/developers/docs/intro-to-ethereum/",
+    "publisher": "ethereum.org",
+    "sourceType": "official_documentation",
+    "accessedAt": "2026-07-30T16:00:00Z",
+    "description": "Official developer documentation identifying ether as Ethereum's native cryptocurrency and documenting its base unit.",
+    "status": "active"
+  },
+  {
+    "id": "26b0bdc8-584f-4033-8b60-9f07e67a3094",
+    "title": "A short history of Uniswap",
+    "url": "https://blog.uniswap.org/uniswap-history",
+    "publisher": "Uniswap Labs Blog",
+    "sourceType": "official_blog",
+    "accessedAt": "2026-07-30T16:00:00Z",
+    "description": "Official account of Hayden Adams creating and launching the Uniswap protocol.",
+    "status": "active"
+  },
+  {
+    "id": "574d2a96-c361-4322-80cd-04282cf95103",
+    "title": "Introducing UNI",
+    "url": "https://blog.uniswap.org/uni",
+    "publisher": "Uniswap Labs Blog",
+    "sourceType": "official_blog",
+    "accessedAt": "2026-07-30T16:00:00Z",
+    "description": "Official UNI launch, Ethereum contract address, supply, and allocation disclosure.",
+    "status": "active"
+  },
+  {
+    "id": "45ee80b9-77c7-4a49-ab93-050ee795d37b",
+    "title": "Uniswap Raises $11M in Series A Funding",
+    "url": "https://blog.uniswap.org/uniswap-raise",
+    "publisher": "Uniswap Labs Blog",
+    "sourceType": "press_release",
+    "accessedAt": "2026-07-30T16:00:00Z",
+    "description": "Official announcement of Uniswap Labs' $11 million Series A financing.",
+    "status": "active"
+  },
+  {
+    "id": "b910f91a-8ee4-4c52-82ff-9b0ec0ab82ec",
+    "title": "Bringing Web3 to Everyone",
+    "url": "https://blog.uniswap.org/bringing-web3-to-everyone",
+    "publisher": "Uniswap Labs Blog",
+    "sourceType": "press_release",
+    "accessedAt": "2026-07-30T16:00:00Z",
+    "description": "Official announcement of Uniswap Labs' $165 million Series B financing.",
+    "status": "active"
+  },
+  {
+    "id": "935ac89e-9053-4d2e-952e-06597c4680ba",
+    "title": "Uniswap token contract",
+    "url": "https://etherscan.io/address/0x1f9840a85d5aF1D1762F925BDADdC4201F984",
+    "publisher": "Etherscan",
+    "sourceType": "block_explorer",
+    "accessedAt": "2026-07-30T16:00:00Z",
+    "description": "Ethereum explorer record corroborating the UNI ERC-20 contract address and decimals.",
+    "status": "active"
+  },
+  {
+    "id": "18b65df4-317a-4872-acfd-f95c25485874",
+    "title": "Announcing the Formation of the Solana Foundation",
+    "url": "https://solana.com/news/announcing-the-formation-of-the-solana-foundation",
+    "publisher": "Solana",
+    "sourceType": "official_blog",
+    "accessedAt": "2026-07-30T16:00:00Z",
+    "description": "Official disclosure separating the Solana Foundation from Solana Labs and describing the Foundation's token grant.",
+    "status": "active"
+  },
+  {
+    "id": "6109f469-d730-4bc0-81ce-1971e82bff22",
+    "title": "Solana Summer",
+    "url": "https://solana.com/news/solana-summer",
+    "publisher": "Solana",
+    "sourceType": "official_blog",
+    "accessedAt": "2026-07-30T16:00:00Z",
+    "description": "Official project history describing the founding team and development of the Solana network.",
+    "status": "active"
+  },
+  {
+    "id": "820d3cb3-09db-4a36-96db-d3ca946df445",
+    "title": "Solana Will Reduce its Token Supply to Account for Market-Making Allocation",
+    "url": "https://solana.com/news/solana-will-reduce-its-token-supply-to-account-for-market-making-allocation",
+    "publisher": "Solana",
+    "sourceType": "official_blog",
+    "accessedAt": "2026-07-30T16:00:00Z",
+    "description": "Official disclosure distinguishing circulating supply and market-making allocation from other token categories.",
+    "status": "active"
+  },
+  {
+    "id": "19e43fa1-7f26-45f7-8941-d7e165a3322d",
+    "title": "Solana Labs Completes a $314.15M Private Token Sale",
+    "url": "https://solana.com/news/solana-labs-completes-a-314-15m-private-token-sale-led-by-andreessen-horowitz-and-polychain-capital",
+    "publisher": "Solana",
+    "sourceType": "press_release",
+    "accessedAt": "2026-07-30T16:00:00Z",
+    "description": "Official announcement of Solana Labs' $314,159,265 private token sale.",
+    "status": "active"
+  },
+  {
+    "id": "8a9eba69-a2f4-42c7-a76f-71132d60479b",
+    "title": "LAMPORTS_PER_SOL",
+    "url": "https://solana-foundation.github.io/solana-web3.js/variables/LAMPORTS_PER_SOL.html",
+    "publisher": "Solana Foundation",
+    "sourceType": "official_documentation",
+    "accessedAt": "2026-07-30T16:00:00Z",
+    "description": "Official Solana Web3.js documentation for the native SOL unit and nine-decimal lamport conversion.",
+    "status": "active"
+  },
+  {
+    "id": "755a3a1f-9e04-4a66-8468-35defcb5b168",
+    "title": "Crypto Founders Wealth Ranking Methodology",
+    "url": "https://github.com/vzbrv/crypto-founders-wealth-ranking/blob/main/docs/methodology.md",
+    "publisher": "Crypto Founders Wealth Ranking",
+    "sourceType": "official_documentation",
+    "accessedAt": "2026-07-30T16:00:00Z",
+    "description": "Repository methodology governing founding-unit aggregation, confidence, missing data, and ranking eligibility.",
+    "status": "active"
+  }
+]

@@ -1,1 +1,54 @@
-[]
+[
+  {
+    "id": "b4270875-5e3b-4dcd-bec4-c4c519c08c02",
+    "projectId": "cb61ccf6-26ba-4716-8cac-f5604546b3e0",
+    "eventDate": "2014-07-22",
+    "roundType": "public",
+    "includeInCapitalDeduction": false,
+    "status": "active",
+    "reviewedAt": "2026-07-30T16:00:00Z",
+    "notes": "Ethereum.org reports approximately 31,000 BTC raised and an approximately $18 million contemporaneous value. The USD amount is intentionally unset and the event is excluded because the reviewed primary source does not provide an exact historical USD value. Unknown is not treated as zero."
+  },
+  {
+    "id": "c9959a25-035a-48e1-b681-5f3fc616b09c",
+    "projectId": "955b4b59-1908-484c-b13e-95740efb38d1",
+    "eventDate": "2020-08-06",
+    "roundType": "other",
+    "originalAmount": "11000000",
+    "originalCurrency": "USD",
+    "amountUsdAtEvent": "11000000",
+    "conversionMethod": "Already denominated in USD in the official Series A announcement.",
+    "includeInCapitalDeduction": true,
+    "status": "active",
+    "reviewedAt": "2026-07-30T16:00:00Z",
+    "notes": "Uniswap Labs Series A. Included as disclosed outside company capital; this is not attributed to Hayden Adams personally."
+  },
+  {
+    "id": "507ebb8d-d0e0-443f-90c3-91a45ad1a9c4",
+    "projectId": "955b4b59-1908-484c-b13e-95740efb38d1",
+    "eventDate": "2022-10-13",
+    "roundType": "other",
+    "originalAmount": "165000000",
+    "originalCurrency": "USD",
+    "amountUsdAtEvent": "165000000",
+    "conversionMethod": "Already denominated in USD in the official Series B announcement.",
+    "includeInCapitalDeduction": true,
+    "status": "active",
+    "reviewedAt": "2026-07-30T16:00:00Z",
+    "notes": "Uniswap Labs Series B. Included as disclosed outside company capital; this is not attributed to Hayden Adams personally."
+  },
+  {
+    "id": "a145ac11-db1f-4115-8e85-dd6fe2dc9753",
+    "projectId": "1cf70f95-81d3-454f-b381-f8a4ce1b980b",
+    "eventDate": "2021-06-09",
+    "roundType": "private",
+    "originalAmount": "314159265",
+    "originalCurrency": "USD",
+    "amountUsdAtEvent": "314159265",
+    "conversionMethod": "Already denominated in USD in the official private token sale announcement.",
+    "includeInCapitalDeduction": true,
+    "status": "active",
+    "reviewedAt": "2026-07-30T16:00:00Z",
+    "notes": "Solana Labs private token sale. Included as disclosed outside capital; it is not attributed to any founder personally. Earlier funding completeness remains unresolved."
+  }
+]

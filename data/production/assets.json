@@ -1,1 +1,45 @@
-[]
+[
+  {
+    "id": "a3f2760a-1c73-4750-aca9-7f7eb7b34ec5",
+    "projectId": "cb61ccf6-26ba-4716-8cac-f5604546b3e0",
+    "assetType": "native",
+    "symbol": "ETH",
+    "name": "Ether",
+    "decimals": 18,
+    "chainCode": "ethereum",
+    "providerIds": {
+      "coingecko": "ethereum"
+    },
+    "isPrimary": true,
+    "isActive": true
+  },
+  {
+    "id": "92ed3359-3d9a-4633-8588-4d871f7f0d13",
+    "projectId": "955b4b59-1908-484c-b13e-95740efb38d1",
+    "assetType": "token",
+    "symbol": "UNI",
+    "name": "Uniswap",
+    "decimals": 18,
+    "chainCode": "ethereum",
+    "contractAddress": "0x1f9840a85d5aF1D1762F925BDADdC4201F984",
+    "providerIds": {
+      "coingecko": "uniswap"
+    },
+    "isPrimary": true,
+    "isActive": true
+  },
+  {
+    "id": "6ca70931-f1bb-4a6c-8df9-d18950590f0b",
+    "projectId": "1cf70f95-81d3-454f-b381-f8a4ce1b980b",
+    "assetType": "native",
+    "symbol": "SOL",
+    "name": "Solana",
+    "decimals": 9,
+    "chainCode": "solana",
+    "providerIds": {
+      "coingecko": "solana"
+    },
+    "isPrimary": true,
+    "isActive": true
+  }
+]

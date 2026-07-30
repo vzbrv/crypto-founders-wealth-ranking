@@ -1,1 +1,50 @@
-[]
+[
+  {
+    "id": "5c543047-6a47-41ea-89e6-463f8514d2ec",
+    "slug": "ethereum-founding-team",
+    "displayName": "Ethereum Founding Team",
+    "description": "The eight-person founding group documented by Ethereum.org.",
+    "entityType": "team",
+    "status": "active",
+    "researchReviewedAt": "2026-07-30T16:00:00Z",
+    "projectLinks": [
+      {
+        "projectId": "cb61ccf6-26ba-4716-8cac-f5604546b3e0",
+        "attributionFraction": "1",
+        "attributionMethod": "team_collective"
+      }
+    ]
+  },
+  {
+    "id": "bab427e3-77d0-42b6-b1f5-7ee2a5320bfe",
+    "slug": "hayden-adams",
+    "displayName": "Hayden Adams",
+    "description": "Founder and original creator of the Uniswap protocol.",
+    "entityType": "individual",
+    "status": "active",
+    "researchReviewedAt": "2026-07-30T16:00:00Z",
+    "projectLinks": [
+      {
+        "projectId": "955b4b59-1908-484c-b13e-95740efb38d1",
+        "attributionFraction": "1",
+        "attributionMethod": "equal_split"
+      }
+    ]
+  },
+  {
+    "id": "b4f2bf31-00fe-4b12-b513-eb9678150871",
+    "slug": "solana-founding-team",
+    "displayName": "Solana Founding Team",
+    "description": "The founding group documented in Solana's official history.",
+    "entityType": "team",
+    "status": "active",
+    "researchReviewedAt": "2026-07-30T16:00:00Z",
+    "projectLinks": [
+      {
+        "projectId": "1cf70f95-81d3-454f-b381-f8a4ce1b980b",
+        "attributionFraction": "1",
+        "attributionMethod": "team_collective"
+      }
+    ]
+  }
+]
