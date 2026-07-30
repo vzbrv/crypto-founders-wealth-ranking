@@ -1,11 +1,11 @@
 # Curated data workflow
 
-Curated research will be repository-managed, reviewed in pull requests, and validated before build.
+Curated research is repository-managed, reviewed in pull requests, and validated before build.
 
 The repository layout is `data/projects.json`, `data/founding-units.json`, `data/assets.json`, `data/sources.json`, `data/tracked-wallets.json`, `data/funding-rounds.json`, and `data/record-sources.json`.
 
-Phase 1 provides `pnpm validate:data`; it also runs automatically before every build and in CI. Phase 2 adds idempotent `pnpm sync:curated-data` after the Supabase schema exists. Sync will validate first and use privileged credentials only outside the browser.
+`pnpm validate:data` validates synthetic fixtures. `CURATED_DATA_DIR=data/production pnpm validate:production-data` validates production research. `pnpm sync:curated-data` validates first and uses privileged credentials only outside the browser.
 
-Phase 1 includes Zod schemas and synthetic example records for projects, founding units, assets, sources, wallets, funding rounds, and claim-level source links. Validation rejects missing sources, broken references, malformed values, invalid chain addresses, attribution errors, missing primary assets, included funding without USD-at-event, and duplicate IDs. No real founder or wealth data belongs in Phase 1.
+Zod schemas cover projects, founding units, assets, sources, wallets, funding rounds, and claim-level source links. Validation rejects missing evidence, broken references, malformed values, invalid chain addresses, attribution errors, multiple active canonical units without an explicit allocation, incomplete reviews, reviewed-zero records without evidence, and duplicate wallet or funding deductions.
 
-Future changes must preserve claim-level provenance, distinguish unknown from zero, record review timestamps, and keep evidence confidence separate from monetary calculations.
+Every project has separate wallet and funding reviews. Every wallet and funding event has its own reviewer, timestamp, notes, evidence, and deduplication key. Unknown values stay null. See [schema.md](schema.md).

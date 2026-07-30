@@ -9,6 +9,10 @@
     "amountUsdAtEvent": "2500000",
     "conversionMethod": "Already denominated in USD.",
     "includeInCapitalDeduction": true,
+    "deduplicationKey": "synthetic-horizon:2025-01-10:seed:2500000-usd",
+    "reviewStatus": "approved_sufficient",
+    "reviewer": "Synthetic fixture reviewer",
+    "evidenceSourceIds": ["44444444-4444-4444-8444-444444444444"],
     "status": "active",
     "reviewedAt": "2026-07-27T12:00:00Z",
     "notes": "Synthetic funding event for validation only."

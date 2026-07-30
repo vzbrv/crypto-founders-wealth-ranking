@@ -11,7 +11,13 @@
     "classification": "team",
     "ownershipConfidence": "high",
     "circulatingInclusionFraction": "0.75",
+    "balanceIncludedInCirculatingSupply": true,
     "affectsScore": true,
+    "deduplicationKey": "ethereum:0x2222222222222222222222222222222222222222:33333333-3333-4333-8333-333333333333",
+    "reviewStatus": "approved_sufficient",
+    "reviewer": "Synthetic fixture reviewer",
+    "reviewedAt": "2026-07-27T12:00:00Z",
+    "evidenceSourceIds": ["44444444-4444-4444-8444-444444444444"],
     "status": "active",
     "researchReviewedAt": "2026-07-27T12:00:00Z",
     "notes": "Fictional address and balance scope for validation only."

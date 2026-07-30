@@ -49,6 +49,12 @@ DATABASE_URL="$DATABASE_URL" CURATED_DATA_DIR=data/production pnpm sync:curated-
 
 The sync is transactional and idempotent: stable record IDs are upserted and rerunning the command does not duplicate rows.
 
+## Methodology-integrity migration
+
+`202607300014_methodology_integrity.sql` is a forward-only corrective migration. It adds review, evidence, deduplication, eligibility, and nullable-ranking fields; invalidates legacy ranks; and replaces public calculation views without weakening row-level security. Review the generated diff and take the normal database backup before applying it. This repository change does not authorize applying it to hosted Supabase or deploying Cloudflare.
+
+After applying it in an authorized release, sync reviewed production data, run the verification commands below, and confirm the public leaderboard contains 0 ranked and 3 research units. If verification fails, stop publication and ship a new corrective migration; do not edit applied migration history.
+
 ## GitHub Actions
 
 The manually dispatched `deploy-supabase.yml` workflow validates, tests, builds, applies migrations, configures secrets, deploys all four functions, and synchronizes production data. The separate `Verify production` workflow is read-only except for its deliberate anonymous-write rejection check.

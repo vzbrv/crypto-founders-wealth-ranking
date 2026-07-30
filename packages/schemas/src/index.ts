@@ -34,6 +34,39 @@ export const fractionSchema = z
 
 const statusSchema = z.enum(["active", "hidden", "research"]);
 const confidenceSchema = z.enum(["high", "medium", "low", "insufficient"]);
+export const reviewStatusSchema = z.enum([
+  "not_reviewed",
+  "in_progress",
+  "approved_sufficient",
+  "reviewed_insufficient",
+]);
+
+const reviewSchema = z
+  .strictObject({
+    status: reviewStatusSchema,
+    reviewer: z.string().min(1).nullable(),
+    reviewedAt: dateTimeSchema.nullable(),
+    notes: z.string().min(1).nullable(),
+    evidenceSourceIds: z.array(uuidSchema),
+  })
+  .superRefine((review, context) => {
+    if (
+      ["approved_sufficient", "reviewed_insufficient"].includes(
+        review.status,
+      ) &&
+      (review.reviewer === null ||
+        review.reviewedAt === null ||
+        review.notes === null ||
+        review.evidenceSourceIds.length === 0)
+    ) {
+      context.addIssue({
+        code: "custom",
+        message:
+          "A completed review requires reviewer, timestamp, notes, and evidence",
+        path: ["status"],
+      });
+    }
+  });
 
 export const projectSchema = z.strictObject({
   id: uuidSchema,
@@ -45,6 +78,8 @@ export const projectSchema = z.strictObject({
   calculationCategory: z.enum(["liquid_token", "ineligible"]),
   status: statusSchema,
   confidenceLevel: confidenceSchema,
+  walletReview: reviewSchema,
+  fundingReview: reviewSchema,
   methodologyNotes: z.string().min(1),
   iqWikiSlug: z.string().min(1).optional(),
   websiteUrl: urlSchema,
@@ -120,7 +155,13 @@ export const walletSchema = z
     ]),
     ownershipConfidence: z.enum(["high", "medium", "low", "disputed"]),
     circulatingInclusionFraction: fractionSchema.nullable(),
+    balanceIncludedInCirculatingSupply: z.boolean().nullable(),
     affectsScore: z.boolean(),
+    deduplicationKey: z.string().min(1),
+    reviewStatus: reviewStatusSchema,
+    reviewer: z.string().min(1).nullable(),
+    reviewedAt: dateTimeSchema.nullable(),
+    evidenceSourceIds: z.array(uuidSchema),
     status: statusSchema,
     researchReviewedAt: dateTimeSchema,
     notes: z.string().min(1).optional(),
@@ -156,6 +197,44 @@ export const walletSchema = z
         path: ["circulatingInclusionFraction"],
       });
     }
+    if (
+      wallet.affectsScore &&
+      wallet.balanceIncludedInCirculatingSupply === null
+    ) {
+      context.addIssue({
+        code: "custom",
+        message:
+          "A score-affecting wallet requires circulation inclusion evidence",
+        path: ["balanceIncludedInCirculatingSupply"],
+      });
+    }
+    if (
+      wallet.reviewStatus === "approved_sufficient" &&
+      (wallet.reviewer === null ||
+        wallet.reviewedAt === null ||
+        wallet.evidenceSourceIds.length === 0)
+    ) {
+      context.addIssue({
+        code: "custom",
+        message:
+          "An approved wallet requires reviewer, timestamp, and evidence",
+        path: ["reviewStatus"],
+      });
+    }
+    if (
+      wallet.circulatingInclusionFraction === "0" &&
+      (wallet.reviewer === null ||
+        wallet.reviewedAt === null ||
+        wallet.notes === undefined ||
+        wallet.evidenceSourceIds.length === 0)
+    ) {
+      context.addIssue({
+        code: "custom",
+        message:
+          "A reviewed zero wallet deduction requires reviewer, timestamp, notes, and evidence",
+        path: ["circulatingInclusionFraction"],
+      });
+    }
   });
 
 export const fundingRoundSchema = z
@@ -176,6 +255,10 @@ export const fundingRoundSchema = z
     amountUsdAtEvent: decimalSchema.optional(),
     conversionMethod: z.string().min(1).optional(),
     includeInCapitalDeduction: z.boolean(),
+    deduplicationKey: z.string().min(1),
+    reviewStatus: reviewStatusSchema,
+    reviewer: z.string().min(1).nullable(),
+    evidenceSourceIds: z.array(uuidSchema),
     status: statusSchema,
     reviewedAt: dateTimeSchema,
     notes: z.string().min(1).optional(),
@@ -188,6 +271,29 @@ export const fundingRoundSchema = z
       context.addIssue({
         code: "custom",
         message: "Included funding requires amountUsdAtEvent",
+        path: ["amountUsdAtEvent"],
+      });
+    }
+    if (
+      round.reviewStatus === "approved_sufficient" &&
+      (round.reviewer === null || round.evidenceSourceIds.length === 0)
+    ) {
+      context.addIssue({
+        code: "custom",
+        message: "An approved funding event requires reviewer and evidence",
+        path: ["reviewStatus"],
+      });
+    }
+    if (
+      round.amountUsdAtEvent === "0" &&
+      (round.reviewer === null ||
+        round.notes === undefined ||
+        round.evidenceSourceIds.length === 0)
+    ) {
+      context.addIssue({
+        code: "custom",
+        message:
+          "A reviewed zero funding amount requires reviewer, timestamp, notes, and evidence",
         path: ["amountUsdAtEvent"],
       });
     }
@@ -318,6 +424,20 @@ export const curatedDataBundleSchema = curatedDataBundleBaseSchema.superRefine(
           });
       }
     }
+    for (const project of bundle.projects) {
+      for (const [reviewName, review] of [
+        ["walletReview", project.walletReview],
+        ["fundingReview", project.fundingReview],
+      ] as const) {
+        for (const sourceId of review.evidenceSourceIds) {
+          if (!sourceIds.has(sourceId))
+            context.addIssue({
+              code: "custom",
+              message: `Missing source ${sourceId} referenced by project ${project.id} ${reviewName}`,
+            });
+        }
+      }
+    }
     for (const asset of bundle.assets) {
       if (!projectIds.has(asset.projectId))
         context.addIssue({
@@ -353,6 +473,13 @@ export const curatedDataBundleSchema = curatedDataBundleBaseSchema.superRefine(
             message: `Wallet ${wallet.id} references an asset from another project`,
           });
       }
+      for (const sourceId of wallet.evidenceSourceIds) {
+        if (!sourceIds.has(sourceId))
+          context.addIssue({
+            code: "custom",
+            message: `Missing source ${sourceId} referenced by wallet ${wallet.id}`,
+          });
+      }
     }
     for (const round of bundle.fundingRounds) {
       if (!projectIds.has(round.projectId))
@@ -360,6 +487,13 @@ export const curatedDataBundleSchema = curatedDataBundleBaseSchema.superRefine(
           code: "custom",
           message: `Missing project ${round.projectId} referenced by funding round ${round.id}`,
         });
+      for (const sourceId of round.evidenceSourceIds) {
+        if (!sourceIds.has(sourceId))
+          context.addIssue({
+            code: "custom",
+            message: `Missing source ${sourceId} referenced by funding round ${round.id}`,
+          });
+      }
     }
     for (const project of bundle.projects) {
       const primaryAssets = bundle.assets.filter(
@@ -390,6 +524,50 @@ export const curatedDataBundleSchema = curatedDataBundleBaseSchema.superRefine(
           code: "custom",
           message: `Attribution fractions exceed one for project ${projectId}`,
         });
+    }
+
+    for (const project of bundle.projects.filter(
+      ({ status }) => status === "active",
+    )) {
+      const activeLinks = bundle.foundingUnits
+        .filter(({ status }) => status === "active")
+        .flatMap((unit) =>
+          unit.projectLinks
+            .filter(({ projectId }) => projectId === project.id)
+            .map((link) => ({ unit, link })),
+        );
+      const documentedAllocation =
+        activeLinks.length > 1 &&
+        activeLinks.every(
+          ({ link }) => link.attributionMethod === "documented_split",
+        ) &&
+        Math.abs(
+          activeLinks.reduce(
+            (total, { link }) => total + Number(link.attributionFraction),
+            0,
+          ) - 1,
+        ) <= Number.EPSILON;
+      if (activeLinks.length !== 1 && !documentedAllocation)
+        context.addIssue({
+          code: "custom",
+          message: `Active project ${project.id} must have one canonical founding unit or an explicit documented allocation`,
+        });
+    }
+
+    for (const [kind, records] of [
+      ["wallet", bundle.wallets],
+      ["funding round", bundle.fundingRounds],
+    ] as const) {
+      const deduplicationKeys = new Set<string>();
+      for (const record of records) {
+        const key = `${record.projectId}:${record.deduplicationKey}`;
+        if (deduplicationKeys.has(key))
+          context.addIssue({
+            code: "custom",
+            message: `Duplicate ${kind} deduplication key ${key}`,
+          });
+        deduplicationKeys.add(key);
+      }
     }
 
     const requiredSourceRecords = [

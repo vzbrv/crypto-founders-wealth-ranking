@@ -5,10 +5,24 @@ export interface ProjectRecord {
   symbol: string | null;
   description: string;
   confidenceLevel: string;
+  walletReview: ReviewRecord;
+  fundingReview: ReviewRecord;
   methodologyNotes: string;
   websiteUrl: string;
   researchReviewedAt: string;
   status: string;
+}
+
+export interface ReviewRecord {
+  status:
+    | "not_reviewed"
+    | "in_progress"
+    | "approved_sufficient"
+    | "reviewed_insufficient";
+  reviewer: string | null;
+  reviewedAt: string | null;
+  notes: string | null;
+  evidenceSourceIds: string[];
 }
 
 export interface FoundingUnitRecord {
@@ -45,6 +59,12 @@ export interface WalletRecord {
   ownershipConfidence: string;
   circulatingInclusionFraction: string | null;
   affectsScore: boolean;
+  balanceIncludedInCirculatingSupply: boolean | null;
+  deduplicationKey: string;
+  reviewStatus: ReviewRecord["status"];
+  reviewer: string | null;
+  reviewedAt: string | null;
+  evidenceSourceIds: string[];
   researchReviewedAt: string;
   notes: string;
 }
@@ -56,9 +76,13 @@ export interface FundingRoundRecord {
   roundType: string;
   originalAmount?: string;
   originalCurrency?: string;
-  amountUsdAtEvent: string;
+  amountUsdAtEvent?: string;
   conversionMethod?: string;
   includeInCapitalDeduction: boolean;
+  deduplicationKey: string;
+  reviewStatus: ReviewRecord["status"];
+  reviewer: string | null;
+  evidenceSourceIds: string[];
   reviewedAt: string;
   notes: string;
 }
@@ -100,7 +124,10 @@ export function calculateScoreBreakdown(input: {
   excludedValueUsd: number;
   capitalRaisedUsd: number;
 }) {
-  return input.marketCapUsd - input.excludedValueUsd - input.capitalRaisedUsd;
+  return Math.max(
+    0,
+    input.marketCapUsd - input.excludedValueUsd - input.capitalRaisedUsd,
+  );
 }
 
 export function explorerUrl(chainCode: string, address: string): string | null {
