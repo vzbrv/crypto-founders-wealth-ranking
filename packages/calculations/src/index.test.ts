@@ -129,6 +129,33 @@ describe("wallet and supply deductions", () => {
       ),
     ).toThrow(CalculationInputError);
   });
+
+  it("never deducts a low-confidence score-affecting wallet", () => {
+    expect(
+      calculateDeductibleWalletBalance(
+        wallet({ walletId: "low-confidence", ownershipConfidence: "low" }),
+      ),
+    ).toMatchObject({
+      deductibleBalance: null,
+      complete: false,
+      warnings: [
+        { code: "WALLET_ATTRIBUTION_LOW_CONFIDENCE" },
+        { code: "WALLET_ATTRIBUTION_INELIGIBLE" },
+      ],
+    });
+  });
+
+  it("does not double-deduct balances excluded from circulating supply", () => {
+    expect(
+      calculateDeductibleWalletBalance(
+        wallet({
+          walletId: "locked-wallet",
+          normalizedBalance: "42",
+          balanceIncludedInCirculatingSupply: false,
+        }),
+      ),
+    ).toMatchObject({ deductibleBalance: "0", complete: true });
+  });
 });
 
 describe("qualifying capital", () => {

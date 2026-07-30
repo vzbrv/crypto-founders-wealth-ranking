@@ -435,7 +435,7 @@ section {
 }
 .research-card {
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: 1rem;
   min-height: 13rem;
   padding: 1.35rem;
@@ -458,6 +458,24 @@ section {
   color: var(--muted);
   font-size: 0.88rem;
   line-height: 1.5;
+}
+.research-link {
+  margin-top: 1.25rem;
+  color: var(--accent);
+  font-weight: 750;
+}
+.canonical-research {
+  margin-top: 3rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--border);
+}
+.canonical-research > h3 {
+  font-family: Georgia, serif;
+  font-size: 1.75rem;
+  font-weight: 500;
+}
+.research-universe-table {
+  min-width: 90rem;
 }
 
 .methodology {
@@ -800,6 +818,16 @@ footer p:first-child {
   nav > div {
     gap: 0.8rem;
     font-size: 0.75rem;
+  }
+  .site-nav {
+    align-content: center;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    padding-block: 0.75rem;
+  }
+  .nav-links {
+    width: 100%;
+    flex-wrap: wrap;
   }
   h1 {
     font-size: clamp(3rem, 15vw, 5.5rem);

@@ -96,6 +96,26 @@ export function calculateDeductibleWalletBalance(
   }
 
   if (
+    wallet.ownershipConfidence === "low" ||
+    wallet.ownershipConfidence === "disputed"
+  ) {
+    warnings.push(
+      warning(
+        "WALLET_ATTRIBUTION_INELIGIBLE",
+        "blocking",
+        "Low-confidence or disputed attribution cannot affect a published score.",
+        [wallet.walletId],
+      ),
+    );
+    return {
+      walletId: wallet.walletId,
+      deductibleBalance: null,
+      complete: false,
+      warnings,
+    };
+  }
+
+  if (
     wallet.reviewStatus !== "approved_sufficient" ||
     !wallet.evidenceComplete
   ) {

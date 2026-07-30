@@ -3,15 +3,20 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "exports": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./research": "./src/research.ts"
+  },
   "dependencies": {
-    "@crypto-founders/schemas": "workspace:*"
+    "@crypto-founders/schemas": "workspace:*",
+    "decimal.js": "^10.6.0"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "lint": "eslint src",
     "validate": "tsx src/cli.ts",
     "validate:production": "tsx src/production-cli.ts",
+    "validate:research": "node --import tsx src/research-cli.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run src --passWithNoTests"
   }

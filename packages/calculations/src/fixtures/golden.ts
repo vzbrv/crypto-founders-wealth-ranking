@@ -137,7 +137,7 @@ export const PROJECT_SCORE_GOLDEN_FIXTURES: ProjectScoreGoldenFixture[] = [
       scoreUsd: null,
       warningCodes: [
         "WALLET_ATTRIBUTION_LOW_CONFIDENCE",
-        "UNKNOWN_CIRCULATION_TREATMENT",
+        "WALLET_ATTRIBUTION_INELIGIBLE",
       ],
     },
   },

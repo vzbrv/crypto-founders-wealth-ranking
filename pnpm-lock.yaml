@@ -52,6 +52,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@crypto-founders/curated-data':
+        specifier: workspace:*
+        version: link:../../packages/curated-data
       '@crypto-founders/observability':
         specifier: workspace:*
         version: link:../../packages/observability
@@ -91,6 +94,9 @@ importers:
       '@crypto-founders/schemas':
         specifier: workspace:*
         version: link:../schemas
+      decimal.js:
+        specifier: ^10.6.0
+        version: 10.6.0
 
   packages/database:
     dependencies:
