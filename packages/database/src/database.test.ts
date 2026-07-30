@@ -50,6 +50,10 @@ const methodologyIntegrityMigrationUrl = new URL(
   "../../../supabase/migrations/202607300014_methodology_integrity.sql",
   import.meta.url,
 );
+const scalarSafeReviewEvidenceMigrationUrl = new URL(
+  "../../../supabase/migrations/202607300015_scalar_safe_review_evidence.sql",
+  import.meta.url,
+);
 const seedUrl = new URL(
   "../../../supabase/tests/seed.synthetic.sql",
   import.meta.url,
@@ -65,6 +69,7 @@ const migrationSql = [
   await readFile(productionReadContractMigrationUrl, "utf8"),
   await readFile(serviceRoleReadsMigrationUrl, "utf8"),
   await readFile(methodologyIntegrityMigrationUrl, "utf8"),
+  await readFile(scalarSafeReviewEvidenceMigrationUrl, "utf8"),
 ].join("\n");
 const seedSql = await readFile(seedUrl, "utf8");
 const productionDataDirectory = fileURLToPath(
@@ -275,6 +280,45 @@ describe("Phase 3 database", () => {
         reviewed_confidence: "insufficient",
         wallet_review_status: "reviewed_insufficient",
         funding_review_status: "reviewed_insufficient",
+      },
+    ]);
+  });
+
+  it("treats scalar review evidence as incomplete during ranking", async () => {
+    const database = await createDatabase(true);
+
+    await database.exec(`
+      update projects
+      set wallet_review_status = 'not_reviewed',
+          wallet_review_evidence_source_ids = '"legacy-wallet-evidence"'::jsonb,
+          funding_review_status = 'not_reviewed',
+          funding_review_evidence_source_ids = '42'::jsonb;
+
+      update tracked_wallets
+      set review_status = 'not_reviewed',
+          evidence_source_ids = 'true'::jsonb;
+
+      update funding_rounds
+      set review_status = 'not_reviewed',
+          evidence_source_ids = 'null'::jsonb;
+    `);
+
+    await database.query(`select recalculate_rankings($1)`, [
+      "scalar-jsonb-regression",
+    ]);
+
+    const result = await database.query<{
+      eligibility_status: string;
+      score_usd: string | null;
+    }>(`
+      select eligibility_status, score_usd::text
+      from current_project_scores
+    `);
+
+    expect(result.rows).toEqual([
+      {
+        eligibility_status: "research_in_progress",
+        score_usd: null,
       },
     ]);
   });
