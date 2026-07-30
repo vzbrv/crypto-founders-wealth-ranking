@@ -38,6 +38,10 @@ const productionReadContractMigrationUrl = new URL(
   "../../../supabase/migrations/202607280011_production_read_contract.sql",
   import.meta.url,
 );
+const serviceRoleReadsMigrationUrl = new URL(
+  "../../../supabase/migrations/202607290013_service_role_edge_function_reads.sql",
+  import.meta.url,
+);
 const seedUrl = new URL(
   "../../../supabase/tests/seed.synthetic.sql",
   import.meta.url,
@@ -51,6 +55,7 @@ const migrationSql = [
   await readFile(phaseEightMigrationUrl, "utf8"),
   await readFile(phaseTenMigrationUrl, "utf8"),
   await readFile(productionReadContractMigrationUrl, "utf8"),
+  await readFile(serviceRoleReadsMigrationUrl, "utf8"),
 ].join("\n");
 const seedSql = await readFile(seedUrl, "utf8");
 
@@ -89,9 +94,13 @@ const expectedViews = [
 
 const databases: PGlite[] = [];
 
-async function createDatabase(seed = false): Promise<PGlite> {
+async function createDatabase(
+  seed = false,
+  withServiceRole = false,
+): Promise<PGlite> {
   const database = new PGlite();
   databases.push(database);
+  if (withServiceRole) await database.exec("create role service_role");
   await database.exec(migrationSql);
   if (seed) await database.exec(seedSql);
   return database;
@@ -170,8 +179,8 @@ describe("Phase 3 database", () => {
     });
   });
 
-  it("allows anonymous reads of active data but blocks hidden data and writes", async () => {
-    const database = await createDatabase(true);
+  it("enforces provider health read and write privileges", async () => {
+    const database = await createDatabase(true, true);
     await database.exec(`
       insert into projects (
         id, slug, name, description, project_type, calculation_category,
@@ -225,6 +234,19 @@ describe("Phase 3 database", () => {
           `insert into provider_health (provider, status) values ('public', 'healthy')`,
         ),
       ).rejects.toThrow();
+    } finally {
+      await database.exec("reset role");
+    }
+
+    await database.exec("set role service_role");
+    try {
+      const providerStatus = await database.query<{
+        provider: string;
+        status: string;
+      }>("select provider, status from public_provider_status");
+      expect(providerStatus.rows).toEqual([
+        { provider: "synthetic-provider", status: "failed" },
+      ]);
     } finally {
       await database.exec("reset role");
     }
