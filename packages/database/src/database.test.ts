@@ -143,6 +143,14 @@ afterEach(async () => {
 });
 
 describe("Phase 3 database", () => {
+  it("keeps serialized JSON parameters text-typed before JSONB casts", async () => {
+    const statements = createCuratedImportStatements(await loadCuratedData());
+    const sql = statements.map(({ text }) => text).join("\n");
+
+    expect(sql.match(/\$\d+::text::jsonb/g)).toHaveLength(5);
+    expect(sql).not.toMatch(/\$\d+::jsonb/);
+  });
+
   it("migrates an empty database with every required table and view", async () => {
     const database = await createDatabase();
     const tables = await database.query<{ table_name: string }>(
