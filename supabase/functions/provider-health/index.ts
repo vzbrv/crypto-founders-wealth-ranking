@@ -56,7 +56,7 @@ Deno.serve(async (request) => {
     });
     if (!response.ok) {
       log("error", "health_read_failed", {
-        status: response.status,
+        upstreamStatus: response.status,
         durationMs: Date.now() - startedAt,
       });
       return json({ error: "Provider health read failed" }, 502);
