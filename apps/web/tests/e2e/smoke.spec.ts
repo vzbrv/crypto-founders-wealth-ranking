@@ -263,7 +263,7 @@ test("shows a reproducible project score and its evidence", async ({
       contentType: "application/json",
       body: JSON.stringify([
         {
-          wallet_id: "55555555-5555-4555-8555-555555555555",
+          id: "55555555-5555-4555-8555-555555555555",
           balance: "100000000",
           balance_observed_at: now,
           balance_provider: "mock provider",
