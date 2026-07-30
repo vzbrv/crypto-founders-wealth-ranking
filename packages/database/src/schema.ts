@@ -186,6 +186,9 @@ export const trackedWallets = pgTable("tracked_wallets", {
   balanceIncludedInCirculatingSupply: boolean(
     "balance_included_in_circulating_supply",
   ),
+  circulatingInclusionExplanation: text(
+    "circulating_inclusion_explanation",
+  ),
   affectsScore: boolean("affects_score").notNull().default(true),
   deduplicationKey: text("deduplication_key").notNull(),
   reviewStatus: text("review_status").notNull(),
@@ -255,10 +258,13 @@ export const fundingRounds = pgTable("funding_rounds", {
   originalAmount: numeric("original_amount", { precision: 38, scale: 18 }),
   originalCurrency: text("original_currency"),
   amountUsdAtEvent: numeric("amount_usd_at_event", { precision: 38, scale: 8 }),
+  amountStatus: text("amount_status").notNull(),
   usdConversionMethod: text("usd_conversion_method"),
+  usdConversionDate: date("usd_conversion_date"),
   includeInCapitalDeduction: boolean("include_in_capital_deduction")
     .notNull()
     .default(true),
+  inclusionReason: text("inclusion_reason").notNull(),
   deduplicationKey: text("deduplication_key").notNull(),
   reviewStatus: text("review_status").notNull(),
   reviewer: text(),

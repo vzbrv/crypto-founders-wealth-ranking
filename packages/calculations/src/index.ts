@@ -28,6 +28,7 @@ import {
   type QualifyingCapitalResult,
   type RankingInput,
   type RankingResult,
+  type ReviewStatus,
 } from "./types.js";
 
 export * from "./types.js";
@@ -57,13 +58,6 @@ const deduplicateWarnings = (
 export function calculateDeductibleWalletBalance(
   wallet: ProjectWalletInput,
 ): DeductibleWalletBalanceResult {
-  const balance = parseDecimal(
-    wallet.normalizedBalance,
-    `wallet ${wallet.walletId} balance`,
-    {
-      minimum: "0",
-    },
-  );
   const warnings: CalculationWarning[] = [];
 
   if (wallet.ownershipConfidence === "low") {
@@ -164,6 +158,29 @@ export function calculateDeductibleWalletBalance(
     };
   }
 
+  if (wallet.normalizedBalance === null) {
+    warnings.push(
+      warning(
+        "WALLET_BALANCE_MISSING",
+        "blocking",
+        "A reviewed score-affecting wallet is missing a balance observation.",
+        [wallet.walletId],
+      ),
+    );
+    return {
+      walletId: wallet.walletId,
+      deductibleBalance: null,
+      complete: false,
+      warnings,
+    };
+  }
+
+  const balance = parseDecimal(
+    wallet.normalizedBalance,
+    `wallet ${wallet.walletId} balance`,
+    { minimum: "0" },
+  );
+
   const fraction = parseDecimal(
     wallet.circulatingInclusionFraction,
     `wallet ${wallet.walletId} circulation fraction`,
@@ -180,6 +197,7 @@ export function calculateDeductibleWalletBalance(
 
 export function calculateExcludedSupply(
   wallets: ProjectWalletInput[],
+  reviewStatus: ReviewStatus,
 ): ExcludedSupplyResult {
   const seenKeys = new Map<string, string>();
   const duplicateWarnings: CalculationWarning[] = [];
@@ -207,18 +225,35 @@ export function calculateExcludedSupply(
         : total.add(result.deductibleBalance),
     new Decimal(0),
   );
+  const reviewComplete = reviewStatus === "approved_sufficient";
   const complete =
+    reviewComplete &&
     duplicateWarnings.length === 0 &&
     walletResults.every((result) => result.complete);
+  const reviewWarnings = reviewComplete
+    ? []
+    : [
+        warning(
+          "WALLET_REVIEW_INCOMPLETE",
+          "blocking",
+          "Project wallet coverage is not reviewed and sufficient; the deduction is Unknown.",
+        ),
+      ];
+  const hasKnownValue =
+    reviewComplete ||
+    walletResults.some((result) => result.deductibleBalance !== null);
 
   return {
     excludedSupply: complete ? formatDecimal(knownExcludedSupply) : null,
-    knownExcludedSupply: formatDecimal(knownExcludedSupply),
+    knownExcludedSupply: hasKnownValue
+      ? formatDecimal(knownExcludedSupply)
+      : null,
     complete,
     walletResults,
     warnings: deduplicateWarnings([
       ...walletResults.flatMap((result) => result.warnings),
       ...duplicateWarnings,
+      ...reviewWarnings,
     ]),
   };
 }
@@ -250,6 +285,7 @@ const sumKnownQualifyingCapital = (
 
 export function calculateQualifyingCapital(
   fundingRounds: FundingRoundInput[],
+  reviewStatus: ReviewStatus,
 ): QualifyingCapitalResult {
   const seenKeys = new Map<string, string>();
   const duplicateIds: string[] = [];
@@ -278,12 +314,23 @@ export function calculateQualifyingCapital(
           !fundingRound.evidenceComplete),
     )
     .map((fundingRound) => fundingRound.fundingRoundId);
+  const reviewComplete = reviewStatus === "approved_sufficient";
   const complete =
+    reviewComplete &&
     missingIds.length === 0 &&
     incompleteReviewIds.length === 0 &&
     duplicateIds.length === 0;
 
   const warnings: CalculationWarning[] = [];
+  if (!reviewComplete) {
+    warnings.push(
+      warning(
+        "FUNDING_REVIEW_INCOMPLETE",
+        "blocking",
+        "Project lifetime funding coverage is not reviewed and sufficient; the deduction is Unknown or Incomplete.",
+      ),
+    );
+  }
   if (missingIds.length > 0) {
     warnings.push(
       warning(
@@ -317,7 +364,8 @@ export function calculateQualifyingCapital(
 
   return {
     qualifyingCapitalUsd: complete ? formatUsd(capital) : null,
-    knownQualifyingCapitalUsd: formatUsd(capital),
+    knownQualifyingCapitalUsd:
+      reviewComplete || capital.gt(0) ? formatUsd(capital) : null,
     complete,
     warnings,
   };
@@ -419,8 +467,14 @@ export function generateCalculationWarnings(
   }
 
   if (input.project !== undefined) {
-    const excluded = calculateExcludedSupply(input.project.wallets);
-    const capital = calculateQualifyingCapital(input.project.fundingRounds);
+    const excluded = calculateExcludedSupply(
+      input.project.wallets,
+      input.project.walletReviewStatus,
+    );
+    const capital = calculateQualifyingCapital(
+      input.project.fundingRounds,
+      input.project.fundingReviewStatus,
+    );
     warnings.push(...excluded.warnings, ...capital.warnings);
 
     if (excluded.excludedSupply !== null) {
@@ -480,8 +534,14 @@ export function calculateProjectScore(
     },
   );
   const circulatingMarketValue = price.mul(circulatingSupply);
-  const excluded = calculateExcludedSupply(input.wallets);
-  const capital = calculateQualifyingCapital(input.fundingRounds);
+  const excluded = calculateExcludedSupply(
+    input.wallets,
+    input.walletReviewStatus,
+  );
+  const capital = calculateQualifyingCapital(
+    input.fundingRounds,
+    input.fundingReviewStatus,
+  );
   const warnings = generateCalculationWarnings({ project: input });
   const hasBlockingWarning = warnings.some(
     (item) => item.severity === "blocking",

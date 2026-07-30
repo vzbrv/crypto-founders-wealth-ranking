@@ -98,19 +98,22 @@ describe("wallet and supply deductions", () => {
   });
 
   it("sums only known deductions and exposes incompleteness", () => {
-    const result = calculateExcludedSupply([
-      wallet({
-        walletId: "known",
-        normalizedBalance: "10.5",
-        circulatingInclusionFraction: "0.5",
-      }),
-      wallet({
-        walletId: "unknown",
-        normalizedBalance: "7",
-        circulatingInclusionFraction: null,
-        balanceIncludedInCirculatingSupply: null,
-      }),
-    ]);
+    const result = calculateExcludedSupply(
+      [
+        wallet({
+          walletId: "known",
+          normalizedBalance: "10.5",
+          circulatingInclusionFraction: "0.5",
+        }),
+        wallet({
+          walletId: "unknown",
+          normalizedBalance: "7",
+          circulatingInclusionFraction: null,
+          balanceIncludedInCirculatingSupply: null,
+        }),
+      ],
+      "approved_sufficient",
+    );
 
     expect(result).toMatchObject({
       excludedSupply: null,
@@ -160,15 +163,19 @@ describe("wallet and supply deductions", () => {
 
 describe("qualifying capital", () => {
   it("accepts explicitly reviewed zero deductions", () => {
-    const wallets = calculateExcludedSupply([
-      wallet({ walletId: "reviewed-zero-wallet", normalizedBalance: "0" }),
-    ]);
-    const capital = calculateQualifyingCapital([
-      funding({
-        fundingRoundId: "reviewed-zero-funding",
-        amountUsdAtEvent: "0",
-      }),
-    ]);
+    const wallets = calculateExcludedSupply(
+      [wallet({ walletId: "reviewed-zero-wallet", normalizedBalance: "0" })],
+      "approved_sufficient",
+    );
+    const capital = calculateQualifyingCapital(
+      [
+        funding({
+          fundingRoundId: "reviewed-zero-funding",
+          amountUsdAtEvent: "0",
+        }),
+      ],
+      "approved_sufficient",
+    );
 
     expect(wallets).toMatchObject({
       excludedSupply: "0",
@@ -184,19 +191,22 @@ describe("qualifying capital", () => {
 
   it("ignores explicitly excluded rounds", () => {
     expect(
-      calculateQualifyingCapital([
-        funding({
-          fundingRoundId: "included",
-          amountUsdAtEvent: "12.3456789",
-        }),
-        funding({
-          fundingRoundId: "excluded",
-          amountUsdAtEvent: null,
-          includeInCapitalDeduction: false,
-          reviewStatus: "not_reviewed",
-          evidenceComplete: false,
-        }),
-      ]),
+      calculateQualifyingCapital(
+        [
+          funding({
+            fundingRoundId: "included",
+            amountUsdAtEvent: "12.3456789",
+          }),
+          funding({
+            fundingRoundId: "excluded",
+            amountUsdAtEvent: null,
+            includeInCapitalDeduction: false,
+            reviewStatus: "not_reviewed",
+            evidenceComplete: false,
+          }),
+        ],
+        "approved_sufficient",
+      ),
     ).toMatchObject({
       qualifyingCapitalUsd: "12.34567890",
       knownQualifyingCapitalUsd: "12.34567890",
@@ -235,6 +245,8 @@ describe("project score safeguards", () => {
       assetId: "asset-over",
       priceUsd: "2",
       circulatingSupply: "10",
+      walletReviewStatus: "approved_sufficient",
+      fundingReviewStatus: "approved_sufficient",
       wallets: [
         wallet({
           walletId: "wallet-over",
@@ -421,10 +433,13 @@ describe("rankings", () => {
 
 describe("deduplication safeguards", () => {
   it("blocks duplicate wallet deductions", () => {
-    const result = calculateExcludedSupply([
-      wallet({ walletId: "wallet-a", deduplicationKey: "same-address" }),
-      wallet({ walletId: "wallet-b", deduplicationKey: "same-address" }),
-    ]);
+    const result = calculateExcludedSupply(
+      [
+        wallet({ walletId: "wallet-a", deduplicationKey: "same-address" }),
+        wallet({ walletId: "wallet-b", deduplicationKey: "same-address" }),
+      ],
+      "approved_sufficient",
+    );
 
     expect(result.excludedSupply).toBeNull();
     expect(result.knownExcludedSupply).toBe("1");
@@ -434,10 +449,13 @@ describe("deduplication safeguards", () => {
   });
 
   it("blocks duplicate funding deductions", () => {
-    const result = calculateQualifyingCapital([
-      funding({ fundingRoundId: "round-a", deduplicationKey: "same-round" }),
-      funding({ fundingRoundId: "round-b", deduplicationKey: "same-round" }),
-    ]);
+    const result = calculateQualifyingCapital(
+      [
+        funding({ fundingRoundId: "round-a", deduplicationKey: "same-round" }),
+        funding({ fundingRoundId: "round-b", deduplicationKey: "same-round" }),
+      ],
+      "approved_sufficient",
+    );
 
     expect(result.qualifyingCapitalUsd).toBeNull();
     expect(result.knownQualifyingCapitalUsd).toBe("1.00000000");

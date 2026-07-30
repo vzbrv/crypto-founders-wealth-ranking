@@ -156,6 +156,7 @@ export const walletSchema = z
     ownershipConfidence: z.enum(["high", "medium", "low", "disputed"]),
     circulatingInclusionFraction: fractionSchema.nullable(),
     balanceIncludedInCirculatingSupply: z.boolean().nullable(),
+    circulatingInclusionExplanation: z.string().min(1).nullable(),
     affectsScore: z.boolean(),
     deduplicationKey: z.string().min(1),
     reviewStatus: reviewStatusSchema,
@@ -209,6 +210,17 @@ export const walletSchema = z
       });
     }
     if (
+      (wallet.circulatingInclusionFraction !== null ||
+        wallet.balanceIncludedInCirculatingSupply !== null) &&
+      wallet.circulatingInclusionExplanation === null
+    ) {
+      context.addIssue({
+        code: "custom",
+        message: "A circulation determination requires an explanation",
+        path: ["circulatingInclusionExplanation"],
+      });
+    }
+    if (
       wallet.reviewStatus === "approved_sufficient" &&
       (wallet.reviewer === null ||
         wallet.reviewedAt === null ||
@@ -223,7 +235,8 @@ export const walletSchema = z
     }
     if (
       wallet.circulatingInclusionFraction === "0" &&
-      (wallet.reviewer === null ||
+      (wallet.reviewStatus !== "approved_sufficient" ||
+        wallet.reviewer === null ||
         wallet.reviewedAt === null ||
         wallet.notes === undefined ||
         wallet.evidenceSourceIds.length === 0)
@@ -245,16 +258,27 @@ export const fundingRoundSchema = z
     roundType: z.enum([
       "pre_seed",
       "seed",
+      "equity",
+      "venture",
       "private",
+      "private_token_sale",
       "strategic",
+      "accelerator",
       "public",
+      "public_token_sale",
+      "crowdsale",
+      "grant",
+      "debt",
       "other",
     ]),
     originalAmount: decimalSchema.optional(),
     originalCurrency: z.string().min(1).optional(),
     amountUsdAtEvent: decimalSchema.optional(),
+    amountStatus: z.enum(["exact", "approximate", "unknown"]),
     conversionMethod: z.string().min(1).optional(),
+    usdConversionDate: dateSchema.optional(),
     includeInCapitalDeduction: z.boolean(),
+    inclusionReason: z.string().min(1),
     deduplicationKey: z.string().min(1),
     reviewStatus: reviewStatusSchema,
     reviewer: z.string().min(1).nullable(),
@@ -265,13 +289,34 @@ export const fundingRoundSchema = z
   })
   .superRefine((round, context) => {
     if (
-      round.includeInCapitalDeduction &&
-      round.amountUsdAtEvent === undefined
+      (round.originalAmount === undefined) !==
+      (round.originalCurrency === undefined)
     ) {
       context.addIssue({
         code: "custom",
-        message: "Included funding requires amountUsdAtEvent",
-        path: ["amountUsdAtEvent"],
+        message: "Original amount and currency must be supplied together",
+        path: ["originalAmount"],
+      });
+    }
+    if (
+      (round.amountStatus === "unknown") !==
+      (round.amountUsdAtEvent === undefined)
+    ) {
+      context.addIssue({
+        code: "custom",
+        message: "Unknown amount status must preserve a missing USD amount",
+        path: ["amountStatus"],
+      });
+    }
+    if (
+      round.amountUsdAtEvent !== undefined &&
+      (round.conversionMethod === undefined ||
+        round.usdConversionDate === undefined)
+    ) {
+      context.addIssue({
+        code: "custom",
+        message: "A USD amount requires its conversion method and date",
+        path: ["conversionMethod"],
       });
     }
     if (
@@ -286,7 +331,8 @@ export const fundingRoundSchema = z
     }
     if (
       round.amountUsdAtEvent === "0" &&
-      (round.reviewer === null ||
+      (round.reviewStatus !== "approved_sufficient" ||
+        round.reviewer === null ||
         round.notes === undefined ||
         round.evidenceSourceIds.length === 0)
     ) {

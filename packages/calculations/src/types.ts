@@ -8,6 +8,7 @@ export const CALCULATION_WARNING_CODES = [
   "WALLET_ATTRIBUTION_INELIGIBLE",
   "UNKNOWN_CIRCULATION_TREATMENT",
   "WALLET_REVIEW_INCOMPLETE",
+  "WALLET_BALANCE_MISSING",
   "FUNDING_REVIEW_INCOMPLETE",
   "DUPLICATE_WALLET_DEDUCTION",
   "DUPLICATE_FUNDING_DEDUCTION",
@@ -38,7 +39,7 @@ export type CalculationWarning = {
 export type ProjectWalletInput = {
   walletId: string;
   deduplicationKey: string;
-  normalizedBalance: string;
+  normalizedBalance: string | null;
   circulatingInclusionFraction: string | null;
   balanceIncludedInCirculatingSupply: boolean | null;
   affectsScore: boolean;
@@ -62,6 +63,8 @@ export type ProjectCalculationInput = {
   priceUsd: string;
   circulatingSupply: string;
   providerMarketCapUsd?: string;
+  walletReviewStatus: ReviewStatus;
+  fundingReviewStatus: ReviewStatus;
   wallets: ProjectWalletInput[];
   fundingRounds: FundingRoundInput[];
 };
@@ -75,7 +78,7 @@ export type DeductibleWalletBalanceResult = {
 
 export type ExcludedSupplyResult = {
   excludedSupply: string | null;
-  knownExcludedSupply: string;
+  knownExcludedSupply: string | null;
   complete: boolean;
   walletResults: DeductibleWalletBalanceResult[];
   warnings: CalculationWarning[];
@@ -83,7 +86,7 @@ export type ExcludedSupplyResult = {
 
 export type QualifyingCapitalResult = {
   qualifyingCapitalUsd: string | null;
-  knownQualifyingCapitalUsd: string;
+  knownQualifyingCapitalUsd: string | null;
   complete: boolean;
   warnings: CalculationWarning[];
 };
@@ -103,10 +106,10 @@ export type ProjectScoreResult = {
   status: "available" | "unavailable";
   circulatingMarketValueUsd: string;
   excludedSupply: string | null;
-  knownExcludedSupply: string;
+  knownExcludedSupply: string | null;
   excludedValueUsd: string | null;
   qualifyingCapitalUsd: string | null;
-  knownQualifyingCapitalUsd: string;
+  knownQualifyingCapitalUsd: string | null;
   outsideHolderSupply: string | null;
   outsideHolderValueUsd: string | null;
   scoreUsd: string | null;
