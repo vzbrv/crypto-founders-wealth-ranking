@@ -46,6 +46,10 @@ const serviceRoleReadsMigrationUrl = new URL(
   "../../../supabase/migrations/202607290013_service_role_edge_function_reads.sql",
   import.meta.url,
 );
+const methodologyIntegrityMigrationUrl = new URL(
+  "../../../supabase/migrations/202607300014_methodology_integrity.sql",
+  import.meta.url,
+);
 const seedUrl = new URL(
   "../../../supabase/tests/seed.synthetic.sql",
   import.meta.url,
@@ -60,6 +64,7 @@ const migrationSql = [
   await readFile(phaseTenMigrationUrl, "utf8"),
   await readFile(productionReadContractMigrationUrl, "utf8"),
   await readFile(serviceRoleReadsMigrationUrl, "utf8"),
+  await readFile(methodologyIntegrityMigrationUrl, "utf8"),
 ].join("\n");
 const seedSql = await readFile(seedUrl, "utf8");
 const productionDataDirectory = fileURLToPath(
@@ -225,6 +230,53 @@ describe("Phase 3 database", () => {
       sources: 17,
       links: 49,
     });
+
+    const publicRows = await database.query<{
+      display_name: string;
+      rank: number | null;
+      score_usd: string | null;
+      research_status: string;
+      eligibility_status: string;
+      reviewed_confidence: string;
+      wallet_review_status: string;
+      funding_review_status: string;
+    }>(`select display_name, rank, score_usd, research_status,
+      eligibility_status, reviewed_confidence, wallet_review_status,
+      funding_review_status
+      from public_leaderboard order by display_name`);
+
+    expect(publicRows.rows).toEqual([
+      {
+        display_name: "Ethereum Founding Team",
+        rank: null,
+        score_usd: null,
+        research_status: "Research in progress",
+        eligibility_status: "ineligible",
+        reviewed_confidence: "insufficient",
+        wallet_review_status: "reviewed_insufficient",
+        funding_review_status: "reviewed_insufficient",
+      },
+      {
+        display_name: "Hayden Adams",
+        rank: null,
+        score_usd: null,
+        research_status: "Research in progress",
+        eligibility_status: "ineligible",
+        reviewed_confidence: "insufficient",
+        wallet_review_status: "reviewed_insufficient",
+        funding_review_status: "reviewed_insufficient",
+      },
+      {
+        display_name: "Solana Founding Team",
+        rank: null,
+        score_usd: null,
+        research_status: "Research in progress",
+        eligibility_status: "ineligible",
+        reviewed_confidence: "insufficient",
+        wallet_review_status: "reviewed_insufficient",
+        funding_review_status: "reviewed_insufficient",
+      },
+    ]);
   });
 
   it("enforces provider health read and write privileges", async () => {
@@ -280,6 +332,19 @@ describe("Phase 3 database", () => {
       await expect(
         database.exec(
           `insert into provider_health (provider, status) values ('public', 'healthy')`,
+        ),
+      ).rejects.toThrow();
+
+      await expect(
+        database.exec(
+          `insert into projects (
+            id, slug, name, description, project_type, calculation_category,
+            status, confidence_level, methodology_notes, website_url
+          ) values (
+            '91111111-1111-4111-8111-111111111113', 'public-write', 'Public write',
+            'Rejected anonymous write', 'protocol', 'liquid_token', 'active',
+            'insufficient', 'Rejected', 'https://example.com/public-write'
+          )`,
         ),
       ).rejects.toThrow();
     } finally {
@@ -707,11 +772,18 @@ describe("Phase 8 Solana wallet sync", () => {
 
       insert into projects (
         id, slug, name, description, project_type, calculation_category, status,
-        confidence_level, methodology_notes, website_url, research_reviewed_at
+        confidence_level, methodology_notes, website_url, research_reviewed_at,
+        wallet_review_status, wallet_review_reviewer, wallet_review_reviewed_at,
+        wallet_review_notes, wallet_review_evidence_source_ids,
+        funding_review_status, funding_review_reviewer, funding_review_reviewed_at,
+        funding_review_notes, funding_review_evidence_source_ids
       ) values (
         '${projectId}', 'solana-project', 'Solana Project', 'Phase 8 fixture',
         'blockchain', 'liquid_token', 'active', 'high', 'Phase 8 fixture',
-        'https://example.com/solana-project', now()
+        'https://example.com/solana-project', now(), 'approved_sufficient',
+        'Synthetic reviewer', now(), 'Synthetic wallet review', '["synthetic-source"]',
+        'approved_sufficient', 'Synthetic reviewer', now(),
+        'Synthetic zero-funding review', '["synthetic-source"]'
       );
 
       insert into project_founding_units (
@@ -736,11 +808,15 @@ describe("Phase 8 Solana wallet sync", () => {
       insert into tracked_wallets (
         id, project_id, founding_unit_id, chain_code, address, normalized_address,
         label, classification, ownership_confidence, circulating_inclusion_fraction,
-        affects_score, status, research_reviewed_at
+        affects_score, status, research_reviewed_at,
+        balance_included_in_circulating_supply, deduplication_key, review_status,
+        reviewer, reviewed_at, evidence_source_ids
       ) values (
         '${walletId}', '${projectId}', '${foundingUnitId}', 'solana',
         '11111111111111111111111111111111', '11111111111111111111111111111111',
-        'Solana team wallet', 'team', 'high', 1, true, 'active', now()
+        'Solana team wallet', 'team', 'high', 1, true, 'active', now(), true,
+        'solana-team-wallet', 'approved_sufficient', 'Synthetic reviewer', now(),
+        '["synthetic-source"]'
       );
 
       insert into wallet_asset_mappings (

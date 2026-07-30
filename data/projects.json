@@ -9,6 +9,20 @@
     "calculationCategory": "liquid_token",
     "status": "active",
     "confidenceLevel": "high",
+    "walletReview": {
+      "status": "approved_sufficient",
+      "reviewer": "Synthetic fixture reviewer",
+      "reviewedAt": "2026-07-27T12:00:00Z",
+      "notes": "Synthetic fixture review only.",
+      "evidenceSourceIds": ["44444444-4444-4444-8444-444444444444"]
+    },
+    "fundingReview": {
+      "status": "approved_sufficient",
+      "reviewer": "Synthetic fixture reviewer",
+      "reviewedAt": "2026-07-27T12:00:00Z",
+      "notes": "Synthetic fixture review only.",
+      "evidenceSourceIds": ["44444444-4444-4444-8444-444444444444"]
+    },
     "methodologyNotes": "Synthetic values; never publish as real wealth data.",
     "websiteUrl": "https://example.com/projects/synthetic-horizon",
     "launchedAt": "2025-01-15",

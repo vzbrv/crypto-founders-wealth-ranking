@@ -11,4 +11,4 @@ Phase 8 implements CoinGecko market data, Ethereum native/ERC-20 balances throug
 | Substrate    | Subscan           | public account and asset data | interface placeholder only |
 | TON          | TON Center        | public account and token data | interface placeholder only |
 
-Every material curated claim must carry a direct source, retrieval date, and review state. Secondary sources may guide research but do not replace claim-level evidence.
+Every material curated claim must carry a direct source, retrieval date, and review state. Every included deduction and excluded wallet needs evidence. A reviewed zero also needs reviewer, timestamp, notes, and evidence. Missing evidence is displayed as a missing state and blocks ranking. Secondary sources, including Arkham labels, may guide research but do not replace claim-level evidence or constitute attribution on their own.

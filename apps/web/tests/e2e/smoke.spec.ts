@@ -24,6 +24,9 @@ async function mockPublicData(page: Page) {
             { projectId: "project-alpha", attributionFraction: 1 },
           ],
           warnings: [],
+          eligibility_status: "ranked",
+          ineligibility_reasons: [],
+          research_status: "Ranked",
         },
         {
           rank: null,
@@ -42,6 +45,9 @@ async function mockPublicData(page: Page) {
             { projectId: "project-beta", attributionFraction: 1 },
           ],
           warnings: ["Circulating supply requires review."],
+          eligibility_status: "research_in_progress",
+          ineligibility_reasons: ["Circulating supply requires review."],
+          research_status: "Research in progress",
         },
       ]),
     }),
@@ -190,6 +196,9 @@ test("updates supported live scores and preserves them during reconnect", async 
             { projectId: "project-ethereum", attributionFraction: 1 },
           ],
           warnings: [],
+          eligibility_status: "ranked",
+          ineligibility_reasons: [],
+          research_status: "Ranked",
         },
       ]),
     }),
@@ -254,7 +263,7 @@ test("shows a reproducible project score and its evidence", async ({
       contentType: "application/json",
       body: JSON.stringify([
         {
-          wallet_id: "55555555-5555-4555-8555-555555555555",
+          id: "55555555-5555-4555-8555-555555555555",
           balance: "100000000",
           balance_observed_at: now,
           balance_provider: "mock provider",
@@ -278,6 +287,9 @@ test("shows a reproducible project score and its evidence", async ({
               attributionFraction: 1,
             },
           ],
+          eligibility_status: "ranked",
+          ineligibility_reasons: [],
+          research_status: "Ranked",
         },
       ]),
     }),
@@ -295,7 +307,7 @@ test("shows a reproducible project score and its evidence", async ({
     page.getByRole("heading", { name: "Wallet deductions" }),
   ).toBeVisible();
   await expect(page.getByTestId("score-equation")).toHaveText(
-    "$1,000,000,000.00 − $150,000,000.00 − $50,000,000.00 = $800,000,000.00",
+    "max(0, $1,000,000,000.00 − $150,000,000.00 − $50,000,000.00) = $800,000,000.00",
   );
   await expect(page.getByText("mock provider", { exact: false })).toBeVisible();
 });

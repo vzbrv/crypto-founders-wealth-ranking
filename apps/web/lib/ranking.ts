@@ -15,6 +15,12 @@ export interface RawLeaderboardRow {
   iq_wiki_slug: string | null;
   project_breakdown: unknown;
   warnings: unknown;
+  eligibility_status: "ranked" | "research_in_progress";
+  ineligibility_reasons: unknown;
+  research_status: "Ranked" | "Research in progress";
+  wallet_review_status?: string | null;
+  funding_review_status?: string | null;
+  calculation_links?: unknown;
   is_stale?: boolean;
   stale_reason?: string | null;
 }
@@ -26,6 +32,7 @@ export interface RawProjectDetail {
   symbol: string | null;
   market_cap_usd: number | string | null;
   outside_holder_value_usd: number | string | null;
+  excluded_value_usd: number | string | null;
   capital_raised_usd: number | string | null;
   score_usd?: number | string | null;
   price_usd?: number | string | null;
@@ -34,6 +41,10 @@ export interface RawProjectDetail {
   outside_holder_supply?: number | string | null;
   data_freshness: unknown;
   calculated_at: string | null;
+  eligibility_status?: "ranked" | "research_in_progress" | null;
+  ineligibility_reasons?: unknown;
+  wallet_review_status?: string | null;
+  funding_review_status?: string | null;
 }
 
 export interface RankingEntry {
@@ -65,6 +76,10 @@ export interface RankingEntry {
   capitalDeductedUsd: number | null;
   freshestObservationAt: string;
   warnings: string[];
+  eligibilityStatus: "ranked" | "research_in_progress";
+  ineligibilityReasons: string[];
+  walletReviewStatus: string | null;
+  fundingReviewStatus: string | null;
   isStale: boolean;
   staleReason: string | null;
   status: "ranked" | "research";
@@ -133,12 +148,10 @@ export function buildRankingEntries(
         const project = projectsById.get(projectId);
         if (!project) return [];
 
-        const marketCap = numberOrNull(project.market_cap_usd);
-        const outsideValue = numberOrNull(project.outside_holder_value_usd);
+        const excludedValue = numberOrNull(project.excluded_value_usd);
         const capitalRaised = numberOrNull(project.capital_raised_usd);
-        if (marketCap !== null && outsideValue !== null) {
-          excludedHoldingsUsd +=
-            Math.max(0, marketCap - outsideValue) * attributionFraction;
+        if (excludedValue !== null) {
+          excludedHoldingsUsd += excludedValue * attributionFraction;
           hasExcludedDetail = true;
         }
         if (capitalRaised !== null) {
@@ -184,12 +197,13 @@ export function buildRankingEntries(
       capitalDeductedUsd: hasCapitalDetail ? capitalDeductedUsd : null,
       freshestObservationAt: observations.sort().at(-1) ?? row.calculated_at,
       warnings: warnings(row.warnings),
+      eligibilityStatus: row.eligibility_status,
+      ineligibilityReasons: warnings(row.ineligibility_reasons),
+      walletReviewStatus: row.wallet_review_status ?? null,
+      fundingReviewStatus: row.funding_review_status ?? null,
       isStale: row.is_stale ?? false,
       staleReason: row.stale_reason ?? null,
-      status:
-        row.rank === null || normalizedConfidence === "insufficient"
-          ? "research"
-          : "ranked",
+      status: row.eligibility_status === "ranked" ? "ranked" : "research",
     };
   });
 }

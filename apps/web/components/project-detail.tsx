@@ -13,6 +13,15 @@ interface ApiProjectDetail {
   rank?: number | null;
   score_usd?: number | string | null;
   confidence_label?: string | null;
+  reviewed_confidence?: string | null;
+  eligibility_status?: "ranked" | "research_in_progress" | null;
+  ineligibility_reasons?: unknown;
+  wallet_review_status?: string | null;
+  wallet_reviewer?: string | null;
+  wallet_reviewed_at?: string | null;
+  funding_review_status?: string | null;
+  funding_reviewer?: string | null;
+  funding_reviewed_at?: string | null;
   price_usd?: number | string | null;
   circulating_supply?: number | string | null;
   excluded_supply?: number | string | null;
@@ -25,18 +34,25 @@ interface ApiProjectDetail {
 }
 
 interface ApiWalletEvidence {
-  wallet_id: string;
+  id: string;
   balance?: number | string | null;
   balance_observed_at?: string | null;
   balance_provider?: string | null;
   deductible_balance?: number | string | null;
   deductible_value_usd?: number | string | null;
+  review_status?: string | null;
+  reviewer?: string | null;
+  reviewed_at?: string | null;
+  evidence_source_ids?: unknown;
 }
 
 interface ApiLeaderboardRow {
   rank: number | null;
   score_usd: number | string | null;
   confidence_label: string;
+  reviewed_confidence?: string | null;
+  eligibility_status?: "ranked" | "research_in_progress";
+  ineligibility_reasons?: unknown;
   project_breakdown: unknown;
 }
 
@@ -44,6 +60,12 @@ function numberOrNull(value: unknown): number | null {
   if (value === null || value === undefined || value === "") return null;
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : null;
+}
+
+function strings(value: unknown): string[] {
+  return Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === "string")
+    : [];
 }
 
 function money(value: number | null): string {
@@ -149,6 +171,18 @@ export function ProjectDetail({ evidence }: { evidence: ProjectEvidence }) {
           score_usd: ranking?.score_usd ?? details[0]?.score_usd ?? null,
           confidence_label:
             ranking?.confidence_label ?? evidence.project.confidenceLevel,
+          reviewed_confidence:
+            ranking?.reviewed_confidence ??
+            details[0]?.reviewed_confidence ??
+            null,
+          eligibility_status:
+            ranking?.eligibility_status ??
+            details[0]?.eligibility_status ??
+            null,
+          ineligibility_reasons:
+            ranking?.ineligibility_reasons ??
+            details[0]?.ineligibility_reasons ??
+            [],
         });
         setApiWallets(walletRows);
       })
@@ -184,11 +218,24 @@ export function ProjectDetail({ evidence }: { evidence: ProjectEvidence }) {
     };
   }, [detail]);
 
-  const fundingTotal = evidence.fundingRounds
-    .filter((round) => round.includeInCapitalDeduction)
-    .reduce((total, round) => total + Number(round.amountUsdAtEvent), 0);
+  const includedFunding = evidence.fundingRounds.filter(
+    (round) => round.includeInCapitalDeduction,
+  );
+  const fundingTotal =
+    includedFunding.length > 0 &&
+    includedFunding.every(
+      (round) =>
+        round.reviewStatus === "approved_sufficient" &&
+        numberOrNull(round.amountUsdAtEvent) !== null,
+    )
+      ? includedFunding.reduce(
+          (total, round) => total + Number(round.amountUsdAtEvent),
+          0,
+        )
+      : null;
   const warnings = [
     apiWarning,
+    ...strings(detail?.ineligibility_reasons),
     ...evidence.wallets
       .filter((wallet) => wallet.circulatingInclusionFraction === null)
       .map(
@@ -213,22 +260,31 @@ export function ProjectDetail({ evidence }: { evidence: ProjectEvidence }) {
           </div>
           <div>
             <span>Rank</span>
-            <strong>{detail?.rank ?? "Unranked"}</strong>
+            <strong>{detail?.rank ?? "Research in progress"}</strong>
           </div>
           <div>
-            <span>Score</span>
+            <span>Estimated outside-holder token value</span>
             <strong>{money(values.score)}</strong>
+            {detail?.rank === null && values.score !== null ? (
+              <small>Provisional calculation · unranked</small>
+            ) : null}
           </div>
           <div>
             <span>Confidence</span>
             <strong>
-              {detail?.confidence_label ?? evidence.project.confidenceLevel}
+              {detail?.reviewed_confidence ??
+                detail?.confidence_label ??
+                evidence.project.confidenceLevel}
             </strong>
           </div>
         </div>
       </header>
 
-      <section className="panel" aria-labelledby="formula-heading">
+      <section
+        className="panel"
+        id="calculation"
+        aria-labelledby="formula-heading"
+      >
         <div className="section-heading">
           <div>
             <p className="eyebrow">Reproducible calculation</p>
@@ -237,10 +293,11 @@ export function ProjectDetail({ evidence }: { evidence: ProjectEvidence }) {
           <a href="/methodology/">Read methodology</a>
         </div>
         <p className="formula-statement">
-          Market cap − approved affiliated circulating holdings − qualifying
-          outside capital = estimated wealth created
+          Estimated outside-holder token value = max(0, circulating market value
+          − reviewed affiliated circulating holdings − reviewed disclosed
+          outside capital). It is not personal wealth.
         </p>
-        <div className="formula-grid">
+        <div className="formula-grid" id="market-data">
           <div>
             <span>Price</span>
             <strong>{money(numberOrNull(detail?.price_usd))}</strong>
@@ -279,9 +336,11 @@ export function ProjectDetail({ evidence }: { evidence: ProjectEvidence }) {
             <small>Curated funding records</small>
           </div>
           <div>
-            <span>Final score</span>
+            <span>Estimated outside-holder token value</span>
             <strong>{money(values.score)}</strong>
-            <small>Calculated result</small>
+            <small>
+              {detail?.rank === null ? "Provisional · unranked" : "Ranked"}
+            </small>
           </div>
         </div>
         <p className="equation" data-testid="score-equation">
@@ -289,15 +348,27 @@ export function ProjectDetail({ evidence }: { evidence: ProjectEvidence }) {
           values.excluded === null ||
           values.capital === null
             ? "The full numeric equation appears when canonical market and wallet observations are available."
-            : `${money(values.marketCap)} − ${money(values.excluded)} − ${money(values.capital)} = ${money(values.score)}`}
+            : `max(0, ${money(values.marketCap)} − ${money(values.excluded)} − ${money(values.capital)}) = ${money(values.score)}`}
         </p>
       </section>
 
-      <section className="panel" aria-labelledby="wallet-heading">
+      <section className="panel" id="wallets" aria-labelledby="wallet-heading">
         <div className="section-heading">
           <div>
             <p className="eyebrow">Curated + API evidence</p>
             <h2 id="wallet-heading">Wallet deductions</h2>
+            <p>
+              Review:{" "}
+              {detail?.wallet_review_status ??
+                evidence.project.walletReview.status}
+              {detail?.wallet_reviewer || evidence.project.walletReview.reviewer
+                ? ` · ${detail?.wallet_reviewer ?? evidence.project.walletReview.reviewer}`
+                : ""}
+              {detail?.wallet_reviewed_at ||
+              evidence.project.walletReview.reviewedAt
+                ? ` · ${date(detail?.wallet_reviewed_at ?? evidence.project.walletReview.reviewedAt)}`
+                : ""}
+            </p>
           </div>
         </div>
         <div className="table-shell evidence-shell">
@@ -316,9 +387,7 @@ export function ProjectDetail({ evidence }: { evidence: ProjectEvidence }) {
             </thead>
             <tbody>
               {evidence.wallets.map((wallet) => {
-                const observed = apiWallets.find(
-                  (row) => row.wallet_id === wallet.id,
-                );
+                const observed = apiWallets.find((row) => row.id === wallet.id);
                 const explorer = explorerUrl(wallet.chainCode, wallet.address);
                 return (
                   <tr key={wallet.id}>
@@ -350,7 +419,7 @@ export function ProjectDetail({ evidence }: { evidence: ProjectEvidence }) {
                       {wallet.affectsScore &&
                       wallet.circulatingInclusionFraction !== null
                         ? money(numberOrNull(observed?.deductible_value_usd))
-                        : "$0.00"}
+                        : "No deduction"}
                     </td>
                     <td>{wallet.ownershipConfidence}</td>
                     <td>
@@ -375,11 +444,24 @@ export function ProjectDetail({ evidence }: { evidence: ProjectEvidence }) {
         </div>
       </section>
 
-      <section className="panel" aria-labelledby="funding-heading">
+      <section className="panel" id="funding" aria-labelledby="funding-heading">
         <div className="section-heading">
           <div>
             <p className="eyebrow">Curated research</p>
             <h2 id="funding-heading">Outside capital</h2>
+            <p>
+              Review:{" "}
+              {detail?.funding_review_status ??
+                evidence.project.fundingReview.status}
+              {detail?.funding_reviewer ||
+              evidence.project.fundingReview.reviewer
+                ? ` · ${detail?.funding_reviewer ?? evidence.project.fundingReview.reviewer}`
+                : ""}
+              {detail?.funding_reviewed_at ||
+              evidence.project.fundingReview.reviewedAt
+                ? ` · ${date(detail?.funding_reviewed_at ?? evidence.project.fundingReview.reviewedAt)}`
+                : ""}
+            </p>
           </div>
         </div>
         <div className="table-shell evidence-shell">
@@ -427,7 +509,7 @@ export function ProjectDetail({ evidence }: { evidence: ProjectEvidence }) {
         </div>
       </section>
 
-      <section className="panel evidence-summary">
+      <section className="panel evidence-summary" id="evidence">
         <div>
           <p className="eyebrow">Claim-level provenance</p>
           <h2>{evidence.sourceClaims.length} sourced claims</h2>

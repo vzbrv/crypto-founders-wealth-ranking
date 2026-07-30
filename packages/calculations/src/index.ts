@@ -95,7 +95,39 @@ export function calculateDeductibleWalletBalance(
     };
   }
 
-  if (wallet.circulatingInclusionFraction === null) {
+  if (
+    wallet.reviewStatus !== "approved_sufficient" ||
+    !wallet.evidenceComplete
+  ) {
+    warnings.push(
+      warning(
+        "WALLET_REVIEW_INCOMPLETE",
+        "blocking",
+        "A score-affecting wallet requires an approved sufficient review and complete evidence.",
+        [wallet.walletId],
+      ),
+    );
+    return {
+      walletId: wallet.walletId,
+      deductibleBalance: null,
+      complete: false,
+      warnings,
+    };
+  }
+
+  if (wallet.balanceIncludedInCirculatingSupply === false) {
+    return {
+      walletId: wallet.walletId,
+      deductibleBalance: "0",
+      complete: true,
+      warnings,
+    };
+  }
+
+  if (
+    wallet.balanceIncludedInCirculatingSupply === null ||
+    wallet.circulatingInclusionFraction === null
+  ) {
     warnings.push(
       warning(
         "UNKNOWN_CIRCULATION_TREATMENT",
@@ -129,7 +161,25 @@ export function calculateDeductibleWalletBalance(
 export function calculateExcludedSupply(
   wallets: ProjectWalletInput[],
 ): ExcludedSupplyResult {
-  const walletResults = wallets.map(calculateDeductibleWalletBalance);
+  const seenKeys = new Map<string, string>();
+  const duplicateWarnings: CalculationWarning[] = [];
+  const uniqueWallets = wallets.filter((wallet) => {
+    const firstWalletId = seenKeys.get(wallet.deduplicationKey);
+    if (firstWalletId === undefined) {
+      seenKeys.set(wallet.deduplicationKey, wallet.walletId);
+      return true;
+    }
+    duplicateWarnings.push(
+      warning(
+        "DUPLICATE_WALLET_DEDUCTION",
+        "blocking",
+        "Duplicate wallet deduction was ignored to prevent double subtraction.",
+        [firstWalletId, wallet.walletId],
+      ),
+    );
+    return false;
+  });
+  const walletResults = uniqueWallets.map(calculateDeductibleWalletBalance);
   const knownExcludedSupply = walletResults.reduce(
     (total, result) =>
       result.deductibleBalance === null
@@ -137,16 +187,19 @@ export function calculateExcludedSupply(
         : total.add(result.deductibleBalance),
     new Decimal(0),
   );
-  const complete = walletResults.every((result) => result.complete);
+  const complete =
+    duplicateWarnings.length === 0 &&
+    walletResults.every((result) => result.complete);
 
   return {
     excludedSupply: complete ? formatDecimal(knownExcludedSupply) : null,
     knownExcludedSupply: formatDecimal(knownExcludedSupply),
     complete,
     walletResults,
-    warnings: deduplicateWarnings(
-      walletResults.flatMap((result) => result.warnings),
-    ),
+    warnings: deduplicateWarnings([
+      ...walletResults.flatMap((result) => result.warnings),
+      ...duplicateWarnings,
+    ]),
   };
 }
 
@@ -158,6 +211,11 @@ const sumKnownQualifyingCapital = (
   for (const fundingRound of fundingRounds) {
     if (!fundingRound.includeInCapitalDeduction) continue;
     if (fundingRound.amountUsdAtEvent === null) continue;
+    if (
+      fundingRound.reviewStatus !== "approved_sufficient" ||
+      !fundingRound.evidenceComplete
+    )
+      continue;
     capital = capital.add(
       parseDecimal(
         fundingRound.amountUsdAtEvent,
@@ -173,26 +231,69 @@ const sumKnownQualifyingCapital = (
 export function calculateQualifyingCapital(
   fundingRounds: FundingRoundInput[],
 ): QualifyingCapitalResult {
-  const capital = sumKnownQualifyingCapital(fundingRounds);
-  const missingIds = fundingRounds
+  const seenKeys = new Map<string, string>();
+  const duplicateIds: string[] = [];
+  const uniqueRounds = fundingRounds.filter((fundingRound) => {
+    const firstRoundId = seenKeys.get(fundingRound.deduplicationKey);
+    if (firstRoundId === undefined) {
+      seenKeys.set(fundingRound.deduplicationKey, fundingRound.fundingRoundId);
+      return true;
+    }
+    duplicateIds.push(firstRoundId, fundingRound.fundingRoundId);
+    return false;
+  });
+  const capital = sumKnownQualifyingCapital(uniqueRounds);
+  const missingIds = uniqueRounds
     .filter(
       (fundingRound) =>
         fundingRound.includeInCapitalDeduction &&
         fundingRound.amountUsdAtEvent === null,
     )
     .map((fundingRound) => fundingRound.fundingRoundId);
-  const complete = missingIds.length === 0;
+  const incompleteReviewIds = uniqueRounds
+    .filter(
+      (fundingRound) =>
+        fundingRound.includeInCapitalDeduction &&
+        (fundingRound.reviewStatus !== "approved_sufficient" ||
+          !fundingRound.evidenceComplete),
+    )
+    .map((fundingRound) => fundingRound.fundingRoundId);
+  const complete =
+    missingIds.length === 0 &&
+    incompleteReviewIds.length === 0 &&
+    duplicateIds.length === 0;
 
-  const warnings = complete
-    ? []
-    : [
-        warning(
-          "FUNDING_DATA_INCOMPLETE",
-          "blocking",
-          "Included funding is missing a verified USD-at-event amount.",
-          missingIds,
-        ),
-      ];
+  const warnings: CalculationWarning[] = [];
+  if (missingIds.length > 0) {
+    warnings.push(
+      warning(
+        "FUNDING_DATA_INCOMPLETE",
+        "blocking",
+        "Included funding is missing a verified USD-at-event amount.",
+        missingIds,
+      ),
+    );
+  }
+  if (incompleteReviewIds.length > 0) {
+    warnings.push(
+      warning(
+        "FUNDING_REVIEW_INCOMPLETE",
+        "blocking",
+        "Included funding requires an approved sufficient review and complete evidence.",
+        incompleteReviewIds,
+      ),
+    );
+  }
+  if (duplicateIds.length > 0) {
+    warnings.push(
+      warning(
+        "DUPLICATE_FUNDING_DEDUCTION",
+        "blocking",
+        "Duplicate funding deduction was ignored to prevent double subtraction.",
+        [...new Set(duplicateIds)],
+      ),
+    );
+  }
 
   return {
     qualifyingCapitalUsd: complete ? formatUsd(capital) : null,
@@ -401,7 +502,7 @@ export function calculateProjectScore(
   const outsideHolderSupply = circulatingSupply.sub(excludedSupply);
   const excludedValue = price.mul(excludedSupply);
   const outsideHolderValue = price.mul(outsideHolderSupply);
-  const score = outsideHolderValue.sub(qualifyingCapital);
+  const score = Decimal.max(0, outsideHolderValue.sub(qualifyingCapital));
 
   return {
     projectId: input.projectId,
@@ -510,10 +611,26 @@ export function calculateRankings(inputs: RankingInput[]): RankingResult[] {
     seenIds.add(input.foundingUnitId);
   }
 
+  const ineligibilityReasons = (input: RankingInput): string[] => {
+    const reasons: string[] = [];
+    if (input.scoreUsd === null) reasons.push("calculation unavailable");
+    if (input.marketDataStatus !== "recent_sourced")
+      reasons.push("recent sourced market data unavailable");
+    if (input.fundingReviewStatus !== "approved_sufficient")
+      reasons.push("funding review is not approved and sufficient");
+    if (input.walletReviewStatus !== "approved_sufficient")
+      reasons.push("wallet review is not approved and sufficient");
+    if (!input.evidenceComplete)
+      reasons.push("deduction or exclusion evidence is incomplete");
+    if (input.confidenceLabel === "insufficient")
+      reasons.push("confidence is insufficient");
+    return reasons;
+  };
+
   const rankable = inputs
     .filter(
       (input): input is RankingInput & { scoreUsd: string } =>
-        input.scoreUsd !== null && input.confidenceLabel !== "insufficient",
+        ineligibilityReasons(input).length === 0,
     )
     .map((input) => ({
       input,
@@ -527,17 +644,15 @@ export function calculateRankings(inputs: RankingInput[]): RankingResult[] {
     });
 
   const ranked = new Map<string, RankingResult>();
-  let previousScore: Decimal | null = null;
-  let currentRank = 0;
-  rankable.forEach(({ input, score }, index) => {
-    if (previousScore === null || !score.eq(previousScore))
-      currentRank = index + 1;
-    previousScore = score;
+  rankable.forEach(({ input }, index) => {
+    const currentRank = index + 1;
     const previousRank = input.previousRank ?? null;
     ranked.set(input.foundingUnitId, {
       ...input,
       rank: currentRank,
       status: "ranked",
+      eligibilityStatus: "eligible",
+      ineligibilityReasons: [],
       movement: previousRank === null ? null : previousRank - currentRank,
     });
   });
@@ -548,6 +663,8 @@ export function calculateRankings(inputs: RankingInput[]): RankingResult[] {
         ...input,
         rank: null,
         status: "research",
+        eligibilityStatus: "ineligible",
+        ineligibilityReasons: ineligibilityReasons(input),
         movement: null,
       },
   );

@@ -18,7 +18,7 @@ import { useLivePrices } from "../lib/use-live-prices";
 import { SiteNav } from "./site-nav";
 
 const DISCLAIMER =
-  "Scores are estimates based on public market data and public information about project-affiliated holdings and funding. Wallet attribution and circulating-supply classifications may be incomplete or disputed. The ranking does not measure personal net worth, realized investor profit, total social benefit, or investment performance.";
+  "Estimated outside-holder token value is not personal wealth. Scores are estimates based on public market data and reviewed public evidence about project-affiliated holdings and disclosed outside capital. Wallet attribution and circulating-supply classifications may be incomplete or disputed.";
 
 function money(value: number | null): string {
   if (value === null) return "—";
@@ -61,7 +61,8 @@ function ProjectNames({ entry }: { entry: RankingEntry }) {
       {entry.projects.map(({ name, slug }, index) => (
         <span key={slug}>
           {index > 0 ? ", " : ""}
-          <a href={`/project/${slug}/`}>{name}</a>
+          <a href={`/project/${slug}/#calculation`}>{name}</a>{" "}
+          <a href={`/project/${slug}/#evidence`}>Calculation &amp; sources</a>
         </span>
       ))}
     </span>
@@ -114,7 +115,7 @@ function LeaderboardTable({
             <th>Move</th>
             <th>Founder or team</th>
             <th>Project</th>
-            <th className="number">Estimated outside wealth</th>
+            <th className="number">Estimated outside-holder token value</th>
             <th className="number desktop-detail">24h</th>
             <th className="number desktop-detail">Excluded holdings</th>
             <th className="number desktop-detail">Capital deducted</th>
@@ -200,7 +201,7 @@ function ResearchList({ entries }: { entries: RankingEntry[] }) {
       {entries.map((entry) => (
         <article className="research-card" key={entry.foundingUnitId}>
           <div>
-            <p className="card-kicker">Unranked</p>
+            <p className="card-kicker">Research in progress</p>
             <h3>{entry.displayName}</h3>
             <p>
               <ProjectNames entry={entry} />
@@ -208,7 +209,8 @@ function ResearchList({ entries }: { entries: RankingEntry[] }) {
           </div>
           <ConfidenceBadge value={entry.confidence} />
           <p className="research-reason">
-            {entry.warnings.join(" ") ||
+            {entry.ineligibilityReasons.join(" ") ||
+              entry.warnings.join(" ") ||
               "Required public inputs are incomplete."}
           </p>
         </article>
@@ -509,10 +511,12 @@ export function RankingDashboard() {
           <b>−</b>
           <span>Qualifying outside capital</span>
           <b>=</b>
-          <strong>Estimated outside wealth</strong>
+          <strong>Estimated outside-holder token value</strong>
         </div>
         <p>
-          Market observations, public wallet attribution, circulating-supply
+          The score is max(0, circulating market value − approved affiliated
+          circulating holdings − reviewed disclosed outside capital). Market
+          observations, public wallet attribution, circulating-supply
           classifications, and funding records feed the canonical calculation.
           Freshness labels reflect the latest market observation supporting each
           score. Public exchange prices may update a clearly labeled live

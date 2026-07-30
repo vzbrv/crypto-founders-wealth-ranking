@@ -32,6 +32,24 @@ export const projects = pgTable("projects", {
   calculationCategory: text("calculation_category").notNull(),
   status: text().notNull(),
   confidenceLevel: text("confidence_level").notNull(),
+  walletReviewStatus: text("wallet_review_status").notNull(),
+  walletReviewReviewer: text("wallet_review_reviewer"),
+  walletReviewReviewedAt: timestamp("wallet_review_reviewed_at", {
+    withTimezone: true,
+  }),
+  walletReviewNotes: text("wallet_review_notes"),
+  walletReviewEvidenceSourceIds: jsonb("wallet_review_evidence_source_ids")
+    .notNull()
+    .default([]),
+  fundingReviewStatus: text("funding_review_status").notNull(),
+  fundingReviewReviewer: text("funding_review_reviewer"),
+  fundingReviewReviewedAt: timestamp("funding_review_reviewed_at", {
+    withTimezone: true,
+  }),
+  fundingReviewNotes: text("funding_review_notes"),
+  fundingReviewEvidenceSourceIds: jsonb("funding_review_evidence_source_ids")
+    .notNull()
+    .default([]),
   methodologyNotes: text("methodology_notes").notNull(),
   iqWikiSlug: text("iq_wiki_slug"),
   websiteUrl: text("website_url").notNull(),
@@ -165,7 +183,15 @@ export const trackedWallets = pgTable("tracked_wallets", {
     precision: 20,
     scale: 18,
   }),
+  balanceIncludedInCirculatingSupply: boolean(
+    "balance_included_in_circulating_supply",
+  ),
   affectsScore: boolean("affects_score").notNull().default(true),
+  deduplicationKey: text("deduplication_key").notNull(),
+  reviewStatus: text("review_status").notNull(),
+  reviewer: text(),
+  reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
+  evidenceSourceIds: jsonb("evidence_source_ids").notNull().default([]),
   status: text().notNull(),
   researchReviewedAt: timestamp("research_reviewed_at", {
     withTimezone: true,
@@ -233,6 +259,10 @@ export const fundingRounds = pgTable("funding_rounds", {
   includeInCapitalDeduction: boolean("include_in_capital_deduction")
     .notNull()
     .default(true),
+  deduplicationKey: text("deduplication_key").notNull(),
+  reviewStatus: text("review_status").notNull(),
+  reviewer: text(),
+  evidenceSourceIds: jsonb("evidence_source_ids").notNull().default([]),
   status: text().notNull(),
   reviewedAt: timestamp("reviewed_at", { withTimezone: true }).notNull(),
   notes: text(),
@@ -324,6 +354,8 @@ export const projectScores = pgTable(
     dataFreshness: jsonb("data_freshness").notNull(),
     calculationBreakdown: jsonb("calculation_breakdown").notNull(),
     warnings: jsonb().notNull().default([]),
+    eligibilityStatus: text("eligibility_status").notNull().default("research"),
+    ineligibilityReasons: jsonb("ineligibility_reasons").notNull().default([]),
   },
   (table) => [
     unique().on(table.calculationRunId, table.projectId, table.assetId),
@@ -350,6 +382,8 @@ export const foundingUnitScores = pgTable(
     projectBreakdown: jsonb("project_breakdown").notNull(),
     confidenceLabel: text("confidence_label").notNull(),
     warnings: jsonb().notNull().default([]),
+    eligibilityStatus: text("eligibility_status").notNull().default("research"),
+    ineligibilityReasons: jsonb("ineligibility_reasons").notNull().default([]),
   },
   (table) => [unique().on(table.calculationRunId, table.foundingUnitId)],
 );

@@ -6,6 +6,10 @@ export const CALCULATION_WARNING_CODES = [
   "WALLET_ATTRIBUTION_LOW_CONFIDENCE",
   "WALLET_ATTRIBUTION_DISPUTED",
   "UNKNOWN_CIRCULATION_TREATMENT",
+  "WALLET_REVIEW_INCOMPLETE",
+  "FUNDING_REVIEW_INCOMPLETE",
+  "DUPLICATE_WALLET_DEDUCTION",
+  "DUPLICATE_FUNDING_DEDUCTION",
   "EXCLUDED_SUPPLY_EXCEEDS_CIRCULATING",
   "MARKET_CAP_RECONCILIATION_WARNING",
   "LIVE_PRICE_VARIANCE",
@@ -17,6 +21,11 @@ export type CalculationWarningCode = (typeof CALCULATION_WARNING_CODES)[number];
 export type ConfidenceLabel = "high" | "medium" | "low" | "insufficient";
 export type OwnershipConfidence = "high" | "medium" | "low" | "disputed";
 export type WarningSeverity = "info" | "warning" | "blocking";
+export type ReviewStatus =
+  | "not_reviewed"
+  | "in_progress"
+  | "approved_sufficient"
+  | "reviewed_insufficient";
 
 export type CalculationWarning = {
   code: CalculationWarningCode;
@@ -27,16 +36,23 @@ export type CalculationWarning = {
 
 export type ProjectWalletInput = {
   walletId: string;
+  deduplicationKey: string;
   normalizedBalance: string;
   circulatingInclusionFraction: string | null;
+  balanceIncludedInCirculatingSupply: boolean | null;
   affectsScore: boolean;
   ownershipConfidence: OwnershipConfidence;
+  reviewStatus: ReviewStatus;
+  evidenceComplete: boolean;
 };
 
 export type FundingRoundInput = {
   fundingRoundId: string;
+  deduplicationKey: string;
   amountUsdAtEvent: string | null;
   includeInCapitalDeduction: boolean;
+  reviewStatus: ReviewStatus;
+  evidenceComplete: boolean;
 };
 
 export type ProjectCalculationInput = {
@@ -129,12 +145,18 @@ export type RankingInput = {
   foundingUnitId: string;
   scoreUsd: string | null;
   confidenceLabel: ConfidenceLabel;
+  marketDataStatus: "recent_sourced" | "stale" | "missing_source" | "missing";
+  fundingReviewStatus: ReviewStatus;
+  walletReviewStatus: ReviewStatus;
+  evidenceComplete: boolean;
   previousRank?: number | null;
 };
 
 export type RankingResult = RankingInput & {
   rank: number | null;
   status: "ranked" | "research";
+  eligibilityStatus: "eligible" | "ineligible";
+  ineligibilityReasons: string[];
   movement: number | null;
 };
 

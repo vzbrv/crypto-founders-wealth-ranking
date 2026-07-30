@@ -5,6 +5,13 @@
     "eventDate": "2014-07-22",
     "roundType": "public",
     "includeInCapitalDeduction": false,
+    "deduplicationKey": "ethereum:2014-07-22:public-crowdsale",
+    "reviewStatus": "reviewed_insufficient",
+    "reviewer": "Codex research review",
+    "evidenceSourceIds": [
+      "c625652c-e5e1-43da-825a-ec898ef6b9c1",
+      "8eba8c50-ce98-4bf6-b711-d143fe137fe6"
+    ],
     "status": "active",
     "reviewedAt": "2026-07-30T16:00:00Z",
     "notes": "Ethereum.org reports approximately 31,000 BTC raised and an approximately $18 million contemporaneous value. The USD amount is intentionally unset and the event is excluded because the reviewed primary source does not provide an exact historical USD value. Unknown is not treated as zero."
@@ -19,6 +26,10 @@
     "amountUsdAtEvent": "11000000",
     "conversionMethod": "Already denominated in USD in the official Series A announcement.",
     "includeInCapitalDeduction": true,
+    "deduplicationKey": "uniswap:2020-08-06:series-a:11000000-usd",
+    "reviewStatus": "approved_sufficient",
+    "reviewer": "Codex research review",
+    "evidenceSourceIds": ["45ee80b9-77c7-4a49-ab93-050ee795d37b"],
     "status": "active",
     "reviewedAt": "2026-07-30T16:00:00Z",
     "notes": "Uniswap Labs Series A. Included as disclosed outside company capital; this is not attributed to Hayden Adams personally."
@@ -33,6 +44,10 @@
     "amountUsdAtEvent": "165000000",
     "conversionMethod": "Already denominated in USD in the official Series B announcement.",
     "includeInCapitalDeduction": true,
+    "deduplicationKey": "uniswap:2022-10-13:series-b:165000000-usd",
+    "reviewStatus": "approved_sufficient",
+    "reviewer": "Codex research review",
+    "evidenceSourceIds": ["b910f91a-8ee4-4c52-82ff-9b0ec0ab82ec"],
     "status": "active",
     "reviewedAt": "2026-07-30T16:00:00Z",
     "notes": "Uniswap Labs Series B. Included as disclosed outside company capital; this is not attributed to Hayden Adams personally."
@@ -47,6 +62,10 @@
     "amountUsdAtEvent": "314159265",
     "conversionMethod": "Already denominated in USD in the official private token sale announcement.",
     "includeInCapitalDeduction": true,
+    "deduplicationKey": "solana:2021-06-09:private-token-sale:314159265-usd",
+    "reviewStatus": "approved_sufficient",
+    "reviewer": "Codex research review",
+    "evidenceSourceIds": ["19e43fa1-7f26-45f7-8941-d7e165a3322d"],
     "status": "active",
     "reviewedAt": "2026-07-30T16:00:00Z",
     "notes": "Solana Labs private token sale. Included as disclosed outside capital; it is not attributed to any founder personally. Earlier funding completeness remains unresolved."

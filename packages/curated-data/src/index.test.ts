@@ -100,6 +100,54 @@ describe("curated data validation", () => {
     expectInvalid(badTotal, "Attribution fractions exceed one");
   });
 
+  it("requires one canonical founding unit unless allocation is documented", () => {
+    const data = structuredClone(validData);
+    const duplicate = structuredClone(data.foundingUnits[0]!);
+    duplicate.id = "88888888-8888-4888-8888-888888888888";
+    duplicate.slug = "second-synthetic-team";
+    duplicate.projectLinks[0]!.attributionFraction = "0.5";
+    data.foundingUnits[0]!.projectLinks[0]!.attributionFraction = "0.5";
+    data.foundingUnits.push(duplicate);
+    data.recordSources.push({
+      id: "70000000-0000-4000-8000-000000000006",
+      sourceId: data.sources[0]!.id,
+      recordType: "founding_unit",
+      recordId: duplicate.id,
+      field: "projectLinks[0]",
+      supportType: "primary",
+    });
+    expectInvalid(data, "must have one canonical founding unit");
+  });
+
+  it("rejects duplicate wallet and funding deductions", () => {
+    const duplicateWallet = structuredClone(validData);
+    const wallet = structuredClone(duplicateWallet.wallets[0]!);
+    wallet.id = "88888888-8888-4888-8888-888888888888";
+    duplicateWallet.wallets.push(wallet);
+    expectInvalid(duplicateWallet, "Duplicate wallet deduplication key");
+
+    const duplicateFunding = structuredClone(validData);
+    const round = structuredClone(duplicateFunding.fundingRounds[0]!);
+    round.id = "88888888-8888-4888-8888-888888888888";
+    duplicateFunding.fundingRounds.push(round);
+    expectInvalid(
+      duplicateFunding,
+      "Duplicate funding round deduplication key",
+    );
+  });
+
+  it("requires evidence metadata for reviewed zero deductions", () => {
+    const walletData = structuredClone(validData);
+    walletData.wallets[0]!.circulatingInclusionFraction = "0";
+    walletData.wallets[0]!.reviewer = null;
+    expectInvalid(walletData, "A reviewed zero wallet deduction requires");
+
+    const fundingData = structuredClone(validData);
+    fundingData.fundingRounds[0]!.amountUsdAtEvent = "0";
+    fundingData.fundingRounds[0]!.notes = undefined;
+    expectInvalid(fundingData, "A reviewed zero funding amount requires");
+  });
+
   it("rejects active projects without one active primary asset", () => {
     const data = structuredClone(validData);
     data.assets[0]!.isPrimary = false;
