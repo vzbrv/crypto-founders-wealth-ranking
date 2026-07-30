@@ -3,6 +3,7 @@ import { Suspense } from "react";
 
 import { SiteNav } from "../../components/site-nav";
 import { SourceRegistry } from "../../components/source-registry";
+import { getResearchDataset } from "../../lib/research-data";
 import { getAllSourceClaims } from "../../lib/transparency-data";
 
 export const metadata: Metadata = {
@@ -11,7 +12,9 @@ export const metadata: Metadata = {
   alternates: { canonical: "/sources/" },
 };
 
-export default function SourcesPage() {
+export default async function SourcesPage() {
+  const researchSources = (await getResearchDataset()).sources;
+
   return (
     <>
       <SiteNav />
@@ -28,6 +31,51 @@ export default function SourcesPage() {
         <Suspense fallback={<p>Loading source registry…</p>}>
           <SourceRegistry claims={getAllSourceClaims()} />
         </Suspense>
+        <section className="panel" aria-labelledby="research-sources-heading">
+          <div className="section-heading compact">
+            <div>
+              <p className="eyebrow">Separate dated register</p>
+              <h2 id="research-sources-heading">Founder research references</h2>
+            </div>
+            <p>
+              These {researchSources.length} sources support the founder
+              research universe. They are not canonical ranking inputs unless
+              separately promoted through the publication gate.
+            </p>
+          </div>
+          <div className="table-shell evidence-shell">
+            <table className="evidence-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Category</th>
+                  <th>Source</th>
+                  <th>Date</th>
+                  <th>Quality</th>
+                  <th>Notes</th>
+                </tr>
+              </thead>
+              <tbody>
+                {researchSources.map((source) => (
+                  <tr key={source.id}>
+                    <td>
+                      <code>{source.id}</code>
+                    </td>
+                    <td>{source.category}</td>
+                    <td>
+                      <a href={source.url} target="_blank" rel="noreferrer">
+                        {source.name}
+                      </a>
+                    </td>
+                    <td>{source.date ?? "Undated"}</td>
+                    <td>{source.quality}</td>
+                    <td>{source.notes}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
       </main>
     </>
   );

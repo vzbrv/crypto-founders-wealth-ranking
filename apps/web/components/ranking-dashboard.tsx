@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import {
@@ -14,6 +15,7 @@ import {
   type RawLeaderboardRow,
   type RawProjectDetail,
 } from "../lib/ranking";
+import type { ResearchSnapshot } from "../lib/research-data";
 import { useLivePrices } from "../lib/use-live-prices";
 import { SiteNav } from "./site-nav";
 
@@ -219,6 +221,47 @@ function ResearchList({ entries }: { entries: RankingEntry[] }) {
   );
 }
 
+function researchMoney(value: string | null): string {
+  return value === null ? "Unknown" : money(Number(value));
+}
+
+function ResearchSnapshotList({ snapshot }: { snapshot: ResearchSnapshot }) {
+  return (
+    <>
+      <div className="research-grid">
+        {snapshot.candidates.slice(0, 6).map((candidate) => (
+          <article className="research-card" key={candidate.projectId}>
+            <div>
+              <p className="card-kicker">
+                Gross screen #{candidate.grossScreenRank ?? "—"}
+              </p>
+              <h3>
+                <Link href={`/research/${candidate.projectId}/`}>
+                  {candidate.project}
+                </Link>
+              </h3>
+              <p>{candidate.foundersTeam}</p>
+            </div>
+            <span className="badge">{candidate.publicationStatus}</span>
+            <p className="research-reason">
+              Provisional outside-holder value:{" "}
+              <strong>
+                {researchMoney(candidate.provisionalOutsideWealthUsd)}
+              </strong>
+              . {candidate.missingEvidence.join(" ") || "Inputs complete."}
+            </p>
+          </article>
+        ))}
+      </div>
+      <p className="research-link">
+        <Link href="/research/">
+          View all {snapshot.totalCandidates} candidates and evidence →
+        </Link>
+      </p>
+    </>
+  );
+}
+
 async function loadRanking(): Promise<RankingEntry[]> {
   const baseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, "");
   const publicKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
@@ -244,7 +287,11 @@ async function loadRanking(): Promise<RankingEntry[]> {
   );
 }
 
-export function RankingDashboard() {
+export function RankingDashboard({
+  researchSnapshot,
+}: {
+  researchSnapshot: ResearchSnapshot;
+}) {
   const [entries, setEntries] = useState<RankingEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -283,6 +330,9 @@ export function RankingDashboard() {
   );
   const ranked = filtered.filter(({ status }) => status === "ranked");
   const research = filtered.filter(({ status }) => status === "research");
+  const hasCanonicalResearch = entries.some(
+    ({ status }) => status === "research",
+  );
   const rankedRef = useRef(ranked);
   const liveEstimatesRef = useRef(liveEstimates);
 
@@ -379,8 +429,8 @@ export function RankingDashboard() {
             <strong>{ranked.length}</strong>
           </div>
           <div>
-            <span>In research</span>
-            <strong>{research.length}</strong>
+            <span>Research snapshot</span>
+            <strong>{researchSnapshot.totalCandidates}</strong>
           </div>
           <div>
             <span>Live price overlay</span>
@@ -484,15 +534,21 @@ export function RankingDashboard() {
       <section className="research-section" aria-labelledby="research-heading">
         <div className="section-heading compact">
           <div>
-            <p className="eyebrow">Not part of the ranking</p>
-            <h2 id="research-heading">Research in progress</h2>
+            <p className="eyebrow">Dated snapshot · Not part of the ranking</p>
+            <h2 id="research-heading">Founder research universe</h2>
           </div>
           <p>
-            Entries remain unranked until every required input meets the minimum
-            confidence standard.
+            {researchSnapshot.snapshotDate} research inputs. Values are not live
+            observations and are excluded from the canonical leaderboard.
           </p>
         </div>
-        {!loading && !error ? <ResearchList entries={research} /> : null}
+        <ResearchSnapshotList snapshot={researchSnapshot} />
+        {!loading && !error && hasCanonicalResearch ? (
+          <div className="canonical-research">
+            <h3>Canonical pipeline</h3>
+            <ResearchList entries={research} />
+          </div>
+        ) : null}
       </section>
 
       <section

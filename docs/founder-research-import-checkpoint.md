@@ -2,9 +2,9 @@
 
 Branch: `codex/import-founder-research-handoff`
 
-This is an incomplete implementation checkpoint. The research importer and
-calculation safeguards are implemented; UI integration, full validation, and
-the final draft pull request remain.
+This checkpoint now includes the research importer, calculation safeguards,
+static UI integration, and local production validation. Only the final draft
+pull request remains.
 
 ## Completed
 
@@ -22,30 +22,47 @@ the final draft pull request remain.
 - Added calculation guards for ineligible wallet attribution and tokens that
   are outside circulating supply.
 - Added importer and calculation tests.
+- Added a dated, explicitly unranked research summary to the dashboard.
+- Added a static 30-candidate research index and per-project detail pages with
+  provisional/canonical values, evidence status, missing inputs, wallet/entity
+  evidence, and source links.
+- Added the separate 64-source research register, navigation, and sitemap
+  entries without changing canonical leaderboard inputs.
 
 ## Verified at checkpoint
 
 ```text
-pnpm --filter @crypto-founders/curated-data test
-2 files passed, 25 tests passed
+pnpm validate:research-data
+30 candidates, 32 wallet rows, 20 capital records, 64 sources
 
-pnpm --filter @crypto-founders/calculations test
-2 files passed, 52 tests passed
+CURATED_DATA_DIR=data/production pnpm check
+9 package checks passed; 79 production records; 45 static pages
+
+PLAYWRIGHT_CHANNEL=chrome pnpm e2e
+9 tests passed
+
+Static output inspection
+Research index plus 30 detail pages; no synthetic fixture HTML/XML
 ```
 
-## Next work
+The live HTTP portion of `pnpm smoke:production` requires protected deployment
+variables and was not completed locally. No external configuration was changed.
 
-1. Add the research universe to the existing dashboard, project pages, source
-   registry, and sitemap without treating snapshot values as live production
-   observations.
-2. Link gross, excluded holdings, capital, and wallet attribution values to
-   their specific evidence.
-3. Show provisional versus canonical values, statuses, timestamps, and exact
-   missing evidence.
-4. Document provider/chain limitations and all unresolved manual inputs.
-5. Run format, lint, typecheck, all tests, production-data/database validation,
-   build, E2E/smoke checks, and static-output synthetic-data isolation checks.
-6. Commit the completed changes, push, and open a draft pull request. Do not
+## Snapshot limitations
+
+- Values are fixed to the source CSV snapshot date; there is no live market,
+  chain, explorer, or wallet-provider refresh.
+- Wallet/entity evidence is curated public research only. It is excluded from
+  synchronization and cannot change a published score.
+- Partial, missing, and refresh-required inputs remain unresolved manual work.
+  Blank deductions stay unknown and never become canonical zeroes.
+- Before publication, refresh time-sensitive valuation inputs, recheck every
+  source and ownership claim, resolve the candidate's listed missing evidence,
+  and rerun the publication gate in `data/research/CODEX_HANDOFF.md`.
+
+## Remaining work
+
+1. Commit the completed changes, push, and open a draft pull request. Do not
    deploy, merge, or mark it ready.
 
 No database migration has been added. The imported research layer remains

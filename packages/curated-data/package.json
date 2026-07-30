@@ -3,7 +3,10 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "exports": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./research": "./src/research.ts"
+  },
   "dependencies": {
     "@crypto-founders/schemas": "workspace:*",
     "decimal.js": "^10.6.0"
