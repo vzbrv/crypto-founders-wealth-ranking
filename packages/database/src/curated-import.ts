@@ -40,7 +40,7 @@ export function createCuratedImportStatements(
           funding_review_notes, funding_review_evidence_source_ids,
           iq_wiki_slug, website_url, launched_at, research_reviewed_at
         ) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
-          $11, $12, $13, $14, $15::jsonb, $16, $17, $18, $19, $20::jsonb,
+          $11, $12, $13, $14, $15::text::jsonb, $16, $17, $18, $19, $20::text::jsonb,
           $21, $22, $23, $24)
         on conflict (id) do update set
           slug = excluded.slug, name = excluded.name, symbol = excluded.symbol,
@@ -137,7 +137,7 @@ export function createCuratedImportStatements(
           id, project_id, asset_type, symbol, name, decimals, chain_code,
           contract_address, coingecko_id, coinbase_product_id, binance_symbol,
           dex_screener_pair, provider_ids, is_primary, is_active
-        ) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13::jsonb, $14, $15)
+        ) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13::text::jsonb, $14, $15)
         on conflict (id) do update set
           project_id = excluded.project_id, asset_type = excluded.asset_type,
           symbol = excluded.symbol, name = excluded.name, decimals = excluded.decimals,
@@ -201,7 +201,7 @@ export function createCuratedImportStatements(
           affects_score, deduplication_key, review_status, reviewer, reviewed_at,
           evidence_source_ids, status, research_reviewed_at, notes
         ) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12,
-          $13, $14, $15, $16, $17, $18::jsonb, $19, $20, $21)
+          $13, $14, $15, $16, $17, $18::text::jsonb, $19, $20, $21)
         on conflict (id) do update set
           project_id = excluded.project_id, founding_unit_id = excluded.founding_unit_id,
           chain_code = excluded.chain_code, address = excluded.address,
@@ -272,7 +272,7 @@ export function createCuratedImportStatements(
           original_currency, amount_usd_at_event, usd_conversion_method,
           include_in_capital_deduction, deduplication_key, review_status,
           reviewer, evidence_source_ids, status, reviewed_at, notes
-        ) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13::jsonb, $14, $15, $16)
+        ) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13::text::jsonb, $14, $15, $16)
         on conflict (id) do update set
           project_id = excluded.project_id, event_date = excluded.event_date,
           round_type = excluded.round_type, original_amount = excluded.original_amount,
