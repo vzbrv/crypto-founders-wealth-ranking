@@ -1,0 +1,62 @@
+name: Verify production
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-production:
+    name: Verify production
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: production
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.9.0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Verify production HTTP contracts
+        id: http
+        continue-on-error: true
+        env:
+          PUBLIC_SITE_URL: ${{ secrets.PUBLIC_SITE_URL }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: pnpm smoke:production
+
+      - name: Verify production database
+        id: database
+        if: always()
+        continue-on-error: true
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: pnpm verify:production-database
+
+      - name: Report final result
+        if: always()
+        run: |
+          echo "## Overall result" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "- HTTP verification: ${{ steps.http.outcome }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Database verification: ${{ steps.database.outcome }}" >> "$GITHUB_STEP_SUMMARY"
+          if [[ "${{ steps.http.outcome }}" != "success" || "${{ steps.database.outcome }}" != "success" ]]; then
+            echo "Production verification failed. Review the safe check summaries above and configure missing production environment secrets manually." >&2
+            exit 1
+          fi

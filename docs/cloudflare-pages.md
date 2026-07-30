@@ -24,3 +24,5 @@ Set these public build-time environment variables in both Preview and Production
 Only `NEXT_PUBLIC_*` values belong in the Pages build. Do not add database credentials, service-role keys, provider API keys, or `CRON_SECRET`.
 
 Cloudflare should install with `pnpm install --frozen-lockfile`. If an explicit install command is required, set `PNPM_VERSION=11.9.0` and use that command. The output is fully static and requires no Pages Functions or Next.js server runtime.
+
+Production static route generation reads only reviewed records from `data/production`. Do not set `CRYPTO_FOUNDERS_TEST_FIXTURES` or `CRYPTO_FOUNDERS_LOCAL_FIXTURES` in Cloudflare. Synthetic fixtures are enabled automatically in tests, or explicitly for local development with `CRYPTO_FOUNDERS_LOCAL_FIXTURES=1`.

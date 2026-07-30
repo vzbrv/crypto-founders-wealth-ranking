@@ -3,7 +3,7 @@ import { Suspense } from "react";
 
 import { SiteNav } from "../../components/site-nav";
 import { SourceRegistry } from "../../components/source-registry";
-import { getAllSourceClaims } from "../../lib/transparency";
+import { getAllSourceClaims } from "../../lib/transparency-data";
 
 export const metadata: Metadata = {
   title: "Source registry",
