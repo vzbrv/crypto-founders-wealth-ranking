@@ -9,6 +9,7 @@
     "lint": "eslint src",
     "sync:curated-data": "tsx src/sync-curated-data.ts",
     "test:migrations": "vitest run src/database.test.ts",
+    "verify:production": "tsx src/verify-production.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run src"
   },

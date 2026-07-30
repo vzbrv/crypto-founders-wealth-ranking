@@ -1,10 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  calculateScoreBreakdown,
-  explorerUrl,
-  getProjectEvidence,
-} from "../../lib/transparency";
+import { calculateScoreBreakdown, explorerUrl } from "../../lib/transparency";
+import { getProjectEvidence } from "../../lib/transparency-data";
 
 describe("transparency data", () => {
   it("reproduces the public score formula", () => {

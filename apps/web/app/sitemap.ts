@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 
 import { getSiteUrl } from "../lib/site-metadata";
-import { getProjectSlugs } from "../lib/transparency";
+import { getProjectSlugs } from "../lib/transparency-data";
 
 export const dynamic = "force-static";
 

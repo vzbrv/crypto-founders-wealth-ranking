@@ -51,7 +51,7 @@ The sync is transactional and idempotent: stable record IDs are upserted and rer
 
 ## GitHub Actions
 
-The manually dispatched `deploy-supabase.yml` workflow validates, tests, builds, applies migrations, configures secrets, deploys all four functions, and synchronizes production data.
+The manually dispatched `deploy-supabase.yml` workflow validates, tests, builds, applies migrations, configures secrets, deploys all four functions, and synchronizes production data. The separate `Verify production` workflow is read-only except for its deliberate anonymous-write rejection check.
 
 Required GitHub production-environment secrets:
 
@@ -59,6 +59,8 @@ Required GitHub production-environment secrets:
 - `SUPABASE_PROJECT_REF`
 - `SUPABASE_DB_PASSWORD`
 - `SUPABASE_URL`
+- `SUPABASE_PUBLISHABLE_KEY`
+- `PUBLIC_SITE_URL`
 - `DATABASE_URL` (direct PostgreSQL connection)
 - `CRON_SECRET`
 - `EVM_ETHEREUM_RPC_URL`
@@ -69,7 +71,9 @@ The provider-smoke workflow separately uses repository variable `NEXT_PUBLIC_SUP
 
 ## Verification
 
-After Supabase and Cloudflare are live:
+After Supabase and Cloudflare are live, manually dispatch `Verify production`. It uses the protected `production` environment and writes HTTP and PostgreSQL results to the job summary. Missing configuration is identified by variable name only; secret values, headers, and connection strings must never be logged.
+
+For a local equivalent, run both verification commands without shell tracing:
 
 ```bash
 PUBLIC_SITE_URL="$PUBLIC_SITE_URL" \
@@ -77,6 +81,10 @@ SUPABASE_URL="$SUPABASE_URL" \
 SUPABASE_PUBLISHABLE_KEY="$SUPABASE_PUBLISHABLE_KEY" \
 CRON_SECRET="$CRON_SECRET" \
 pnpm smoke:production
+
+DATABASE_URL="$DATABASE_URL" pnpm verify:production-database
 ```
+
+The checks cover all public REST views, write/read access boundaries, provider health, static site routes, migration history, active Cron schedules, recent Cron runs, and public view existence.
 
 See [Cloudflare Pages](cloudflare-pages.md) and the [production checklist](production-checklist.md).
