@@ -91,6 +91,9 @@ importers:
       '@crypto-founders/schemas':
         specifier: workspace:*
         version: link:../schemas
+      decimal.js:
+        specifier: ^10.6.0
+        version: 10.6.0
 
   packages/database:
     dependencies:

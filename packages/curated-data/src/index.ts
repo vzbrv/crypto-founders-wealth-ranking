@@ -7,6 +7,8 @@ import {
   type CuratedDataBundle,
 } from "@crypto-founders/schemas";
 
+export * from "./research.js";
+
 export const curatedDataFiles = {
   projects: "projects.json",
   foundingUnits: "founding-units.json",
