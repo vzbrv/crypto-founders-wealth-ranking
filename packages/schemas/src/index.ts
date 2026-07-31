@@ -107,6 +107,8 @@ export const foundingUnitSchema = z.strictObject({
           "documented_split",
           "team_collective",
         ]),
+        isCanonical: z.boolean(),
+        allocationMethodology: z.string().min(1).nullable(),
       }),
     )
     .min(1),
@@ -584,16 +586,27 @@ export const curatedDataBundleSchema = curatedDataBundleBaseSchema.superRefine(
         );
       const documentedAllocation =
         activeLinks.length > 1 &&
+        activeLinks.every(({ link }) => !link.isCanonical) &&
         activeLinks.every(
           ({ link }) => link.attributionMethod === "documented_split",
         ) &&
+        activeLinks.every(
+          ({ link }) => link.allocationMethodology !== null,
+        ) &&
+        new Set(
+          activeLinks.map(({ link }) => link.allocationMethodology),
+        ).size === 1 &&
         Math.abs(
           activeLinks.reduce(
             (total, { link }) => total + Number(link.attributionFraction),
             0,
           ) - 1,
         ) <= Number.EPSILON;
-      if (activeLinks.length !== 1 && !documentedAllocation)
+      const canonicalAllocation =
+        activeLinks.length === 1 &&
+        activeLinks[0]?.link.isCanonical === true &&
+        Number(activeLinks[0].link.attributionFraction) === 1;
+      if (!canonicalAllocation && !documentedAllocation)
         context.addIssue({
           code: "custom",
           message: `Active project ${project.id} must have one canonical founding unit or an explicit documented allocation`,

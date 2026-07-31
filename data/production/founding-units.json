@@ -11,7 +11,9 @@
       {
         "projectId": "cb61ccf6-26ba-4716-8cac-f5604546b3e0",
         "attributionFraction": "1",
-        "attributionMethod": "team_collective"
+        "attributionMethod": "team_collective",
+        "isCanonical": true,
+        "allocationMethodology": null
       }
     ]
   },
@@ -27,7 +29,9 @@
       {
         "projectId": "955b4b59-1908-484c-b13e-95740efb38d1",
         "attributionFraction": "1",
-        "attributionMethod": "equal_split"
+        "attributionMethod": "equal_split",
+        "isCanonical": true,
+        "allocationMethodology": null
       }
     ]
   },
@@ -43,7 +47,9 @@
       {
         "projectId": "1cf70f95-81d3-454f-b381-f8a4ce1b980b",
         "attributionFraction": "1",
-        "attributionMethod": "team_collective"
+        "attributionMethod": "team_collective",
+        "isCanonical": true,
+        "allocationMethodology": null
       }
     ]
   }

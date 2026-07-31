@@ -309,9 +309,9 @@ export function calculateQualifyingCapital(
   const incompleteReviewIds = uniqueRounds
     .filter(
       (fundingRound) =>
-        fundingRound.includeInCapitalDeduction &&
-        (fundingRound.reviewStatus !== "approved_sufficient" ||
-          !fundingRound.evidenceComplete),
+        fundingRound.reviewStatus !== "approved_sufficient" ||
+        !fundingRound.evidenceComplete ||
+        !fundingRound.inclusionReason?.trim(),
     )
     .map((fundingRound) => fundingRound.fundingRoundId);
   const reviewComplete = reviewStatus === "approved_sufficient";
@@ -346,7 +346,7 @@ export function calculateQualifyingCapital(
       warning(
         "FUNDING_REVIEW_INCOMPLETE",
         "blocking",
-        "Included funding requires an approved sufficient review and complete evidence.",
+        "Every financing event requires an approved sufficient review, complete evidence, and an inclusion decision.",
         incompleteReviewIds,
       ),
     );

@@ -41,6 +41,7 @@ const funding = (
   deduplicationKey: input.fundingRoundId,
   amountUsdAtEvent: "1",
   includeInCapitalDeduction: true,
+  inclusionReason: "Reviewed and included.",
   reviewStatus: "approved_sufficient",
   evidenceComplete: true,
   ...input,
@@ -189,7 +190,7 @@ describe("qualifying capital", () => {
     });
   });
 
-  it("ignores explicitly excluded rounds", () => {
+  it("keeps unresolved excluded financing incomplete", () => {
     expect(
       calculateQualifyingCapital(
         [
@@ -203,15 +204,16 @@ describe("qualifying capital", () => {
             includeInCapitalDeduction: false,
             reviewStatus: "not_reviewed",
             evidenceComplete: false,
+            inclusionReason: "Excluded pending review.",
           }),
         ],
         "approved_sufficient",
       ),
     ).toMatchObject({
-      qualifyingCapitalUsd: "12.34567890",
+      qualifyingCapitalUsd: null,
       knownQualifyingCapitalUsd: "12.34567890",
-      complete: true,
-      warnings: [],
+      complete: false,
+      warnings: [{ code: "FUNDING_REVIEW_INCOMPLETE" }],
     });
   });
 });

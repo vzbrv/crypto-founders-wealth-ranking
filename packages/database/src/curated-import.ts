@@ -116,15 +116,20 @@ export function createCuratedImportStatements(
       statements.push(
         statement(
           `insert into project_founding_units (
-            project_id, founding_unit_id, attribution_fraction, attribution_method
-          ) values ($1, $2, $3, $4)
+            project_id, founding_unit_id, attribution_fraction, attribution_method,
+            is_canonical, allocation_methodology
+          ) values ($1, $2, $3, $4, $5, $6)
           on conflict (project_id, founding_unit_id) do update set
             attribution_fraction = excluded.attribution_fraction,
-            attribution_method = excluded.attribution_method`,
+            attribution_method = excluded.attribution_method,
+            is_canonical = excluded.is_canonical,
+            allocation_methodology = excluded.allocation_methodology`,
           link.projectId,
           unit.id,
           link.attributionFraction,
           link.attributionMethod,
+          link.isCanonical,
+          link.allocationMethodology,
         ),
       );
     }

@@ -120,6 +120,8 @@ export const projectFoundingUnits = pgTable(
       scale: 18,
     }).notNull(),
     attributionMethod: text("attribution_method").notNull(),
+    isCanonical: boolean("is_canonical").notNull().default(false),
+    allocationMethodology: text("allocation_methodology"),
   },
   (table) => [unique().on(table.projectId, table.foundingUnitId)],
 );
@@ -151,6 +153,8 @@ export const marketObservations = pgTable("market_observations", {
     .notNull()
     .references(() => assets.id),
   provider: text().notNull(),
+  sourceUrl: text("source_url"),
+  sourceDescription: text("source_description"),
   observedAt: timestamp("observed_at", { withTimezone: true }).notNull(),
   fetchedAt: timestamp("fetched_at", { withTimezone: true })
     .defaultNow()

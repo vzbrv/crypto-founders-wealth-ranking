@@ -53,6 +53,7 @@ export type FundingRoundInput = {
   deduplicationKey: string;
   amountUsdAtEvent: string | null;
   includeInCapitalDeduction: boolean;
+  inclusionReason: string | null;
   reviewStatus: ReviewStatus;
   evidenceComplete: boolean;
 };
