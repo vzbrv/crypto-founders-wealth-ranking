@@ -58,6 +58,10 @@ const rankingPublicEvidenceMigrationUrl = new URL(
   "../../../supabase/migrations/202607300016_ranking_public_evidence.sql",
   import.meta.url,
 );
+const fundingReviewEligibilityMigrationUrl = new URL(
+  "../../../supabase/migrations/202607310017_funding_review_eligibility.sql",
+  import.meta.url,
+);
 const seedUrl = new URL(
   "../../../supabase/tests/seed.synthetic.sql",
   import.meta.url,
@@ -75,6 +79,7 @@ const migrationSql = [
   await readFile(methodologyIntegrityMigrationUrl, "utf8"),
   await readFile(scalarSafeReviewEvidenceMigrationUrl, "utf8"),
   await readFile(rankingPublicEvidenceMigrationUrl, "utf8"),
+  await readFile(fundingReviewEligibilityMigrationUrl, "utf8"),
 ].join("\n");
 const seedSql = await readFile(seedUrl, "utf8");
 const productionDataDirectory = fileURLToPath(
@@ -581,6 +586,154 @@ describe("Phase 3 database", () => {
       project_scores: 2,
       founding_scores: 2,
       failures: 1,
+    });
+  });
+});
+
+describe("Funding review ranking eligibility", () => {
+  async function prepareRankableInputs(database: PGlite): Promise<void> {
+    await database.exec(`
+      insert into market_observations (
+        asset_id, provider, observed_at, price_usd, circulating_supply, market_cap_usd
+      ) values (
+        '33333333-3333-4333-8333-333333333333', 'funding-regression',
+        now() - interval '1 minute', 3, 1000000, 3000000
+      );
+
+      insert into wallet_balance_observations (
+        tracked_wallet_id, asset_id, provider, observed_at, raw_balance, normalized_balance
+      ) values (
+        '55555555-5555-4555-8555-555555555555',
+        '33333333-3333-4333-8333-333333333333', 'funding-regression',
+        now() - interval '1 minute', 250000000000000000000, 250
+      );
+    `);
+  }
+
+  async function recalculate(database: PGlite) {
+    await database.exec("select recalculate_rankings('funding-regression')");
+    const result = await database.query<{
+      capital_raised_usd: string | null;
+      eligibility_status: "ranked" | "research_in_progress";
+      rank: number | null;
+    }>(`
+      select
+        project.capital_raised_usd::text,
+        project.eligibility_status,
+        unit.rank
+      from current_project_scores as project
+      join current_founding_unit_scores as unit
+        on unit.calculation_run_id = project.calculation_run_id
+      where project.project_id = '11111111-1111-4111-8111-111111111111'
+        and unit.founding_unit_id = '22222222-2222-4222-8222-222222222222'
+    `);
+    return result.rows[0];
+  }
+
+  it("blocks an unresolved excluded event despite approved project funding", async () => {
+    const database = await createDatabase(true);
+    await prepareRankableInputs(database);
+    await database.exec(`
+      update funding_rounds
+      set include_in_capital_deduction = false,
+          inclusion_reason = 'Excluded pending complete review.',
+          review_status = 'not_reviewed',
+          reviewer = null
+      where id = '66666666-6666-4666-8666-666666666666'
+    `);
+    const project = await database.query<{ funding_review_status: string }>(`
+      select funding_review_status
+      from projects
+      where id = '11111111-1111-4111-8111-111111111111'
+    `);
+
+    expect(project.rows[0]?.funding_review_status).toBe("approved_sufficient");
+    expect(await recalculate(database)).toEqual({
+      capital_raised_usd: null,
+      eligibility_status: "research_in_progress",
+      rank: null,
+    });
+  });
+
+  it("does not deduct a properly reviewed excluded event", async () => {
+    const database = await createDatabase(true);
+    await prepareRankableInputs(database);
+    await database.exec(`
+      update funding_rounds
+      set include_in_capital_deduction = false,
+          inclusion_reason = 'Reviewed and excluded from capital deduction.',
+          amount_usd_at_event = null,
+          amount_status = 'unknown',
+          usd_conversion_method = null,
+          usd_conversion_date = null
+      where id = '66666666-6666-4666-8666-666666666666'
+    `);
+
+    expect(await recalculate(database)).toEqual({
+      capital_raised_usd: "0.00000000",
+      eligibility_status: "ranked",
+      rank: 1,
+    });
+  });
+
+  it("deducts a properly reviewed included event exactly once", async () => {
+    const database = await createDatabase(true);
+    await prepareRankableInputs(database);
+
+    expect(await recalculate(database)).toEqual({
+      capital_raised_usd: "2500000.00000000",
+      eligibility_status: "ranked",
+      rank: 1,
+    });
+  });
+
+  it("does not deduct a duplicate funding event twice", async () => {
+    const database = await createDatabase(true);
+    await prepareRankableInputs(database);
+    await database.exec(`
+      insert into funding_rounds (
+        id, project_id, event_date, round_type, original_amount, original_currency,
+        amount_usd_at_event, amount_status, usd_conversion_method,
+        usd_conversion_date, include_in_capital_deduction, inclusion_reason,
+        status, reviewed_at, notes, deduplication_key, review_status, reviewer,
+        evidence_source_ids
+      )
+      select
+        '67676767-6767-4767-8767-676767676767', project_id, event_date,
+        round_type, original_amount, original_currency, amount_usd_at_event,
+        amount_status, usd_conversion_method, usd_conversion_date,
+        include_in_capital_deduction, inclusion_reason, status, reviewed_at,
+        notes, deduplication_key, review_status, reviewer, evidence_source_ids
+      from funding_rounds
+      where id = '66666666-6666-4666-8666-666666666666'
+      on conflict (project_id, deduplication_key) do nothing
+    `);
+    const count = await database.query<{ count: number }>(`
+      select count(*)::int as count
+      from funding_rounds
+      where project_id = '11111111-1111-4111-8111-111111111111'
+    `);
+
+    expect(count.rows[0]?.count).toBe(1);
+    expect(await recalculate(database)).toEqual({
+      capital_raised_usd: "2500000.00000000",
+      eligibility_status: "ranked",
+      rank: 1,
+    });
+  });
+
+  it("keeps rank null when funding review evidence is incomplete", async () => {
+    const database = await createDatabase(true);
+    await prepareRankableInputs(database);
+    await database.exec(`
+      delete from record_sources
+      where id = '70000000-0000-4000-8000-000000000005'
+    `);
+
+    expect(await recalculate(database)).toEqual({
+      capital_raised_usd: null,
+      eligibility_status: "research_in_progress",
+      rank: null,
     });
   });
 });
