@@ -62,6 +62,10 @@ const fundingReviewEligibilityMigrationUrl = new URL(
   "../../../supabase/migrations/202607310017_funding_review_eligibility.sql",
   import.meta.url,
 );
+const marketObservationSourcesMigrationUrl = new URL(
+  "../../../supabase/migrations/202607310018_market_observation_sources.sql",
+  import.meta.url,
+);
 const seedUrl = new URL(
   "../../../supabase/tests/seed.synthetic.sql",
   import.meta.url,
@@ -80,6 +84,7 @@ const migrationSql = [
   await readFile(scalarSafeReviewEvidenceMigrationUrl, "utf8"),
   await readFile(rankingPublicEvidenceMigrationUrl, "utf8"),
   await readFile(fundingReviewEligibilityMigrationUrl, "utf8"),
+  await readFile(marketObservationSourcesMigrationUrl, "utf8"),
 ].join("\n");
 const seedSql = await readFile(seedUrl, "utf8");
 const productionDataDirectory = fileURLToPath(
@@ -769,13 +774,23 @@ describe("Phase 4 market sync", () => {
     ]);
   }
 
-  function observation(priceUsd: string, observedAt: Date) {
+  function observation(
+    priceUsd: string,
+    observedAt: Date,
+    options: {
+      fetchedAt?: Date;
+      sourceUrl?: string | null;
+      sourceDescription?: string | null;
+    } = {},
+  ) {
     return {
       assetId: "33333333-3333-4333-8333-333333333333",
       coingeckoId: "synthetic-horizon-token",
       provider: "coingecko",
       observedAt: observedAt.toISOString(),
-      fetchedAt: new Date().toISOString(),
+      fetchedAt: (options.fetchedAt ?? new Date()).toISOString(),
+      sourceUrl: options.sourceUrl,
+      sourceDescription: options.sourceDescription,
       priceUsd,
       circulatingSupply: "1000000",
       marketCapUsd: String(Number(priceUsd) * 1_000_000),
@@ -803,6 +818,125 @@ describe("Phase 4 market sync", () => {
     expect(result.rows[0]?.calculation_run_id).not.toBeNull();
     expect(score.rows).toEqual([
       { score_usd: "499437.50000000", run_status: "completed" },
+    ]);
+  });
+
+  it("retains and publicly exposes the linked market source and timestamps", async () => {
+    const database = await createDatabase(true);
+    await prepareWalletObservation(database);
+    const observedAt = new Date(Date.now() - 60_000);
+    const fetchedAt = new Date(observedAt.getTime() + 15_000);
+    const sourceUrl =
+      "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=synthetic-horizon-token&precision=full";
+    const sourceDescription = "CoinGecko coins markets API observation";
+
+    await ingest(database, [
+      observation("3", observedAt, {
+        fetchedAt,
+        sourceUrl,
+        sourceDescription,
+      }),
+    ]);
+
+    const result = await database.query<{
+      observation_id: string;
+      project_observation_id: string;
+      wallet_observation_id: string;
+      source_url: string;
+      source_description: string;
+      observed_at_matches: boolean;
+      fetched_at_matches: boolean;
+      project_source_url: string;
+      project_source_description: string;
+      project_timestamps_match: boolean;
+      wallet_source_url: string;
+      wallet_source_description: string;
+      wallet_timestamps_match: boolean;
+    }>(`
+      select
+        observations.id::text as observation_id,
+        details.market_observation_id::text as project_observation_id,
+        wallet.market_observation_id::text as wallet_observation_id,
+        observations.source_url,
+        observations.source_description,
+        observations.observed_at = '${observedAt.toISOString()}'::timestamptz as observed_at_matches,
+        observations.fetched_at = '${fetchedAt.toISOString()}'::timestamptz as fetched_at_matches,
+        details.market_source_url as project_source_url,
+        details.market_source_description as project_source_description,
+        details.market_observed_at = observations.observed_at
+          and details.market_fetched_at = observations.fetched_at as project_timestamps_match,
+        wallet.market_source_url as wallet_source_url,
+        wallet.market_source_description as wallet_source_description,
+        wallet.market_observed_at = observations.observed_at
+          and wallet.market_fetched_at = observations.fetched_at as wallet_timestamps_match
+      from market_observations observations
+      join public_project_details details
+        on details.market_observation_id = observations.id
+      join public_wallet_evidence wallet
+        on wallet.market_observation_id = observations.id
+    `);
+
+    expect(result.rows).toEqual([
+      {
+        observation_id: result.rows[0]?.observation_id,
+        project_observation_id: result.rows[0]?.observation_id,
+        wallet_observation_id: result.rows[0]?.observation_id,
+        source_url: sourceUrl,
+        source_description: sourceDescription,
+        observed_at_matches: true,
+        fetched_at_matches: true,
+        project_source_url: sourceUrl,
+        project_source_description: sourceDescription,
+        project_timestamps_match: true,
+        wallet_source_url: sourceUrl,
+        wallet_source_description: sourceDescription,
+        wallet_timestamps_match: true,
+      },
+    ]);
+  });
+
+  it("preserves an explicit null market source state", async () => {
+    const database = await createDatabase(true);
+    await prepareWalletObservation(database);
+
+    await ingest(database, [
+      observation("3", new Date(Date.now() - 60_000), {
+        sourceUrl: null,
+        sourceDescription: null,
+      }),
+    ]);
+
+    const result = await database.query<{
+      source_url: string | null;
+      source_description: string | null;
+      project_source_url: string | null;
+      project_source_description: string | null;
+      wallet_source_url: string | null;
+      wallet_source_description: string | null;
+    }>(`
+      select
+        observations.source_url,
+        observations.source_description,
+        details.market_source_url as project_source_url,
+        details.market_source_description as project_source_description,
+        wallet.market_source_url as wallet_source_url,
+        wallet.market_source_description as wallet_source_description
+      from market_observations observations
+      join public_project_details details
+        on details.market_observation_id = observations.id
+      join public_wallet_evidence wallet
+        on wallet.market_observation_id = observations.id
+    `);
+
+    expect(result.rows).toEqual([
+      {
+        source_url: null,
+        source_description: null,
+        project_source_url: null,
+        project_source_description: null,
+        wallet_source_url: null,
+        wallet_source_description: null,
+      },
     ]);
   });
 

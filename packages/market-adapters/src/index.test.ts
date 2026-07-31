@@ -47,14 +47,31 @@ describe("CoinGeckoAdapter", () => {
       new URL(fetch.mock.calls[0]![0].toString()).searchParams.get("ids"),
     ).toBe("alpha,beta");
     expect(
-      result.observations.map(({ assetId, priceUsd }) => ({
+      result.observations.map(({ assetId, priceUsd, sourceUrl }) => ({
         assetId,
         priceUsd,
+        sourceUrl,
       })),
     ).toEqual([
-      { assetId: "asset-a", priceUsd: "1.25" },
-      { assetId: "asset-b", priceUsd: "2" },
+      {
+        assetId: "asset-a",
+        priceUsd: "1.25",
+        sourceUrl:
+          "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=alpha&precision=full",
+      },
+      {
+        assetId: "asset-b",
+        priceUsd: "2",
+        sourceUrl:
+          "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=beta&precision=full",
+      },
     ]);
+    expect(result.observations[0]).toMatchObject({
+      sourceDescription: "CoinGecko markets API record for alpha",
+      observedAt: "2026-07-28T11:59:00.000Z",
+      fetchedAt: "2026-07-28T12:00:00.000Z",
+      circulatingSupply: "100",
+    });
     expect(result.health.status).toBe("healthy");
   });
 

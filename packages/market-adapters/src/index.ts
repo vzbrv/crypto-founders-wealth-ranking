@@ -11,12 +11,26 @@ export interface MarketObservation {
   assetId: string;
   coingeckoId: string;
   provider: "coingecko";
+  sourceUrl: string | null;
+  sourceDescription: string | null;
   observedAt: string;
   fetchedAt: string;
   priceUsd: string;
   circulatingSupply: string;
   marketCapUsd: string;
   rawPayload: Record<string, unknown>;
+}
+
+function coingeckoMarketSourceUrl(coingeckoId: unknown): string | null {
+  if (typeof coingeckoId !== "string" || coingeckoId.trim() === "") {
+    return null;
+  }
+
+  const url = new URL(`${COINGECKO_BASE_URL}/coins/markets`);
+  url.searchParams.set("vs_currency", "usd");
+  url.searchParams.set("ids", coingeckoId);
+  url.searchParams.set("precision", "full");
+  return url.toString();
 }
 
 export interface MarketRejection {
@@ -178,6 +192,7 @@ export class CoinGeckoAdapter {
             continue;
           }
           try {
+            const sourceUrl = coingeckoMarketSourceUrl(item.id);
             const observedAt =
               typeof item.last_updated === "string" &&
               !Number.isNaN(Date.parse(item.last_updated))
@@ -187,6 +202,10 @@ export class CoinGeckoAdapter {
               assetId: asset.assetId,
               coingeckoId: asset.coingeckoId,
               provider: "coingecko",
+              sourceUrl,
+              sourceDescription: sourceUrl
+                ? `CoinGecko markets API record for ${item.id}`
+                : null,
               observedAt,
               fetchedAt: checkedAt,
               priceUsd: decimalString(

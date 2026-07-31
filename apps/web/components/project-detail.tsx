@@ -33,6 +33,13 @@ interface ApiProjectDetail {
   capital_raised_usd?: number | string | null;
   data_freshness?: Record<string, unknown> | null;
   calculated_at?: string | null;
+  market_observation_id?: string | null;
+  market_provider?: string | null;
+  market_source_url?: string | null;
+  market_source_description?: string | null;
+  market_observed_at?: string | null;
+  market_fetched_at?: string | null;
+  market_freshness_status?: "current" | "stale" | "unknown" | null;
 }
 
 interface ApiWalletEvidence {
@@ -47,6 +54,13 @@ interface ApiWalletEvidence {
   reviewed_at?: string | null;
   evidence_source_ids?: unknown;
   review_evidence?: unknown;
+  market_observation_id?: string | null;
+  market_provider?: string | null;
+  market_source_url?: string | null;
+  market_source_description?: string | null;
+  market_observed_at?: string | null;
+  market_fetched_at?: string | null;
+  market_freshness_status?: "current" | "stale" | "unknown" | null;
 }
 
 interface ReviewEvidence {
@@ -139,7 +153,7 @@ function SourceLink({ claim }: { claim: SourceClaim | undefined }) {
       {claim.source.publisher}
     </a>
   ) : (
-    <span className="warning-text">Unknown</span>
+    <span className="warning-text">Unknown — missing evidence</span>
   );
 }
 
@@ -157,7 +171,7 @@ function ReviewEvidenceLinks({ value }: { value: unknown }) {
       ))}
     </>
   ) : (
-    <span className="warning-text">Unknown</span>
+    <span className="warning-text">Unknown — missing evidence</span>
   );
 }
 
@@ -352,15 +366,44 @@ export function ProjectDetail({ evidence }: { evidence: ProjectEvidence }) {
           outside capital). It is not personal wealth.
         </p>
         <div className="formula-grid" id="market-data">
+          <div
+            data-testid="market-observation"
+            data-market-observation-id={
+              detail?.market_observation_id ?? undefined
+            }
+          >
+            <span>Market observation</span>
+            <strong>
+              {detail?.market_source_url ? (
+                <a
+                  href={detail.market_source_url}
+                  rel="noreferrer"
+                  target="_blank"
+                >
+                  {detail.market_source_description ??
+                    detail.market_provider ??
+                    "Market data source"}
+                </a>
+              ) : (
+                <span className="warning-text">Unknown — missing evidence</span>
+              )}
+            </strong>
+            <small>
+              Observation {detail?.market_observation_id ?? "Unknown"} ·
+              Observed {date(detail?.market_observed_at)} · Fetched{" "}
+              {date(detail?.market_fetched_at)} ·{" "}
+              {detail?.market_freshness_status ?? "unknown"}
+            </small>
+          </div>
           <div>
             <span>Price</span>
             <strong>{money(numberOrNull(detail?.price_usd))}</strong>
-            <small>API observation</small>
+            <small>Linked market observation</small>
           </div>
           <div>
             <span>Circulating supply</span>
             <strong>{amount(numberOrNull(detail?.circulating_supply))}</strong>
-            <small>API observation</small>
+            <small>Linked market observation</small>
           </div>
           <div>
             <span>Excluded supply</span>
@@ -399,7 +442,13 @@ export function ProjectDetail({ evidence }: { evidence: ProjectEvidence }) {
             </small>
           </div>
         </div>
-        <p className="equation" data-testid="score-equation">
+        <p
+          className="equation"
+          data-testid="score-equation"
+          data-market-observation-id={
+            detail?.market_observation_id ?? undefined
+          }
+        >
           {values.marketCap === null ||
           values.excluded === null ||
           values.capital === null
