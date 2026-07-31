@@ -17,11 +17,13 @@ interface ApiProjectDetail {
   eligibility_status?: "ranked" | "research_in_progress" | null;
   ineligibility_reasons?: unknown;
   wallet_review_status?: string | null;
-  wallet_reviewer?: string | null;
-  wallet_reviewed_at?: string | null;
+  wallet_review_reviewer?: string | null;
+  wallet_review_reviewed_at?: string | null;
+  wallet_review_evidence?: unknown;
   funding_review_status?: string | null;
-  funding_reviewer?: string | null;
-  funding_reviewed_at?: string | null;
+  funding_review_reviewer?: string | null;
+  funding_review_reviewed_at?: string | null;
+  funding_review_evidence?: unknown;
   price_usd?: number | string | null;
   circulating_supply?: number | string | null;
   excluded_supply?: number | string | null;
@@ -44,6 +46,14 @@ interface ApiWalletEvidence {
   reviewer?: string | null;
   reviewed_at?: string | null;
   evidence_source_ids?: unknown;
+  review_evidence?: unknown;
+}
+
+interface ReviewEvidence {
+  id: string;
+  title: string;
+  url: string;
+  publisher: string;
 }
 
 interface ApiLeaderboardRow {
@@ -69,7 +79,7 @@ function strings(value: unknown): string[] {
 }
 
 function money(value: number | null): string {
-  if (value === null) return "Awaiting API observation";
+  if (value === null) return "Unknown";
   return new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: "USD",
@@ -78,7 +88,7 @@ function money(value: number | null): string {
 }
 
 function amount(value: number | null): string {
-  if (value === null) return "Awaiting API observation";
+  if (value === null) return "Unknown";
   return new Intl.NumberFormat("en-US", { maximumFractionDigits: 6 }).format(
     value,
   );
@@ -90,7 +100,31 @@ function date(value: string | null | undefined): string {
         dateStyle: "medium",
         timeStyle: "short",
       }).format(new Date(value))
-    : "Not observed";
+    : "Unknown";
+}
+
+function reviewEvidence(value: unknown): ReviewEvidence[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((item) => {
+    if (!item || typeof item !== "object") return [];
+    const source = item as Record<string, unknown>;
+    if (
+      typeof source.id !== "string" ||
+      typeof source.title !== "string" ||
+      typeof source.url !== "string" ||
+      typeof source.publisher !== "string"
+    ) {
+      return [];
+    }
+    return [
+      {
+        id: source.id,
+        title: source.title,
+        url: source.url,
+        publisher: source.publisher,
+      },
+    ];
+  });
 }
 
 function claimFor(claims: SourceClaim[], recordId: string, field?: string) {
@@ -105,7 +139,25 @@ function SourceLink({ claim }: { claim: SourceClaim | undefined }) {
       {claim.source.publisher}
     </a>
   ) : (
-    <span className="warning-text">Source missing</span>
+    <span className="warning-text">Unknown</span>
+  );
+}
+
+function ReviewEvidenceLinks({ value }: { value: unknown }) {
+  const sources = reviewEvidence(value);
+  return sources.length > 0 ? (
+    <>
+      {sources.map((source, index) => (
+        <span key={source.id}>
+          {index > 0 ? ", " : ""}
+          <a href={source.url} rel="noreferrer" target="_blank">
+            {source.publisher}
+          </a>
+        </span>
+      ))}
+    </>
+  ) : (
+    <span className="warning-text">Unknown</span>
   );
 }
 
@@ -208,13 +260,18 @@ export function ProjectDetail({ evidence }: { evidence: ProjectEvidence }) {
       excluded,
       capital,
       score:
-        marketCap !== null && excluded !== null && capital !== null
+        detail?.eligibility_status === "ranked" &&
+        marketCap !== null &&
+        excluded !== null &&
+        capital !== null
           ? calculateScoreBreakdown({
               marketCapUsd: marketCap,
               excludedValueUsd: excluded,
               capitalRaisedUsd: capital,
             })
-          : numberOrNull(detail?.score_usd),
+          : detail?.eligibility_status === "ranked"
+            ? numberOrNull(detail?.score_usd)
+            : null,
     };
   }, [detail]);
 
@@ -265,9 +322,6 @@ export function ProjectDetail({ evidence }: { evidence: ProjectEvidence }) {
           <div>
             <span>Estimated outside-holder token value</span>
             <strong>{money(values.score)}</strong>
-            {detail?.rank === null && values.score !== null ? (
-              <small>Provisional calculation · unranked</small>
-            ) : null}
           </div>
           <div>
             <span>Confidence</span>
@@ -339,7 +393,9 @@ export function ProjectDetail({ evidence }: { evidence: ProjectEvidence }) {
             <span>Estimated outside-holder token value</span>
             <strong>{money(values.score)}</strong>
             <small>
-              {detail?.rank === null ? "Provisional · unranked" : "Ranked"}
+              {detail?.eligibility_status === "ranked"
+                ? "Ranked"
+                : "Research in progress"}
             </small>
           </div>
         </div>
@@ -347,7 +403,7 @@ export function ProjectDetail({ evidence }: { evidence: ProjectEvidence }) {
           {values.marketCap === null ||
           values.excluded === null ||
           values.capital === null
-            ? "The full numeric equation appears when canonical market and wallet observations are available."
+            ? "The full numeric equation appears when published market and wallet observations are available."
             : `max(0, ${money(values.marketCap)} − ${money(values.excluded)} − ${money(values.capital)}) = ${money(values.score)}`}
         </p>
       </section>
@@ -361,13 +417,17 @@ export function ProjectDetail({ evidence }: { evidence: ProjectEvidence }) {
               Review:{" "}
               {detail?.wallet_review_status ??
                 evidence.project.walletReview.status}
-              {detail?.wallet_reviewer || evidence.project.walletReview.reviewer
-                ? ` · ${detail?.wallet_reviewer ?? evidence.project.walletReview.reviewer}`
+              {detail?.wallet_review_reviewer ||
+              evidence.project.walletReview.reviewer
+                ? ` · ${detail?.wallet_review_reviewer ?? evidence.project.walletReview.reviewer}`
                 : ""}
-              {detail?.wallet_reviewed_at ||
+              {detail?.wallet_review_reviewed_at ||
               evidence.project.walletReview.reviewedAt
-                ? ` · ${date(detail?.wallet_reviewed_at ?? evidence.project.walletReview.reviewedAt)}`
+                ? ` · ${date(detail?.wallet_review_reviewed_at ?? evidence.project.walletReview.reviewedAt)}`
                 : ""}
+              <br />
+              Review evidence:{" "}
+              <ReviewEvidenceLinks value={detail?.wallet_review_evidence} />
             </p>
           </div>
         </div>
@@ -430,6 +490,9 @@ export function ProjectDetail({ evidence }: { evidence: ProjectEvidence }) {
                           "ownership",
                         )}
                       />
+                      <br />
+                      Review evidence:{" "}
+                      <ReviewEvidenceLinks value={observed?.review_evidence} />
                       <small>
                         Reviewed {date(wallet.researchReviewedAt)}
                         <br />
@@ -453,14 +516,17 @@ export function ProjectDetail({ evidence }: { evidence: ProjectEvidence }) {
               Review:{" "}
               {detail?.funding_review_status ??
                 evidence.project.fundingReview.status}
-              {detail?.funding_reviewer ||
+              {detail?.funding_review_reviewer ||
               evidence.project.fundingReview.reviewer
-                ? ` · ${detail?.funding_reviewer ?? evidence.project.fundingReview.reviewer}`
+                ? ` · ${detail?.funding_review_reviewer ?? evidence.project.fundingReview.reviewer}`
                 : ""}
-              {detail?.funding_reviewed_at ||
+              {detail?.funding_review_reviewed_at ||
               evidence.project.fundingReview.reviewedAt
-                ? ` · ${date(detail?.funding_reviewed_at ?? evidence.project.fundingReview.reviewedAt)}`
+                ? ` · ${date(detail?.funding_review_reviewed_at ?? evidence.project.fundingReview.reviewedAt)}`
                 : ""}
+              <br />
+              Review evidence:{" "}
+              <ReviewEvidenceLinks value={detail?.funding_review_evidence} />
             </p>
           </div>
         </div>

@@ -37,9 +37,9 @@ export async function generateMetadata({
   const { projectId } = await params;
   if (!projectId?.length) {
     return {
-      title: "Founder research universe",
+      title: "Founding-unit research universe",
       description:
-        "Dated, unranked founder-research candidates and evidence gaps.",
+        "Dated, unranked founding-unit research candidates and evidence gaps.",
       alternates: { canonical: "/research/" },
     };
   }
@@ -52,7 +52,7 @@ export async function generateMetadata({
     : undefined;
   return candidate
     ? {
-        title: `${candidate.project} founder research`,
+        title: `${candidate.project} founding-unit research`,
         description: `${candidate.snapshotDate} research snapshot for ${candidate.project}.`,
         alternates: { canonical: `/research/${candidate.projectId}/` },
       }
@@ -75,19 +75,19 @@ export default async function ResearchPage({
         <main className="content-page" id="main-content" tabIndex={-1}>
           <header className="page-header">
             <p className="eyebrow">Dated research snapshot</p>
-            <h1>Founder research universe</h1>
+            <h1>Founding-unit research universe</h1>
             <p>
               {dataset.candidates.length} candidates screened as of{" "}
-              {snapshotDate}. Provisional values are research aids, not live
-              observations, canonical ranks, or personal-wealth claims.
+              {snapshotDate}. Research estimates are aids, not live
+              observations, published ranks, or personal-wealth claims.
             </p>
           </header>
           <section className="panel" aria-labelledby="research-table-heading">
             <div className="section-heading compact">
               <h2 id="research-table-heading">Candidate screen</h2>
               <p>
-                Unknown inputs remain unknown. A candidate is canonical-ready
-                only when all three evidence dimensions are complete.
+                Unknown inputs remain unknown. A candidate is ranking-ready only
+                when all three evidence dimensions are complete.
               </p>
             </div>
             <div className="table-shell evidence-shell">
@@ -96,10 +96,10 @@ export default async function ResearchPage({
                   <tr>
                     <th>Gross screen</th>
                     <th>Project</th>
-                    <th>Founder or team</th>
+                    <th>Founding unit</th>
                     <th className="number">Gross value</th>
-                    <th className="number">Provisional value</th>
-                    <th className="number">Canonical value</th>
+                    <th className="number">Research estimate</th>
+                    <th className="number">Published value</th>
                     <th>Status</th>
                     <th>Missing evidence</th>
                   </tr>
@@ -198,11 +198,11 @@ export default async function ResearchPage({
             <strong>{candidate.publicationStatus}</strong>
           </div>
           <div>
-            <span>Provisional value</span>
+            <span>Research estimate</span>
             <strong>{money(candidate.provisionalOutsideWealthUsd)}</strong>
           </div>
           <div>
-            <span>Canonical value</span>
+            <span>Published value</span>
             <strong>{money(candidate.canonicalOutsideWealthUsd)}</strong>
           </div>
         </section>
@@ -213,10 +213,9 @@ export default async function ResearchPage({
             <p>{candidate.valuationBasis}</p>
           </div>
           <p className="formula-statement">
-            Provisional outside-holder value = gross value − known founder/team
+            Research estimate = gross value − known affiliated holdings
             exclusions − verified external capital − other known deductions.
-            Missing deductions are not treated as zero for canonical
-            publication.
+            Missing deductions are not treated as zero for publication.
           </p>
           <div className="formula-grid">
             <div>
@@ -224,7 +223,7 @@ export default async function ResearchPage({
               <strong>{money(candidate.grossValueUsd)}</strong>
             </div>
             <div>
-              <span>Known founder/team excluded</span>
+              <span>Known affiliated holdings</span>
               <strong>{money(candidate.knownFounderTeamExcludedUsd)}</strong>
             </div>
             <div>
@@ -241,7 +240,7 @@ export default async function ResearchPage({
             {money(candidate.knownFounderTeamExcludedUsd)} −{" "}
             {money(candidate.verifiedExternalCapitalUsd)} −{" "}
             {money(candidate.otherDeductionsUsd)} ={" "}
-            {money(candidate.provisionalOutsideWealthUsd)} provisional
+            {money(candidate.provisionalOutsideWealthUsd)} research estimate
           </p>
         </section>
 
@@ -256,7 +255,7 @@ export default async function ResearchPage({
               <strong>{candidate.grossStatus}</strong>
             </div>
             <div>
-              <span>Founder holdings</span>
+              <span>Affiliated holdings</span>
               <strong>{candidate.founderHoldingsStatus}</strong>
             </div>
             <div>
@@ -264,8 +263,10 @@ export default async function ResearchPage({
               <strong>{candidate.capitalStatus}</strong>
             </div>
             <div>
-              <span>Canonical rank</span>
-              <strong>{candidate.canonicalRank ?? "Not eligible"}</strong>
+              <span>Published rank</span>
+              <strong>
+                {candidate.canonicalRank ?? "Research in progress"}
+              </strong>
             </div>
           </div>
           <p>

@@ -190,9 +190,7 @@ export const trackedWallets = pgTable("tracked_wallets", {
   balanceIncludedInCirculatingSupply: boolean(
     "balance_included_in_circulating_supply",
   ),
-  circulatingInclusionExplanation: text(
-    "circulating_inclusion_explanation",
-  ),
+  circulatingInclusionExplanation: text("circulating_inclusion_explanation"),
   affectsScore: boolean("affects_score").notNull().default(true),
   deduplicationKey: text("deduplication_key").notNull(),
   reviewStatus: text("review_status").notNull(),

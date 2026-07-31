@@ -590,12 +590,9 @@ export const curatedDataBundleSchema = curatedDataBundleBaseSchema.superRefine(
         activeLinks.every(
           ({ link }) => link.attributionMethod === "documented_split",
         ) &&
-        activeLinks.every(
-          ({ link }) => link.allocationMethodology !== null,
-        ) &&
-        new Set(
-          activeLinks.map(({ link }) => link.allocationMethodology),
-        ).size === 1 &&
+        activeLinks.every(({ link }) => link.allocationMethodology !== null) &&
+        new Set(activeLinks.map(({ link }) => link.allocationMethodology))
+          .size === 1 &&
         Math.abs(
           activeLinks.reduce(
             (total, { link }) => total + Number(link.attributionFraction),

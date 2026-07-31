@@ -322,12 +322,13 @@ export function calculateQualifyingCapital(
     duplicateIds.length === 0;
 
   const warnings: CalculationWarning[] = [];
-  if (!reviewComplete) {
+  if (!reviewComplete || incompleteReviewIds.length > 0) {
     warnings.push(
       warning(
         "FUNDING_REVIEW_INCOMPLETE",
         "blocking",
-        "Project lifetime funding coverage is not reviewed and sufficient; the deduction is Unknown or Incomplete.",
+        "Project lifetime funding coverage and every financing event require an approved sufficient review, complete evidence, and an inclusion decision.",
+        incompleteReviewIds,
       ),
     );
   }
@@ -338,16 +339,6 @@ export function calculateQualifyingCapital(
         "blocking",
         "Included funding is missing a verified USD-at-event amount.",
         missingIds,
-      ),
-    );
-  }
-  if (incompleteReviewIds.length > 0) {
-    warnings.push(
-      warning(
-        "FUNDING_REVIEW_INCOMPLETE",
-        "blocking",
-        "Every financing event requires an approved sufficient review, complete evidence, and an inclusion decision.",
-        incompleteReviewIds,
       ),
     );
   }

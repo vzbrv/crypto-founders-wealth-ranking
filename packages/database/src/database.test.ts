@@ -54,6 +54,10 @@ const scalarSafeReviewEvidenceMigrationUrl = new URL(
   "../../../supabase/migrations/202607300015_scalar_safe_review_evidence.sql",
   import.meta.url,
 );
+const rankingPublicEvidenceMigrationUrl = new URL(
+  "../../../supabase/migrations/202607300016_ranking_public_evidence.sql",
+  import.meta.url,
+);
 const seedUrl = new URL(
   "../../../supabase/tests/seed.synthetic.sql",
   import.meta.url,
@@ -70,6 +74,7 @@ const migrationSql = [
   await readFile(serviceRoleReadsMigrationUrl, "utf8"),
   await readFile(methodologyIntegrityMigrationUrl, "utf8"),
   await readFile(scalarSafeReviewEvidenceMigrationUrl, "utf8"),
+  await readFile(rankingPublicEvidenceMigrationUrl, "utf8"),
 ].join("\n");
 const seedSql = await readFile(seedUrl, "utf8");
 const productionDataDirectory = fileURLToPath(
@@ -264,7 +269,7 @@ describe("Phase 3 database", () => {
         rank: null,
         score_usd: null,
         research_status: "Research in progress",
-        eligibility_status: "ineligible",
+        eligibility_status: "research_in_progress",
         reviewed_confidence: "insufficient",
         wallet_review_status: "reviewed_insufficient",
         funding_review_status: "reviewed_insufficient",
@@ -274,7 +279,7 @@ describe("Phase 3 database", () => {
         rank: null,
         score_usd: null,
         research_status: "Research in progress",
-        eligibility_status: "ineligible",
+        eligibility_status: "research_in_progress",
         reviewed_confidence: "insufficient",
         wallet_review_status: "reviewed_insufficient",
         funding_review_status: "reviewed_insufficient",
@@ -284,7 +289,7 @@ describe("Phase 3 database", () => {
         rank: null,
         score_usd: null,
         research_status: "Research in progress",
-        eligibility_status: "ineligible",
+        eligibility_status: "research_in_progress",
         reviewed_confidence: "insufficient",
         wallet_review_status: "reviewed_insufficient",
         funding_review_status: "reviewed_insufficient",
@@ -329,6 +334,66 @@ describe("Phase 3 database", () => {
         score_usd: null,
       },
     ]);
+  });
+
+  it("publishes only review evidence linked to its record", async () => {
+    const database = await createDatabase(true);
+    const unlinkedSourceId = "47777777-7777-4777-8777-777777777777";
+
+    await database.exec(`
+      insert into source_records (
+        id, title, url, publisher, source_type, accessed_at, description, status
+      ) values (
+        '${unlinkedSourceId}', 'Unlinked source', 'https://example.com/unlinked',
+        'Unlinked Publisher', 'official_documentation', now(),
+        'Must not be exposed by public evidence views', 'active'
+      );
+
+      update projects
+      set wallet_review_evidence_source_ids =
+            wallet_review_evidence_source_ids || '["${unlinkedSourceId}"]'::jsonb,
+          funding_review_evidence_source_ids =
+            funding_review_evidence_source_ids || '["${unlinkedSourceId}"]'::jsonb;
+
+      update tracked_wallets
+      set evidence_source_ids =
+        evidence_source_ids || '["${unlinkedSourceId}"]'::jsonb;
+    `);
+
+    type Evidence = {
+      id: string;
+      title: string;
+      url: string;
+      publisher: string;
+      sourceType: string;
+    };
+    const projects = await database.query<{
+      eligibility_status: string;
+      wallet_review_evidence: Evidence[];
+      funding_review_evidence: Evidence[];
+    }>(`
+      select eligibility_status, wallet_review_evidence, funding_review_evidence
+      from public_project_details
+    `);
+    const wallets = await database.query<{ review_evidence: Evidence[] }>(`
+      select review_evidence from public_wallet_evidence
+    `);
+    const expectedEvidence = expect.objectContaining({
+      id: "44444444-4444-4444-8444-444444444444",
+      title: "Synthetic Horizon fixture source",
+      url: "https://example.com/research/synthetic-horizon",
+      publisher: "Example Research",
+      sourceType: "official_documentation",
+    });
+
+    expect(projects.rows[0]?.eligibility_status).toBe("research_in_progress");
+    expect(projects.rows[0]?.wallet_review_evidence).toEqual([
+      expectedEvidence,
+    ]);
+    expect(projects.rows[0]?.funding_review_evidence).toEqual([
+      expectedEvidence,
+    ]);
+    expect(wallets.rows[0]?.review_evidence).toEqual([expectedEvidence]);
   });
 
   it("enforces provider health read and write privileges", async () => {

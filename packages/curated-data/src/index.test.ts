@@ -171,10 +171,13 @@ describe("curated data validation", () => {
     expectInvalid(data, "Invalid ethereum wallet address");
   });
 
-  it("rejects included funding without USD-at-event", () => {
+  it("rejects a known funding status without USD-at-event", () => {
     const data = structuredClone(validData);
     delete data.fundingRounds[0]!.amountUsdAtEvent;
-    expectInvalid(data, "Included funding requires amountUsdAtEvent");
+    expectInvalid(
+      data,
+      "Unknown amount status must preserve a missing USD amount",
+    );
   });
 });
 

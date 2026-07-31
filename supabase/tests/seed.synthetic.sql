@@ -144,13 +144,14 @@ insert into wallet_asset_mappings (
 
 insert into funding_rounds (
   id, project_id, event_date, round_type, original_amount, original_currency,
-  amount_usd_at_event, usd_conversion_method, include_in_capital_deduction,
-  status, reviewed_at, notes, deduplication_key, review_status, reviewer,
-  evidence_source_ids
+  amount_usd_at_event, amount_status, usd_conversion_method,
+  usd_conversion_date, include_in_capital_deduction, inclusion_reason, status,
+  reviewed_at, notes, deduplication_key, review_status, reviewer, evidence_source_ids
 ) values (
   '66666666-6666-4666-8666-666666666666',
   '11111111-1111-4111-8111-111111111111', '2025-01-10', 'seed', 2500000,
-  'USD', 2500000, 'Already denominated in USD.', true, 'active',
+  'USD', 2500000, 'exact', 'Already denominated in USD.', '2025-01-10', true,
+  'Included in the synthetic capital-raised deduction.', 'active',
   '2026-07-27T12:00:00Z',
   'Synthetic funding event for validation only.', 'synthetic-horizon-seed',
   'approved_sufficient', 'Synthetic reviewer',
@@ -160,8 +161,11 @@ insert into funding_rounds (
   round_type = excluded.round_type, original_amount = excluded.original_amount,
   original_currency = excluded.original_currency,
   amount_usd_at_event = excluded.amount_usd_at_event,
+  amount_status = excluded.amount_status,
   usd_conversion_method = excluded.usd_conversion_method,
+  usd_conversion_date = excluded.usd_conversion_date,
   include_in_capital_deduction = excluded.include_in_capital_deduction,
+  inclusion_reason = excluded.inclusion_reason,
   status = excluded.status, reviewed_at = excluded.reviewed_at,
   notes = excluded.notes, deduplication_key = excluded.deduplication_key,
   review_status = excluded.review_status, reviewer = excluded.reviewer,

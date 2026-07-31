@@ -4,19 +4,18 @@ import { SiteNav } from "../../components/site-nav";
 
 export const metadata: Metadata = {
   title: "Methodology",
-  description:
-    "How the Crypto Founders Wealth Ranking is calculated and sourced.",
+  description: "How the Crypto Founding Units Index is calculated and sourced.",
   alternates: { canonical: "/methodology/" },
 };
 
 const sections = [
   [
     "What the score measures",
-    "The estimate attributes liquid value created for outside token holders to a founder or founding team. It is not personal net worth, realized profit, enterprise value, or social impact.",
+    "The estimate attributes liquid value held by outside token holders to a founding unit. It is not personal net worth, realized profit, enterprise value, or social impact.",
   ],
   [
     "Formula",
-    "Circulating market value minus approved project-affiliated circulating holdings minus qualifying outside capital equals estimated wealth created. Project scores are allocated to founding units using a sourced attribution fraction.",
+    "Circulating market value minus approved project-affiliated circulating holdings minus qualifying outside capital equals estimated outside-holder token value. Project scores are allocated to founding units using a sourced attribution fraction.",
   ],
   [
     "Excluded holdings",
@@ -28,15 +27,15 @@ const sections = [
   ],
   [
     "Circulation assumptions",
-    "Circulating supply follows the canonical market observation. Wallet balances are multiplied by their curated circulating-inclusion fraction. A fraction of 0 excludes the balance from circulating supply; 1 treats all of it as circulating.",
+    "Circulating supply follows the published market observation. Wallet balances are multiplied by their curated circulating-inclusion fraction. A fraction of 0 excludes the balance from circulating supply; 1 treats all of it as circulating.",
   ],
   [
-    "Cofounders and teams",
-    "Attribution is stored per project-to-founding-unit link. Team collectives may receive the full project score; individual cofounders may receive sourced fractional shares. Fractions across active links cannot exceed 100%.",
+    "Founding units",
+    "Attribution is stored per project-to-founding-unit link. Team collectives may receive the full project score; individual founders may receive sourced fractional shares. Fractions across active links cannot exceed 100%.",
   ],
   [
     "Stablecoins",
-    "Stablecoin issuance is not treated as wealth creation merely because supply exists. A stablecoin project requires a category-specific methodology and eligible outside-holder value before ranking.",
+    "Stablecoin issuance is not treated as outside-holder value merely because supply exists. A stablecoin project requires a category-specific methodology and eligible outside-holder value before ranking.",
   ],
   [
     "FDV and TVL",

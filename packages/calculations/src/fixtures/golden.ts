@@ -186,10 +186,7 @@ export const PROJECT_SCORE_GOLDEN_FIXTURES: ProjectScoreGoldenFixture[] = [
       qualifyingCapitalUsd: null,
       outsideHolderSupply: null,
       scoreUsd: null,
-      warningCodes: [
-        "FUNDING_REVIEW_INCOMPLETE",
-        "FUNDING_DATA_INCOMPLETE",
-      ],
+      warningCodes: ["FUNDING_REVIEW_INCOMPLETE", "FUNDING_DATA_INCOMPLETE"],
     },
   },
 ];

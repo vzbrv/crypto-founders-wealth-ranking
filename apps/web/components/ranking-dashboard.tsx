@@ -33,7 +33,7 @@ function money(value: number | null): string {
 }
 
 function canonicalTime(entries: RankingEntry[]): string {
-  if (!entries.length) return "Waiting for first canonical calculation";
+  if (!entries.length) return "Waiting for first published calculation";
   const newest = entries
     .map(({ calculatedAt }) => calculatedAt)
     .sort()
@@ -113,9 +113,9 @@ function LeaderboardTable({
       <table className="ranking-table">
         <thead>
           <tr>
-            <th>Canonical rank</th>
+            <th>Published rank</th>
             <th>Move</th>
-            <th>Founder or team</th>
+            <th>Founding unit</th>
             <th>Project</th>
             <th className="number">Estimated outside-holder token value</th>
             <th className="number desktop-detail">24h</th>
@@ -136,7 +136,7 @@ function LeaderboardTable({
               <tr key={entry.foundingUnitId}>
                 <td
                   className="rank cell-rank"
-                  aria-label={`Canonical rank ${entry.rank}`}
+                  aria-label={`Published rank ${entry.rank}`}
                 >
                   {entry.rank}
                 </td>
@@ -158,10 +158,10 @@ function LeaderboardTable({
                       ? liveEstimate.stale
                         ? "Last live estimate"
                         : "Live estimate"
-                      : "Canonical score"}
+                      : "Published score"}
                   </span>
                   {liveEstimate ? (
-                    <small>Canonical {money(entry.scoreUsd)}</small>
+                    <small>Published {money(entry.scoreUsd)}</small>
                   ) : null}
                 </td>
                 <td
@@ -244,7 +244,7 @@ function ResearchSnapshotList({ snapshot }: { snapshot: ResearchSnapshot }) {
             </div>
             <span className="badge">{candidate.publicationStatus}</span>
             <p className="research-reason">
-              Provisional outside-holder value:{" "}
+              Research estimate:{" "}
               <strong>
                 {researchMoney(candidate.provisionalOutsideWealthUsd)}
               </strong>
@@ -278,7 +278,7 @@ async function loadRanking(): Promise<RankingEntry[]> {
   ]);
   if (!leaderboardResponse.ok || !projectResponse.ok) {
     throw new Error(
-      "The canonical ranking endpoint is temporarily unavailable.",
+      "The published ranking endpoint is temporarily unavailable.",
     );
   }
   return buildRankingEntries(
@@ -407,13 +407,13 @@ export function RankingDashboard({
       <header className="hero" id="top">
         <p className="eyebrow">Outside-holder value · Public beta</p>
         <h1>
-          Crypto founders,
+          Crypto founding units,
           <br />
-          <em>ranked by value created.</em>
+          <em>ranked by outside-holder value.</em>
         </h1>
         <p className="summary">
-          A canonical ranking of crypto founders and founding teams, with live
-          market-price estimates for supported assets.
+          A reviewed ranking of crypto founding units, with live market-price
+          estimates for supported assets.
         </p>
         <div className="status-strip" aria-label="Ranking status">
           <div>
@@ -421,7 +421,7 @@ export function RankingDashboard({
             <strong>{status}</strong>
           </div>
           <div>
-            <span>Canonical calculation</span>
+            <span>Published calculation</span>
             <strong>{canonicalTime(entries)}</strong>
           </div>
           <div>
@@ -446,7 +446,7 @@ export function RankingDashboard({
       >
         <div className="section-heading">
           <div>
-            <p className="eyebrow">Canonical leaderboard</p>
+            <p className="eyebrow">Published leaderboard</p>
             <h2 id="ranking-heading">The ranking</h2>
           </div>
           <p>
@@ -461,7 +461,7 @@ export function RankingDashboard({
             <input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Founder, team, or project"
+              placeholder="Founding unit or project"
               type="search"
             />
           </label>
@@ -513,12 +513,12 @@ export function RankingDashboard({
 
         {loading ? (
           <div className="notice" role="status">
-            Loading canonical ranking…
+            Loading published ranking…
           </div>
         ) : null}
         {error ? (
           <div className="notice warning" role="alert">
-            <strong>Canonical data unavailable.</strong> {error} The site will
+            <strong>Published data unavailable.</strong> {error} The site will
             never substitute fabricated values.
           </div>
         ) : null}
@@ -535,17 +535,17 @@ export function RankingDashboard({
         <div className="section-heading compact">
           <div>
             <p className="eyebrow">Dated snapshot · Not part of the ranking</p>
-            <h2 id="research-heading">Founder research universe</h2>
+            <h2 id="research-heading">Founding-unit research universe</h2>
           </div>
           <p>
             {researchSnapshot.snapshotDate} research inputs. Values are not live
-            observations and are excluded from the canonical leaderboard.
+            observations and are excluded from the published leaderboard.
           </p>
         </div>
         <ResearchSnapshotList snapshot={researchSnapshot} />
         {!loading && !error && hasCanonicalResearch ? (
           <div className="canonical-research">
-            <h3>Canonical pipeline</h3>
+            <h3>Reviewed ranking pipeline</h3>
             <ResearchList entries={research} />
           </div>
         ) : null}
@@ -573,17 +573,17 @@ export function RankingDashboard({
           The score is max(0, circulating market value − approved affiliated
           circulating holdings − reviewed disclosed outside capital). Market
           observations, public wallet attribution, circulating-supply
-          classifications, and funding records feed the canonical calculation.
+          classifications, and funding records feed the published calculation.
           Freshness labels reflect the latest market observation supporting each
           score. Public exchange prices may update a clearly labeled live
-          estimate, but never replace the authoritative canonical score.
+          estimate, but never replace the authoritative published score.
         </p>
       </section>
 
       <footer>
         <p>{DISCLAIMER}</p>
         <p className="footer-mark">
-          Crypto Founders Wealth Index · Public methodology
+          Crypto Founding Units Index · Public methodology
         </p>
       </footer>
     </main>
