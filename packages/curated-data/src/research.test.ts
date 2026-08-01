@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 import { beforeAll, describe, expect, it } from "vitest";
 
 import {
+  buildProvisionalRanking,
   calculateProvisionalOutsideWealth,
   calculatePublicEquityMarketCap,
   importResearchCsv,
@@ -19,18 +20,36 @@ const researchDirectory = fileURLToPath(
 let candidateCsv: string;
 let walletCsv: string;
 let sourceCsv: string;
+let provisionalMarketCsv: string;
+let provisionalCapitalCsv: string;
 
 beforeAll(async () => {
-  [candidateCsv, walletCsv, sourceCsv] = await Promise.all([
+  [
+    candidateCsv,
+    walletCsv,
+    sourceCsv,
+    provisionalMarketCsv,
+    provisionalCapitalCsv,
+  ] = await Promise.all([
     readFile(`${researchDirectory}candidate_universe.csv`, "utf8"),
     readFile(`${researchDirectory}wallet_evidence.csv`, "utf8"),
     readFile(`${researchDirectory}source_catalog.csv`, "utf8"),
+    readFile(`${researchDirectory}provisional_market_data.csv`, "utf8"),
+    readFile(`${researchDirectory}provisional_capital_events.csv`, "utf8"),
   ]);
 });
 
 const importData = (
   overrides: Partial<Parameters<typeof importResearchCsv>[0]> = {},
-) => importResearchCsv({ candidateCsv, walletCsv, sourceCsv, ...overrides });
+) =>
+  importResearchCsv({
+    candidateCsv,
+    walletCsv,
+    sourceCsv,
+    provisionalMarketCsv,
+    provisionalCapitalCsv,
+    ...overrides,
+  });
 
 describe("research dataset import", () => {
   it("imports the complete handoff with calculated publication gates and ranks", () => {
@@ -40,6 +59,8 @@ describe("research dataset import", () => {
       candidates: { length: 30 },
       wallets: { length: 32 },
       capitalRecords: { length: 20 },
+      provisionalMarketObservations: { length: 25 },
+      provisionalCapitalEvents: { length: 18 },
       sources: { length: 64 },
     });
     expect(
@@ -55,6 +76,50 @@ describe("research dataset import", () => {
       { projectId: "dogecoin", canonicalRank: 1 },
       { projectId: "litecoin", canonicalRank: 2 },
     ]);
+  });
+
+  it("builds a sourced top 10 while preserving incomplete deductions", () => {
+    const data = importData();
+    const ranking = buildProvisionalRanking(data);
+
+    expect(
+      ranking.map(({ provisionalRank, projectId }) => ({
+        provisionalRank,
+        projectId,
+      })),
+    ).toEqual([
+      { provisionalRank: 1, projectId: "bitcoin" },
+      { provisionalRank: 2, projectId: "ethereum" },
+      { provisionalRank: 3, projectId: "bnb" },
+      { provisionalRank: 4, projectId: "xrp" },
+      { provisionalRank: 5, projectId: "solana" },
+      { provisionalRank: 6, projectId: "tron" },
+      { provisionalRank: 7, projectId: "hyperliquid" },
+      { provisionalRank: 8, projectId: "dogecoin" },
+      { provisionalRank: 9, projectId: "cardano" },
+      { provisionalRank: 10, projectId: "chainlink" },
+    ]);
+    expect(ranking[0]).toMatchObject({
+      provisionalOutsideHolderValueUsd: "1296447935147",
+      affiliatedCirculatingHoldingsUsd: null,
+      reviewedDisclosedOutsideCapitalUsd: "0",
+      marketSourceId: "CG-BTC",
+    });
+    expect(ranking.find(({ projectId }) => projectId === "xrp")).toMatchObject({
+      reviewedDisclosedOutsideCapitalUsd: null,
+      coverageWarning: expect.stringContaining("not a $0 deduction"),
+    });
+    const referencedSourceIds = new Set(data.sources.map(({ id }) => id));
+    expect(
+      data.provisionalMarketObservations.every(({ sourceId }) =>
+        referencedSourceIds.has(sourceId),
+      ),
+    ).toBe(true);
+    expect(
+      data.provisionalCapitalEvents.every(({ sourceId }) =>
+        referencedSourceIds.has(sourceId),
+      ),
+    ).toBe(true);
   });
 
   it("preserves unknown deductions as null and explicit researched zero as zero", () => {
