@@ -638,17 +638,17 @@ export function calculateFoundingUnitScore(input: {
 }
 
 const CONFIDENCE_MAXIMUMS: Record<keyof ConfidenceComponents, string> = {
-  founderIdentityEvidence: "10",
+  founderIdentityEvidence: "20",
   founderWalletCoverage: "20",
-  teamFoundationTreasuryCoverage: "20",
-  circulationTreatment: "20",
-  fundingCompleteness: "20",
-  marketReliability: "10",
+  teamFoundationTreasuryCoverage: "15",
+  circulationTreatment: "15",
+  fundingCompleteness: "15",
+  marketReliability: "15",
 };
 
 const confidenceLabel = (score: Decimal): ConfidenceLabel => {
-  if (score.gte("85")) return "high";
-  if (score.gte("65")) return "medium";
+  if (score.gte("80")) return "high";
+  if (score.gte("60")) return "medium";
   if (score.gte("40")) return "low";
   return "insufficient";
 };
@@ -677,9 +677,7 @@ export function calculateConfidence(
   return {
     score: score.toFixed(2),
     label:
-      missingComponents.length === 0
-        ? confidenceLabel(score)
-        : "insufficient",
+      missingComponents.length === 0 ? confidenceLabel(score) : "insufficient",
     components,
     complete: missingComponents.length === 0,
     missingComponents,
@@ -708,7 +706,7 @@ export function calculateRankings(inputs: RankingInput[]): RankingResult[] {
       reasons.push("wallet review is not approved and sufficient");
     if (!input.evidenceComplete)
       reasons.push("deduction or exclusion evidence is incomplete");
-    if (input.confidenceLabel === "insufficient")
+    if (input.calculatedConfidenceLabel === "insufficient")
       reasons.push("confidence is insufficient");
     return reasons;
   };

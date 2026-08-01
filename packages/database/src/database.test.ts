@@ -70,6 +70,10 @@ const sqlConfidenceEvidenceMigrationUrl = new URL(
   "../../../supabase/migrations/202607310019_sql_confidence_evidence.sql",
   import.meta.url,
 );
+const rankingIntegrityMigrationUrl = new URL(
+  "../../../supabase/migrations/202607310020_ranking_integrity.sql",
+  import.meta.url,
+);
 const seedUrl = new URL(
   "../../../supabase/tests/seed.synthetic.sql",
   import.meta.url,
@@ -90,6 +94,7 @@ const migrationSql = [
   await readFile(fundingReviewEligibilityMigrationUrl, "utf8"),
   await readFile(marketObservationSourcesMigrationUrl, "utf8"),
   await readFile(sqlConfidenceEvidenceMigrationUrl, "utf8"),
+  await readFile(rankingIntegrityMigrationUrl, "utf8"),
 ].join("\n");
 const seedSql = await readFile(seedUrl, "utf8");
 const productionDataDirectory = fileURLToPath(
@@ -746,6 +751,168 @@ describe("Funding review ranking eligibility", () => {
       eligibility_status: "research_in_progress",
       rank: null,
     });
+  });
+});
+
+describe("Ranking integrity", () => {
+  const projectId = "f1000000-0000-4000-8000-000000000001";
+  const individualUnitId = "f2000000-0000-4000-8000-000000000001";
+  const teamUnitId = "f2000000-0000-4000-8000-000000000002";
+  const secondTeamUnitId = "f2000000-0000-4000-8000-000000000003";
+
+  async function prepareIntegrityFixture(database: PGlite): Promise<void> {
+    await database.exec(`
+      insert into projects (
+        id, slug, name, description, project_type, calculation_category, status,
+        confidence_level, methodology_notes, website_url, research_reviewed_at
+      ) values (
+        '${projectId}', 'ranking-integrity-fixture', 'Ranking integrity fixture',
+        'Fixture for founding-unit integrity checks.', 'protocol', 'liquid_token',
+        'active', 'insufficient', 'Fixture only.', 'https://example.com', now()
+      );
+      insert into founding_units (
+        id, slug, display_name, description, entity_type, status, research_reviewed_at
+      ) values
+        ('${individualUnitId}', 'integrity-individual', 'Integrity individual', 'Fixture', 'individual', 'active', now()),
+        ('${teamUnitId}', 'integrity-team', 'Integrity team', 'Fixture', 'team', 'active', now()),
+        ('${secondTeamUnitId}', 'integrity-team-two', 'Integrity team two', 'Fixture', 'team', 'active', now());
+      insert into people (id, slug, display_name, status) values
+        ('f3000000-0000-4000-8000-000000000001', 'integrity-person', 'Integrity person', 'active');
+    `);
+  }
+
+  it("rejects multiple canonical founding units for one project", async () => {
+    const database = await createDatabase();
+    await prepareIntegrityFixture(database);
+
+    await database.exec(`
+      insert into project_founding_units (
+        project_id, founding_unit_id, attribution_fraction, attribution_method, is_canonical
+      ) values ('${projectId}', '${individualUnitId}', 1, 'documented_split', true);
+    `);
+
+    await expect(
+      database.exec(`
+        insert into project_founding_units (
+          project_id, founding_unit_id, attribution_fraction, attribution_method, is_canonical
+        ) values ('${projectId}', '${teamUnitId}', 0, 'documented_split', true);
+      `),
+    ).rejects.toThrow(/project_founding_units_one_canonical_per_project_idx/);
+  });
+
+  it("rejects a person assigned to individual and team founding units", async () => {
+    const database = await createDatabase();
+    await prepareIntegrityFixture(database);
+    await database.exec(`
+      insert into founding_unit_members (founding_unit_id, person_id) values
+        ('${individualUnitId}', 'f3000000-0000-4000-8000-000000000001'),
+        ('${teamUnitId}', 'f3000000-0000-4000-8000-000000000001');
+    `);
+
+    await expect(
+      database.exec(`
+        begin;
+        insert into project_founding_units (
+          project_id, founding_unit_id, attribution_fraction, attribution_method
+        ) values
+          ('${projectId}', '${individualUnitId}', 0.5, 'documented_split'),
+          ('${projectId}', '${teamUnitId}', 0.5, 'documented_split');
+        commit;
+      `),
+    ).rejects.toThrow(/allocated individually and through a team/);
+  });
+
+  it("accepts complete documented founding-unit splits", async () => {
+    const database = await createDatabase();
+    await prepareIntegrityFixture(database);
+
+    await database.exec(`
+      begin;
+      insert into project_founding_units (
+        project_id, founding_unit_id, attribution_fraction, attribution_method
+      ) values
+        ('${projectId}', '${teamUnitId}', 0.6, 'documented_split'),
+        ('${projectId}', '${secondTeamUnitId}', 0.4, 'documented_split');
+      commit;
+    `);
+
+    const result = await database.query<{ allocation: string }>(`
+      select sum(attribution_fraction)::text as allocation
+      from project_founding_units
+      where project_id = '${projectId}'
+    `);
+    expect(result.rows[0]?.allocation).toBe("1.000000000000000000");
+  });
+
+  it("rejects incomplete founding-unit allocations", async () => {
+    const database = await createDatabase();
+    await prepareIntegrityFixture(database);
+
+    await expect(
+      database.exec(`
+        begin;
+        insert into project_founding_units (
+          project_id, founding_unit_id, attribution_fraction, attribution_method
+        ) values
+          ('${projectId}', '${teamUnitId}', 0.6, 'documented_split'),
+          ('${projectId}', '${secondTeamUnitId}', 0.3, 'documented_split');
+        commit;
+      `),
+    ).rejects.toThrow(/allocations must sum to 1/);
+  });
+
+  it("does not let manual high confidence bypass calculated evidence", async () => {
+    const database = await createDatabase();
+    await database.exec(`
+      insert into projects (
+        id, slug, name, description, project_type, calculation_category, status,
+        confidence_level, methodology_notes, website_url, research_reviewed_at
+      ) values (
+        '${projectId}', 'manual-high-fixture', 'Manual high fixture', 'Fixture',
+        'protocol', 'liquid_token', 'active', 'high', 'Fixture only.',
+        'https://example.com', now()
+      );
+      insert into assets (id, project_id, asset_type, symbol, name, is_primary) values
+        ('f4000000-0000-4000-8000-000000000001', '${projectId}', 'token', 'MHI', 'Manual high', true);
+      insert into calculation_runs (id, trigger_type, methodology_version, status, completed_at) values
+        ('f5000000-0000-4000-8000-000000000001', 'manual', 'fixture', 'completed', now());
+      insert into project_scores (
+        calculation_run_id, project_id, asset_id, score_usd, confidence_label,
+        data_freshness, calculation_breakdown
+      ) values (
+        'f5000000-0000-4000-8000-000000000001', '${projectId}',
+        'f4000000-0000-4000-8000-000000000001', 100, 'insufficient', '{}'::jsonb,
+        '{"confidence":{"score":70,"complete":false,"components":[{"component":"founder_wallet_coverage","maximumScore":20,"score":null,"complete":false}]}}'::jsonb
+      );
+    `);
+
+    const result = await database.query<{
+      reviewed_confidence: string;
+      calculated_confidence_label: string;
+      confidence_total: string;
+      confidence_components: unknown;
+      confidence_explanation: string;
+    }>(`
+      select reviewed_confidence, calculated_confidence_label, confidence_total::text,
+        confidence_components, confidence_explanation
+      from public_project_details
+      where id = '${projectId}'
+    `);
+
+    expect(result.rows[0]).toMatchObject({
+      reviewed_confidence: "insufficient",
+      calculated_confidence_label: "insufficient",
+      confidence_total: "70",
+    });
+    expect(result.rows[0]?.confidence_components).toEqual([
+      {
+        component: "founder_wallet_coverage",
+        complete: false,
+        maximumScore: 20,
+        score: null,
+      },
+    ]);
+    expect(result.rows[0]?.confidence_explanation).toContain("incomplete");
   });
 });
 

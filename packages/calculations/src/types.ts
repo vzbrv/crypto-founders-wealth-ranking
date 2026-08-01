@@ -151,7 +151,8 @@ export type ConfidenceResult = {
 export type RankingInput = {
   foundingUnitId: string;
   scoreUsd: string | null;
-  confidenceLabel: ConfidenceLabel;
+  calculatedConfidenceLabel: ConfidenceLabel;
+  manualConfidenceLabel?: ConfidenceLabel;
   marketDataStatus: "recent_sourced" | "stale" | "missing_source" | "missing";
   fundingReviewStatus: ReviewStatus;
   walletReviewStatus: ReviewStatus;

@@ -14,6 +14,10 @@ interface ApiProjectDetail {
   score_usd?: number | string | null;
   confidence_label?: string | null;
   reviewed_confidence?: string | null;
+  calculated_confidence_label?: string | null;
+  confidence_total?: number | string | null;
+  confidence_components?: unknown;
+  confidence_explanation?: string | null;
   eligibility_status?: "ranked" | "research_in_progress" | null;
   ineligibility_reasons?: unknown;
   wallet_review_status?: string | null;
@@ -80,10 +84,38 @@ interface ApiLeaderboardRow {
   project_breakdown: unknown;
 }
 
+interface ConfidenceComponent {
+  component: string;
+  maximumScore: number | null;
+  score: number | null;
+  complete: boolean;
+}
+
 function numberOrNull(value: unknown): number | null {
   if (value === null || value === undefined || value === "") return null;
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : null;
+}
+
+function confidenceComponents(value: unknown): ConfidenceComponent[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((item) => {
+    if (!item || typeof item !== "object") return [];
+    const component = item as Record<string, unknown>;
+    if (typeof component.component !== "string") return [];
+    return [
+      {
+        component: component.component,
+        maximumScore: numberOrNull(component.maximumScore),
+        score: numberOrNull(component.score),
+        complete: component.complete === true,
+      },
+    ];
+  });
+}
+
+function confidenceComponentName(component: string): string {
+  return component.replace(/_/g, " ");
 }
 
 function strings(value: unknown): string[] {
@@ -231,16 +263,18 @@ export function ProjectDetail({ evidence }: { evidence: ProjectEvidence }) {
     ])
       .then(([details, walletRows, leaderboard]) => {
         const ranking = leaderboardMatch(leaderboard, evidence.project.id);
+        const calculatedConfidenceLabel =
+          details[0]?.calculated_confidence_label ??
+          details[0]?.confidence_label ??
+          ranking?.confidence_label ??
+          "insufficient";
         setDetail({
           ...(details[0] ?? {}),
           rank: ranking?.rank ?? null,
           score_usd: ranking?.score_usd ?? details[0]?.score_usd ?? null,
-          confidence_label:
-            ranking?.confidence_label ?? evidence.project.confidenceLevel,
-          reviewed_confidence:
-            ranking?.reviewed_confidence ??
-            details[0]?.reviewed_confidence ??
-            null,
+          confidence_label: calculatedConfidenceLabel,
+          calculated_confidence_label: calculatedConfidenceLabel,
+          reviewed_confidence: calculatedConfidenceLabel,
           eligibility_status:
             ranking?.eligibility_status ??
             details[0]?.eligibility_status ??
@@ -259,11 +293,7 @@ export function ProjectDetail({ evidence }: { evidence: ProjectEvidence }) {
             : "Live observations unavailable",
         );
       });
-  }, [
-    evidence.project.confidenceLevel,
-    evidence.project.id,
-    evidence.project.slug,
-  ]);
+  }, [evidence.project.id, evidence.project.slug]);
 
   const values = useMemo(() => {
     const marketCap = numberOrNull(detail?.market_cap_usd);
@@ -315,6 +345,12 @@ export function ProjectDetail({ evidence }: { evidence: ProjectEvidence }) {
       ),
     evidence.project.methodologyNotes,
   ].filter((item): item is string => Boolean(item));
+  const confidenceRows = confidenceComponents(detail?.confidence_components);
+  const confidenceTotal = numberOrNull(detail?.confidence_total);
+  const confidenceLabel =
+    detail?.calculated_confidence_label ??
+    detail?.confidence_label ??
+    "insufficient";
 
   return (
     <main className="detail-page" id="main-content" tabIndex={-1}>
@@ -339,11 +375,7 @@ export function ProjectDetail({ evidence }: { evidence: ProjectEvidence }) {
           </div>
           <div>
             <span>Confidence</span>
-            <strong>
-              {detail?.reviewed_confidence ??
-                detail?.confidence_label ??
-                evidence.project.confidenceLevel}
-            </strong>
+            <strong>{confidenceLabel}</strong>
           </div>
         </div>
       </header>
@@ -455,6 +487,77 @@ export function ProjectDetail({ evidence }: { evidence: ProjectEvidence }) {
             ? "The full numeric equation appears when published market and wallet observations are available."
             : `max(0, ${money(values.marketCap)} − ${money(values.excluded)} − ${money(values.capital)}) = ${money(values.score)}`}
         </p>
+      </section>
+
+      <section
+        className="panel"
+        id="confidence"
+        aria-labelledby="confidence-heading"
+      >
+        <div className="section-heading">
+          <div>
+            <p className="eyebrow">Calculated from stored evidence</p>
+            <h2 id="confidence-heading">Confidence explanation</h2>
+          </div>
+        </div>
+        <div className="formula-grid">
+          <div>
+            <span>Calculated label</span>
+            <strong>{confidenceLabel}</strong>
+            <small>Used for ranking eligibility</small>
+          </div>
+          <div>
+            <span>Total</span>
+            <strong>
+              {confidenceTotal === null
+                ? "Unavailable"
+                : `${confidenceTotal.toFixed(2)} / 100`}
+            </strong>
+            <small>Required evidence components</small>
+          </div>
+        </div>
+        <p>
+          {detail?.confidence_explanation ??
+            "Calculated confidence is unavailable until a current calculation is published."}
+        </p>
+        <div className="table-shell evidence-shell">
+          <table className="evidence-table">
+            <thead>
+              <tr>
+                <th>Component</th>
+                <th>Score</th>
+                <th>Maximum</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {confidenceRows.length > 0 ? (
+                confidenceRows.map((component) => (
+                  <tr key={component.component}>
+                    <td>{confidenceComponentName(component.component)}</td>
+                    <td>
+                      {component.score === null
+                        ? "Missing"
+                        : component.score.toFixed(2)}
+                    </td>
+                    <td>
+                      {component.maximumScore === null
+                        ? "Unknown"
+                        : component.maximumScore.toFixed(2)}
+                    </td>
+                    <td>{component.complete ? "Complete" : "Incomplete"}</td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={4}>
+                    No current confidence evidence is published.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </section>
 
       <section className="panel" id="wallets" aria-labelledby="wallet-heading">

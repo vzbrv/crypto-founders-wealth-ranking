@@ -51,7 +51,7 @@ const ranking = (
   input: Partial<RankingInput> & Pick<RankingInput, "foundingUnitId">,
 ): RankingInput => ({
   scoreUsd: "1",
-  confidenceLabel: "medium",
+  calculatedConfidenceLabel: "medium",
   marketDataStatus: "recent_sourced",
   fundingReviewStatus: "approved_sufficient",
   walletReviewStatus: "approved_sufficient",
@@ -318,21 +318,24 @@ describe("founding-unit aggregation", () => {
 });
 
 describe("confidence", () => {
-  const componentsFor = (founderIdentityEvidence: string) => ({
+  const componentsFor = (
+    founderIdentityEvidence: string,
+    marketReliability = "15",
+  ) => ({
     founderIdentityEvidence,
     founderWalletCoverage: "20",
-    teamFoundationTreasuryCoverage: "20",
-    circulationTreatment: "20",
-    fundingCompleteness: "20",
-    marketReliability: "0",
+    teamFoundationTreasuryCoverage: "15",
+    circulationTreatment: "15",
+    fundingCompleteness: "15",
+    marketReliability,
   });
 
   it.each([
-    ["5", "high", "85.00"],
-    ["4.99", "medium", "84.99"],
-    ["0", "medium", "80.00"],
-  ] as const)("labels score %s correctly", (identity, label, score) => {
-    expect(calculateConfidence(componentsFor(identity))).toMatchObject({
+    ["0", "15", "high", "80.00"],
+    ["0", "14.99", "medium", "79.99"],
+    ["0", "0", "medium", "65.00"],
+  ] as const)("labels score %s correctly", (identity, market, label, score) => {
+    expect(calculateConfidence(componentsFor(identity, market))).toMatchObject({
       label,
       score,
     });
@@ -343,8 +346,8 @@ describe("confidence", () => {
       calculateConfidence({
         founderIdentityEvidence: "10",
         founderWalletCoverage: "10",
-        teamFoundationTreasuryCoverage: "10",
-        circulationTreatment: "10",
+        teamFoundationTreasuryCoverage: "15",
+        circulationTreatment: "5",
         fundingCompleteness: "0",
         marketReliability: "0",
       }).label,
@@ -353,8 +356,8 @@ describe("confidence", () => {
       calculateConfidence({
         founderIdentityEvidence: "9.99",
         founderWalletCoverage: "10",
-        teamFoundationTreasuryCoverage: "10",
-        circulationTreatment: "10",
+        teamFoundationTreasuryCoverage: "15",
+        circulationTreatment: "5",
         fundingCompleteness: "0",
         marketReliability: "0",
       }).label,
@@ -366,13 +369,13 @@ describe("confidence", () => {
       calculateConfidence({
         founderIdentityEvidence: "10",
         founderWalletCoverage: null,
-        teamFoundationTreasuryCoverage: "20",
-        circulationTreatment: "20",
-        fundingCompleteness: "20",
-        marketReliability: "10",
+        teamFoundationTreasuryCoverage: "15",
+        circulationTreatment: "15",
+        fundingCompleteness: "15",
+        marketReliability: "15",
       }),
     ).toMatchObject({
-      score: "80.00",
+      score: "70.00",
       label: "insufficient",
       complete: false,
       missingComponents: ["founderWalletCoverage"],
@@ -391,14 +394,14 @@ describe("rankings", () => {
       ranking({
         foundingUnitId: "unit-a",
         scoreUsd: "10",
-        confidenceLabel: "high",
+        calculatedConfidenceLabel: "high",
         previousRank: 3,
       }),
       ranking({ foundingUnitId: "unit-zero", scoreUsd: "0" }),
       ranking({
         foundingUnitId: "unit-insufficient",
         scoreUsd: "100",
-        confidenceLabel: "insufficient",
+        calculatedConfidenceLabel: "insufficient",
       }),
       ranking({
         foundingUnitId: "unit-unavailable",
@@ -447,6 +450,24 @@ describe("rankings", () => {
         "wallet review is not approved and sufficient",
         "deduction or exclusion evidence is incomplete",
       ],
+    });
+  });
+
+  it("does not use manual confidence to bypass calculated eligibility", () => {
+    const [result] = calculateRankings([
+      ranking({
+        foundingUnitId: "unit-manual-high",
+        scoreUsd: "100",
+        calculatedConfidenceLabel: "insufficient",
+        manualConfidenceLabel: "high",
+      }),
+    ]);
+
+    expect(result).toMatchObject({
+      rank: null,
+      status: "research",
+      eligibilityStatus: "ineligible",
+      ineligibilityReasons: ["confidence is insufficient"],
     });
   });
 });
