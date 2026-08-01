@@ -117,9 +117,9 @@ declare
       jsonb_build_array(
         jsonb_build_object(
           'component', 'founder_identity_evidence',
-          'maximum_score', 20,
-          'score', case when wallet_ready then 20 else 0 end,
-          'complete', wallet_ready,
+          'maximum_score', 10,
+          'score', case when has_founding_unit_attribution then 10 else 0 end,
+          'complete', has_founding_unit_attribution,
           'evidence', jsonb_build_array(jsonb_build_object(
             'foundingUnits', founding_unit_evidence
           ))
@@ -138,8 +138,8 @@ declare
         ),
         jsonb_build_object(
           'component', 'team_foundation_treasury_coverage',
-          'maximum_score', 15,
-          'score', case when wallet_ready and all_wallet_rows_reviewed then 15 else 0 end,
+          'maximum_score', 20,
+          'score', case when wallet_ready and all_wallet_rows_reviewed then 20 else 0 end,
           'complete', wallet_ready and all_wallet_rows_reviewed,
           'evidence', jsonb_build_array(jsonb_build_object(
             'reviewedWalletRows', observed_wallet_count,
@@ -148,10 +148,10 @@ declare
         ),
         jsonb_build_object(
           'component', 'circulation_treatment',
-          'maximum_score', 15,
+          'maximum_score', 20,
           'score', case
             when market_ready and wallet_ready
-              and excluded_supply <= circulating_supply then 15
+              and excluded_supply <= circulating_supply then 20
             else 0
           end,
           'complete', market_ready and wallet_ready
@@ -164,8 +164,8 @@ declare
         ),
         jsonb_build_object(
           'component', 'funding_completeness',
-          'maximum_score', 15,
-          'score', case when funding_ready then 15 else 0 end,
+          'maximum_score', 20,
+          'score', case when funding_ready then 20 else 0 end,
           'complete', funding_ready,
           'evidence', jsonb_build_array(jsonb_build_object(
             'reviewStatus', funding_review_status,
@@ -175,8 +175,8 @@ declare
         ),
         jsonb_build_object(
           'component', 'market_reliability',
-          'maximum_score', 15,
-          'score', case when market_ready then 15 else 0 end,
+          'maximum_score', 10,
+          'score', case when market_ready then 10 else 0 end,
           'complete', market_ready,
           'evidence', jsonb_build_array(jsonb_build_object(
             'marketObservationId', market_observation_id,
@@ -204,8 +204,8 @@ declare
       *,
       case
         when not confidence_complete or confidence_score < 40 then 'insufficient'
-        when confidence_score < 60 then 'low'
-        when confidence_score < 80 then 'medium'
+        when confidence_score < 65 then 'low'
+        when confidence_score < 85 then 'medium'
         else 'high'
       end as confidence_label
     from confidence_rollup

@@ -318,64 +318,41 @@ describe("founding-unit aggregation", () => {
 });
 
 describe("confidence", () => {
-  const componentsFor = (
-    founderIdentityEvidence: string,
-    marketReliability = "15",
-  ) => ({
-    founderIdentityEvidence,
-    founderWalletCoverage: "20",
-    teamFoundationTreasuryCoverage: "15",
-    circulationTreatment: "15",
-    fundingCompleteness: "15",
-    marketReliability,
-  });
-
   it.each([
-    ["0", "15", "high", "80.00"],
-    ["0", "14.99", "medium", "79.99"],
-    ["0", "0", "medium", "65.00"],
-  ] as const)("labels score %s correctly", (identity, market, label, score) => {
-    expect(calculateConfidence(componentsFor(identity, market))).toMatchObject({
-      label,
-      score,
-    });
-  });
-
-  it("covers low and insufficient thresholds", () => {
-    expect(
-      calculateConfidence({
-        founderIdentityEvidence: "10",
-        founderWalletCoverage: "10",
-        teamFoundationTreasuryCoverage: "15",
-        circulationTreatment: "5",
-        fundingCompleteness: "0",
-        marketReliability: "0",
-      }).label,
-    ).toBe("low");
-    expect(
-      calculateConfidence({
-        founderIdentityEvidence: "9.99",
-        founderWalletCoverage: "10",
-        teamFoundationTreasuryCoverage: "15",
-        circulationTreatment: "5",
-        fundingCompleteness: "0",
-        marketReliability: "0",
-      }).label,
-    ).toBe("insufficient");
-  });
+    ["39", "insufficient", "9", "0", "0"],
+    ["40", "low", "10", "0", "0"],
+    ["64", "low", "20", "14", "0"],
+    ["65", "medium", "20", "15", "0"],
+    ["84", "medium", "20", "14", "20"],
+    ["85", "high", "20", "15", "20"],
+  ] as const)(
+    "labels score %s correctly",
+    (score, label, teamScore, circulationScore, fundingScore) => {
+      expect(
+        calculateConfidence({
+          founderIdentityEvidence: "10",
+          founderWalletCoverage: "20",
+          teamFoundationTreasuryCoverage: teamScore,
+          circulationTreatment: circulationScore,
+          fundingCompleteness: fundingScore,
+          marketReliability: "0",
+        }),
+      ).toMatchObject({ label, score: `${score}.00`, complete: true });
+    },
+  );
 
   it("does not assume missing evidence points or award a high label", () => {
     expect(
       calculateConfidence({
         founderIdentityEvidence: "10",
         founderWalletCoverage: null,
-        teamFoundationTreasuryCoverage: "15",
-        circulationTreatment: "15",
-        fundingCompleteness: "15",
-        marketReliability: "15",
+        teamFoundationTreasuryCoverage: "20",
+        circulationTreatment: "20",
+        fundingCompleteness: "20",
+        marketReliability: "10",
       }),
     ).toMatchObject({
-      score: "70.00",
+      score: "80.00",
       label: "insufficient",
       complete: false,
       missingComponents: ["founderWalletCoverage"],

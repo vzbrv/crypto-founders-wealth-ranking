@@ -638,17 +638,17 @@ export function calculateFoundingUnitScore(input: {
 }
 
 const CONFIDENCE_MAXIMUMS: Record<keyof ConfidenceComponents, string> = {
-  founderIdentityEvidence: "20",
+  founderIdentityEvidence: "10",
   founderWalletCoverage: "20",
-  teamFoundationTreasuryCoverage: "15",
-  circulationTreatment: "15",
-  fundingCompleteness: "15",
-  marketReliability: "15",
+  teamFoundationTreasuryCoverage: "20",
+  circulationTreatment: "20",
+  fundingCompleteness: "20",
+  marketReliability: "10",
 };
 
 const confidenceLabel = (score: Decimal): ConfidenceLabel => {
-  if (score.gte("80")) return "high";
-  if (score.gte("60")) return "medium";
+  if (score.gte("85")) return "high";
+  if (score.gte("65")) return "medium";
   if (score.gte("40")) return "low";
   return "insufficient";
 };

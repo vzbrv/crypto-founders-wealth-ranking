@@ -43,7 +43,7 @@ const sections = [
   ],
   [
     "Confidence system",
-    "High, medium, low, and insufficient labels summarize evidence completeness and material uncertainty. Missing required inputs or blocking validation failures keep an entry unranked rather than substituting zero.",
+    "Confidence is evidence-derived: founder identity is 10 points; founder-wallet coverage, team/foundation/treasury coverage, circulation treatment, and funding completeness are 20 each; market reliability is 10. High is 85–100, medium 65–84, low 40–64, and insufficient below 40. Missing required inputs or blocking validation failures keep an entry unranked rather than substituting zero.",
   ],
   [
     "Update frequency",

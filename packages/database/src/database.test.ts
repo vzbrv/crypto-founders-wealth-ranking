@@ -74,6 +74,10 @@ const rankingIntegrityMigrationUrl = new URL(
   "../../../supabase/migrations/202607310020_ranking_integrity.sql",
   import.meta.url,
 );
+const sqlConfidenceEvidence = await readFile(
+  sqlConfidenceEvidenceMigrationUrl,
+  "utf8",
+);
 const seedUrl = new URL(
   "../../../supabase/tests/seed.synthetic.sql",
   import.meta.url,
@@ -93,7 +97,7 @@ const migrationSql = [
   await readFile(rankingPublicEvidenceMigrationUrl, "utf8"),
   await readFile(fundingReviewEligibilityMigrationUrl, "utf8"),
   await readFile(marketObservationSourcesMigrationUrl, "utf8"),
-  await readFile(sqlConfidenceEvidenceMigrationUrl, "utf8"),
+  sqlConfidenceEvidence,
   await readFile(rankingIntegrityMigrationUrl, "utf8"),
 ].join("\n");
 const seedSql = await readFile(seedUrl, "utf8");
@@ -169,6 +173,17 @@ afterEach(async () => {
 });
 
 describe("Phase 3 database", () => {
+  it("keeps SQL confidence weights and label boundaries aligned", () => {
+    expect(
+      [...sqlConfidenceEvidence.matchAll(/'maximum_score', (\d+)/g)].map(
+        ([, score]) => score,
+      ),
+    ).toEqual(["10", "20", "20", "20", "20", "10"]);
+    expect(sqlConfidenceEvidence).toMatch(
+      /when not confidence_complete or confidence_score < 40 then 'insufficient'[\s\S]*?when confidence_score < 65 then 'low'[\s\S]*?when confidence_score < 85 then 'medium'[\s\S]*?else 'high'/,
+    );
+  });
+
   it("keeps serialized JSON parameters text-typed before JSONB casts", async () => {
     const statements = createCuratedImportStatements(await loadCuratedData());
     const sql = statements.map(({ text }) => text).join("\n");
@@ -1041,14 +1056,14 @@ describe("Phase 4 market sync", () => {
     expect(evidence.rows).toEqual([
       {
         component: "circulation_treatment",
-        maximum_score: "15.00",
-        score: "15.00",
+        maximum_score: "20.00",
+        score: "20.00",
         complete: true,
       },
       {
         component: "founder_identity_evidence",
-        maximum_score: "20.00",
-        score: "20.00",
+        maximum_score: "10.00",
+        score: "10.00",
         complete: true,
       },
       {
@@ -1059,20 +1074,20 @@ describe("Phase 4 market sync", () => {
       },
       {
         component: "funding_completeness",
-        maximum_score: "15.00",
-        score: "15.00",
+        maximum_score: "20.00",
+        score: "20.00",
         complete: true,
       },
       {
         component: "market_reliability",
-        maximum_score: "15.00",
-        score: "15.00",
+        maximum_score: "10.00",
+        score: "10.00",
         complete: true,
       },
       {
         component: "team_foundation_treasury_coverage",
-        maximum_score: "15.00",
-        score: "15.00",
+        maximum_score: "20.00",
+        score: "20.00",
         complete: true,
       },
     ]);
