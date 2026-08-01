@@ -657,18 +657,33 @@ export function calculateConfidence(
   components: ConfidenceComponents,
 ): ConfidenceResult {
   let score = new Decimal(0);
+  const missingComponents: Array<keyof ConfidenceComponents> = [];
   for (const key of Object.keys(CONFIDENCE_MAXIMUMS) as Array<
     keyof ConfidenceComponents
   >) {
+    const component = components[key];
+    if (component === null || component === undefined || component === "") {
+      missingComponents.push(key);
+      continue;
+    }
     score = score.add(
-      parseDecimal(components[key], `confidence component ${key}`, {
+      parseDecimal(component, `confidence component ${key}`, {
         minimum: "0",
         maximum: CONFIDENCE_MAXIMUMS[key],
       }),
     );
   }
 
-  return { score: score.toFixed(2), label: confidenceLabel(score), components };
+  return {
+    score: score.toFixed(2),
+    label:
+      missingComponents.length === 0
+        ? confidenceLabel(score)
+        : "insufficient",
+    components,
+    complete: missingComponents.length === 0,
+    missingComponents,
+  };
 }
 
 export function calculateRankings(inputs: RankingInput[]): RankingResult[] {

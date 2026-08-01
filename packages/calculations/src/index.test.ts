@@ -360,6 +360,24 @@ describe("confidence", () => {
       }).label,
     ).toBe("insufficient");
   });
+
+  it("does not assume missing evidence points or award a high label", () => {
+    expect(
+      calculateConfidence({
+        founderIdentityEvidence: "10",
+        founderWalletCoverage: null,
+        teamFoundationTreasuryCoverage: "20",
+        circulationTreatment: "20",
+        fundingCompleteness: "20",
+        marketReliability: "10",
+      }),
+    ).toMatchObject({
+      score: "80.00",
+      label: "insufficient",
+      complete: false,
+      missingComponents: ["founderWalletCoverage"],
+    });
+  });
 });
 
 describe("rankings", () => {

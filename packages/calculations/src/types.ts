@@ -132,18 +132,20 @@ export type FoundingUnitScoreResult = {
 };
 
 export type ConfidenceComponents = {
-  founderIdentityEvidence: string;
-  founderWalletCoverage: string;
-  teamFoundationTreasuryCoverage: string;
-  circulationTreatment: string;
-  fundingCompleteness: string;
-  marketReliability: string;
+  founderIdentityEvidence: string | null | undefined;
+  founderWalletCoverage: string | null | undefined;
+  teamFoundationTreasuryCoverage: string | null | undefined;
+  circulationTreatment: string | null | undefined;
+  fundingCompleteness: string | null | undefined;
+  marketReliability: string | null | undefined;
 };
 
 export type ConfidenceResult = {
   score: string;
   label: ConfidenceLabel;
   components: ConfidenceComponents;
+  complete: boolean;
+  missingComponents: Array<keyof ConfidenceComponents>;
 };
 
 export type RankingInput = {
