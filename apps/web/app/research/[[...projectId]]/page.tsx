@@ -20,6 +20,39 @@ function money(value: string | null): string {
   }).format(Number(value));
 }
 
+function reviewedMoney(
+  value: string | null,
+  source?: { name: string; url: string } | undefined,
+): string {
+  return value === "0" && !source ? "Unknown" : money(value);
+}
+
+function CalculationValue({
+  label,
+  value,
+  source,
+}: {
+  label: string;
+  value: string | null;
+  source?: { name: string; url: string } | undefined;
+}) {
+  return (
+    <div>
+      <span>{label}</span>
+      <strong>{reviewedMoney(value, source)}</strong>
+      <small>
+        {source ? (
+          <a href={source.url} target="_blank" rel="noreferrer">
+            Source: {source.name}
+          </a>
+        ) : (
+          "Missing direct evidence — provisional only"
+        )}
+      </small>
+    </div>
+  );
+}
+
 export async function generateStaticParams() {
   return [
     { projectId: [] as string[] },
@@ -115,6 +148,13 @@ export default async function ResearchPage({
                           <strong>{candidate.project}</strong>
                         </Link>
                         <small>{candidate.ticker}</small>
+                        <small>
+                          <Link
+                            href={`/research/${candidate.projectId}/#calculation`}
+                          >
+                            Calculation &amp; sources
+                          </Link>
+                        </small>
                       </td>
                       <td>{candidate.foundersTeam}</td>
                       <td className="number">
@@ -172,6 +212,9 @@ export default async function ResearchPage({
   const sources = dataset.sources.filter(({ id: sourceId }) =>
     sourceIds.has(sourceId),
   );
+  const sourcesById = new Map(
+    dataset.sources.map((source) => [source.id, source]),
+  );
 
   return (
     <>
@@ -198,7 +241,7 @@ export default async function ResearchPage({
             <strong>{candidate.publicationStatus}</strong>
           </div>
           <div>
-            <span>Research estimate</span>
+            <span>Provisional research estimate</span>
             <strong>{money(candidate.provisionalOutsideWealthUsd)}</strong>
           </div>
           <div>
@@ -207,9 +250,13 @@ export default async function ResearchPage({
           </div>
         </section>
 
-        <section className="panel" aria-labelledby="calculation-heading">
+        <section
+          className="panel"
+          id="calculation"
+          aria-labelledby="calculation-heading"
+        >
           <div className="section-heading compact">
-            <h2 id="calculation-heading">Research calculation</h2>
+            <h2 id="calculation-heading">Provisional research calculation</h2>
             <p>{candidate.valuationBasis}</p>
           </div>
           <p className="formula-statement">
@@ -218,29 +265,45 @@ export default async function ResearchPage({
             Missing deductions are not treated as zero for publication.
           </p>
           <div className="formula-grid">
-            <div>
-              <span>Gross value</span>
-              <strong>{money(candidate.grossValueUsd)}</strong>
-            </div>
-            <div>
-              <span>Known affiliated holdings</span>
-              <strong>{money(candidate.knownFounderTeamExcludedUsd)}</strong>
-            </div>
-            <div>
-              <span>Verified external capital</span>
-              <strong>{money(candidate.verifiedExternalCapitalUsd)}</strong>
-            </div>
-            <div>
-              <span>Other deductions</span>
-              <strong>{money(candidate.otherDeductionsUsd)}</strong>
-            </div>
+            <CalculationValue
+              label="Gross value"
+              source={
+                candidate.grossSourceId
+                  ? sourcesById.get(candidate.grossSourceId)
+                  : undefined
+              }
+              value={candidate.grossValueUsd}
+            />
+            <CalculationValue
+              label="Known affiliated holdings"
+              source={
+                candidate.holdingsSourceId
+                  ? sourcesById.get(candidate.holdingsSourceId)
+                  : undefined
+              }
+              value={candidate.knownFounderTeamExcludedUsd}
+            />
+            <CalculationValue
+              label="Verified external capital"
+              source={
+                candidate.capitalSourceId
+                  ? sourcesById.get(candidate.capitalSourceId)
+                  : undefined
+              }
+              value={candidate.verifiedExternalCapitalUsd}
+            />
+            <CalculationValue
+              label="Other deductions"
+              value={candidate.otherDeductionsUsd}
+            />
           </div>
           <p className="equation">
             {money(candidate.grossValueUsd)} −{" "}
             {money(candidate.knownFounderTeamExcludedUsd)} −{" "}
             {money(candidate.verifiedExternalCapitalUsd)} −{" "}
-            {money(candidate.otherDeductionsUsd)} ={" "}
-            {money(candidate.provisionalOutsideWealthUsd)} research estimate
+            {reviewedMoney(candidate.otherDeductionsUsd)} ={" "}
+            {money(candidate.provisionalOutsideWealthUsd)} provisional research
+            estimate
           </p>
         </section>
 
@@ -346,7 +409,11 @@ export default async function ResearchPage({
           </div>
         </section>
 
-        <section className="panel" aria-labelledby="source-heading">
+        <section
+          className="panel"
+          id="evidence"
+          aria-labelledby="source-heading"
+        >
           <div className="section-heading compact">
             <h2 id="source-heading">Referenced sources</h2>
             <p>Public evidence referenced by this research record.</p>
