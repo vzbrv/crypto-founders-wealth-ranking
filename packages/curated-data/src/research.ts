@@ -869,7 +869,7 @@ export async function loadResearchData(
     candidateCsv,
     walletCsv,
     sourceCsv,
-    provisionalMarketCsv,
-    provisionalCapitalCsv,
+    ...(provisionalMarketCsv === undefined ? {} : { provisionalMarketCsv }),
+    ...(provisionalCapitalCsv === undefined ? {} : { provisionalCapitalCsv }),
   });
 }
