@@ -78,11 +78,16 @@ export interface ResearchWalletEvidence {
 }
 
 export type FundingSourceClass = "Primary" | "Reliable secondary";
+export const COINGECKO_SNAPSHOT_METHOD = "coingecko_coin_history_v3" as const;
 
 export interface ResearchMarketObservation {
   projectId: string;
+  coinGeckoCoinId: string;
   circulatingMarketValueUsd: string;
   observedAt: string;
+  fetchedAt: string;
+  snapshotMethod: typeof COINGECKO_SNAPSHOT_METHOD;
+  directSourceUrl: string;
   sourceId: string;
 }
 
@@ -92,6 +97,8 @@ export interface ResearchProvisionalCapitalEvent {
   amountUsd: string;
   sourceId: string;
   sourceClass: FundingSourceClass;
+  amountSupport: "Direct";
+  supportingText: string;
   notes: string;
 }
 
@@ -110,6 +117,10 @@ export interface ProvisionalCalculation {
   canonicalRank: number | null;
   circulatingMarketValueUsd: string;
   marketDataTimestamp: string;
+  marketFetchTimestamp: string;
+  marketCoinGeckoCoinId: string;
+  marketSnapshotMethod: typeof COINGECKO_SNAPSHOT_METHOD;
+  marketDirectSourceUrl: string;
   marketSourceId: string;
   affiliatedCirculatingHoldingsUsd: string | null;
   reviewedDisclosedOutsideCapitalUsd: string | null;
@@ -186,8 +197,12 @@ const sourceHeaders = [
 
 const provisionalMarketHeaders = [
   "project_id",
+  "coingecko_coin_id",
   "circulating_market_value_usd",
   "observed_at",
+  "fetched_at",
+  "snapshot_method",
+  "direct_source_url",
   "source_id",
 ] as const;
 
@@ -197,6 +212,8 @@ const provisionalCapitalHeaders = [
   "amount_usd",
   "source_id",
   "source_class",
+  "amount_support",
+  "supporting_text",
   "notes",
 ] as const;
 function requireValue(row: CsvRow, key: string, context: string): string {
@@ -577,7 +594,7 @@ function parseWallets(
 function parseMarketObservations(
   csv: string,
   projectIds: Set<string>,
-  sourceIds: Set<string>,
+  sources: Map<string, ResearchSource>,
 ): ResearchMarketObservation[] {
   const observations = parseCsv(
     csv,
@@ -589,19 +606,46 @@ function parseMarketObservations(
     if (!projectIds.has(projectId))
       throw new Error(`${context}: unknown project ${projectId}`);
     const sourceId = requireValue(row, "source_id", context);
-    if (!sourceIds.has(sourceId))
-      throw new Error(`${context}: unknown source ${sourceId}`);
+    const source = sources.get(sourceId);
+    if (!source) throw new Error(`${context}: unknown source ${sourceId}`);
     const observedAt = requireValue(row, "observed_at", context);
     if (Number.isNaN(Date.parse(observedAt)))
       throw new Error(`${context}: invalid observed_at ${observedAt}`);
+    const fetchedAt = requireValue(row, "fetched_at", context);
+    if (Number.isNaN(Date.parse(fetchedAt)))
+      throw new Error(`${context}: invalid fetched_at ${fetchedAt}`);
+    if (Date.parse(fetchedAt) < Date.parse(observedAt))
+      throw new Error(`${context}: fetched_at precedes observed_at`);
+    const coinGeckoCoinId = requireValue(row, "coingecko_coin_id", context);
+    if (!/^[a-z0-9-]+$/.test(coinGeckoCoinId))
+      throw new Error(`${context}: invalid CoinGecko coin ID`);
+    const snapshotMethod = requireValue(row, "snapshot_method", context);
+    if (snapshotMethod !== COINGECKO_SNAPSHOT_METHOD)
+      throw new Error(`${context}: invalid snapshot_method ${snapshotMethod}`);
+    const date = new Date(observedAt);
+    const historyDate = [
+      String(date.getUTCDate()).padStart(2, "0"),
+      String(date.getUTCMonth() + 1).padStart(2, "0"),
+      date.getUTCFullYear(),
+    ].join("-");
+    const expectedSourceUrl = `https://api.coingecko.com/api/v3/coins/${coinGeckoCoinId}/history?date=${historyDate}&localization=false`;
+    const directSourceUrl = requireValue(row, "direct_source_url", context);
+    if (directSourceUrl !== expectedSourceUrl)
+      throw new Error(`${context}: direct_source_url is not reproducible`);
+    if (source.category !== "Market value" || source.url !== directSourceUrl)
+      throw new Error(`${context}: source catalog does not match observation`);
     return {
       projectId,
+      coinGeckoCoinId,
       circulatingMarketValueUsd: requireValue(
         { value: money(row.circulating_market_value_usd, context) ?? "" },
         "value",
         context,
       ),
       observedAt,
+      fetchedAt,
+      snapshotMethod,
+      directSourceUrl,
       sourceId,
     } satisfies ResearchMarketObservation;
   });
@@ -609,6 +653,12 @@ function parseMarketObservations(
     observations.map((observation) => observation.projectId),
     "provisional_market_data.csv",
   );
+  if (new Set(observations.map((item) => item.snapshotMethod)).size !== 1)
+    throw new Error("provisional_market_data.csv: snapshot method mismatch");
+  if (new Set(observations.map((item) => item.observedAt)).size !== 1)
+    throw new Error(
+      "provisional_market_data.csv: observation timestamp mismatch",
+    );
   return observations;
 }
 
@@ -623,7 +673,7 @@ function fundingSourceClass(
 function parseProvisionalCapitalEvents(
   csv: string,
   projectIds: Set<string>,
-  sourceIds: Set<string>,
+  sources: Map<string, ResearchSource>,
 ): ResearchProvisionalCapitalEvent[] {
   const events = parseCsv(
     csv,
@@ -635,8 +685,13 @@ function parseProvisionalCapitalEvents(
     if (!projectIds.has(projectId))
       throw new Error(`${context}: unknown project ${projectId}`);
     const sourceId = requireValue(row, "source_id", context);
-    if (!sourceIds.has(sourceId))
-      throw new Error(`${context}: unknown source ${sourceId}`);
+    const source = sources.get(sourceId);
+    if (!source) throw new Error(`${context}: unknown source ${sourceId}`);
+    if (source.category !== "Capital")
+      throw new Error(`${context}: source ${sourceId} is not a capital source`);
+    const amountSupport = requireValue(row, "amount_support", context);
+    if (amountSupport !== "Direct")
+      throw new Error(`${context}: amount_support must be Direct`);
     return {
       eventId: requireValue(row, "event_id", context),
       projectId,
@@ -650,6 +705,8 @@ function parseProvisionalCapitalEvents(
         requireValue(row, "source_class", context),
         context,
       ),
+      amountSupport,
+      supportingText: requireValue(row, "supporting_text", context),
       notes: row.notes?.trim() ?? "",
     } satisfies ResearchProvisionalCapitalEvent;
   });
@@ -752,6 +809,10 @@ export function buildProvisionalCalculations(
         canonicalRank: candidate.canonicalRank,
         circulatingMarketValueUsd: market.circulatingMarketValueUsd,
         marketDataTimestamp: market.observedAt,
+        marketFetchTimestamp: market.fetchedAt,
+        marketCoinGeckoCoinId: market.coinGeckoCoinId,
+        marketSnapshotMethod: market.snapshotMethod,
+        marketDirectSourceUrl: market.directSourceUrl,
         marketSourceId: market.sourceId,
         affiliatedCirculatingHoldingsUsd,
         reviewedDisclosedOutsideCapitalUsd,
@@ -799,19 +860,24 @@ export function importResearchCsv(input: {
 }): ResearchDataset {
   const sources = parseSources(input.sourceCsv);
   const sourceIds = new Set(sources.map((source) => source.id));
+  const sourcesById = new Map(sources.map((source) => [source.id, source]));
   const candidates = parseCandidates(input.candidateCsv, sourceIds);
   const projectIds = new Set(
     candidates.map((candidate) => candidate.projectId),
   );
   const wallets = parseWallets(input.walletCsv, projectIds, sourceIds);
   const provisionalMarketObservations = input.provisionalMarketCsv
-    ? parseMarketObservations(input.provisionalMarketCsv, projectIds, sourceIds)
+    ? parseMarketObservations(
+        input.provisionalMarketCsv,
+        projectIds,
+        sourcesById,
+      )
     : [];
   const provisionalCapitalEvents = input.provisionalCapitalCsv
     ? parseProvisionalCapitalEvents(
         input.provisionalCapitalCsv,
         projectIds,
-        sourceIds,
+        sourcesById,
       )
     : [];
   const capitalRecords = candidates.flatMap((candidate) =>

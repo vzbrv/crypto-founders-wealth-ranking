@@ -82,6 +82,7 @@ export default async function ProvisionalPage() {
                       <td>{entry.foundersTeam}</td>
                       <td className="number">
                         {money(entry.circulatingMarketValueUsd)}
+                        <small>Observed {entry.marketDataTimestamp}</small>
                       </td>
                       <td>
                         {entry.deductions.length > 0

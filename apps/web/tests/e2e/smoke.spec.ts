@@ -473,6 +473,19 @@ test("publishes provisional calculations and sources separately", async ({
   ).toBeVisible();
   await expect(page.getByText("Unknown deductions are omitted")).toBeVisible();
   await expect(page.getByRole("row")).toHaveCount(11);
+  await expect(
+    page.getByRole("link", { name: "Calculation & sources" }),
+  ).toHaveCount(10);
+  await expect(
+    page.getByText("Observed 2026-07-30T00:00:00Z", { exact: true }),
+  ).toHaveCount(10);
+
+  const rankedProjects = await page
+    .locator("tbody tr td:nth-child(2) > a")
+    .allTextContents();
+  expect(rankedProjects.indexOf("Chainlink")).toBeLessThan(
+    rankedProjects.indexOf("Cardano"),
+  );
 
   await page.getByRole("link", { name: "Bitcoin", exact: true }).click();
   await expect(page).toHaveURL(/\/provisional\/bitcoin\/?$/);
@@ -483,6 +496,22 @@ test("publishes provisional calculations and sources separately", async ({
   await expect(
     page.getByRole("link", { name: "CoinGecko — Bitcoin" }),
   ).toBeVisible();
+  await expect(
+    page.getByText("Observation time", { exact: true }),
+  ).toBeVisible();
+  await expect(page.getByText("Fetch time", { exact: true })).toBeVisible();
+  await expect(
+    page.getByText("CoinGecko coin ID", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("Snapshot method", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "CoinGecko historical record" }),
+  ).toHaveAttribute(
+    "href",
+    "https://api.coingecko.com/api/v3/coins/bitcoin/history?date=30-07-2026&localization=false",
+  );
   await expect(
     page.getByText("Unknown", { exact: true }).first(),
   ).toBeVisible();

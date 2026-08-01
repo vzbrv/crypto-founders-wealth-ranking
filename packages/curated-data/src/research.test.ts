@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 import { beforeAll, describe, expect, it } from "vitest";
 
 import {
+  COINGECKO_SNAPSHOT_METHOD,
   buildProvisionalRanking,
   calculateProvisionalOutsideWealth,
   calculatePublicEquityMarketCap,
@@ -60,7 +61,7 @@ describe("research dataset import", () => {
       wallets: { length: 32 },
       capitalRecords: { length: 20 },
       provisionalMarketObservations: { length: 25 },
-      provisionalCapitalEvents: { length: 18 },
+      provisionalCapitalEvents: { length: 5 },
       sources: { length: 64 },
     });
     expect(
@@ -96,13 +97,13 @@ describe("research dataset import", () => {
       { provisionalRank: 6, projectId: "tron" },
       { provisionalRank: 7, projectId: "hyperliquid" },
       { provisionalRank: 8, projectId: "dogecoin" },
-      { provisionalRank: 9, projectId: "cardano" },
-      { provisionalRank: 10, projectId: "chainlink" },
+      { provisionalRank: 9, projectId: "chainlink" },
+      { provisionalRank: 10, projectId: "cardano" },
     ]);
     expect(ranking[0]).toMatchObject({
-      provisionalOutsideHolderValueUsd: "1296447935147",
+      provisionalOutsideHolderValueUsd: "1282708329625",
       affiliatedCirculatingHoldingsUsd: null,
-      reviewedDisclosedOutsideCapitalUsd: "0",
+      reviewedDisclosedOutsideCapitalUsd: null,
       marketSourceId: "CG-BTC",
     });
     expect(ranking.find(({ projectId }) => projectId === "xrp")).toMatchObject({
@@ -120,6 +121,122 @@ describe("research dataset import", () => {
         referencedSourceIds.has(sourceId),
       ),
     ).toBe(true);
+  });
+
+  it("uses one reproducible CoinGecko historical snapshot for all 25 observations", () => {
+    const data = importData();
+    const methods = new Set(
+      data.provisionalMarketObservations.map(
+        ({ snapshotMethod }) => snapshotMethod,
+      ),
+    );
+    const observationTimes = new Set(
+      data.provisionalMarketObservations.map(({ observedAt }) => observedAt),
+    );
+
+    expect(methods).toEqual(new Set([COINGECKO_SNAPSHOT_METHOD]));
+    expect(observationTimes).toEqual(new Set(["2026-07-30T00:00:00Z"]));
+    expect(data.provisionalMarketObservations).toHaveLength(25);
+
+    for (const observation of data.provisionalMarketObservations) {
+      const expectedUrl =
+        `https://api.coingecko.com/api/v3/coins/` +
+        `${observation.coinGeckoCoinId}/history?date=30-07-2026&localization=false`;
+      const source = data.sources.find(({ id }) => id === observation.sourceId);
+
+      expect(observation.directSourceUrl).toBe(expectedUrl);
+      expect(Date.parse(observation.fetchedAt)).toBeGreaterThanOrEqual(
+        Date.parse(observation.observedAt),
+      );
+      expect(source).toMatchObject({
+        category: "Market value",
+        url: expectedUrl,
+      });
+    }
+  });
+
+  it("deducts only directly supported funding and leaves unsupported amounts unknown", () => {
+    const data = importData();
+    const ranking = buildProvisionalRanking(data);
+
+    expect(
+      data.provisionalCapitalEvents.map(({ projectId, amountUsd }) => ({
+        projectId,
+        amountUsd,
+      })),
+    ).toEqual([
+      { projectId: "solana", amountUsd: "314159265" },
+      { projectId: "sui", amountUsd: "300000000" },
+      { projectId: "uniswap", amountUsd: "165000000" },
+      { projectId: "near", amountUsd: "150000000" },
+      { projectId: "ondo", amountUsd: "20000000" },
+    ]);
+
+    for (const event of data.provisionalCapitalEvents) {
+      const source = data.sources.find(({ id }) => id === event.sourceId);
+      expect(event.amountSupport).toBe("Direct");
+      expect(event.supportingText.length).toBeGreaterThan(0);
+      expect(source?.category).toBe("Capital");
+    }
+
+    for (const projectId of [
+      "ethereum",
+      "bnb",
+      "tron",
+      "cardano",
+      "chainlink",
+    ]) {
+      const entry = ranking.find(
+        (candidate) => candidate.projectId === projectId,
+      );
+      expect(entry).toMatchObject({
+        reviewedDisclosedOutsideCapitalUsd: null,
+        coverageWarning: expect.stringContaining("not a $0 deduction"),
+      });
+      expect(entry?.provisionalOutsideHolderValueUsd).toBe(
+        calculateProvisionalOutsideWealth(entry!.circulatingMarketValueUsd, [
+          null,
+          null,
+        ]),
+      );
+    }
+  });
+
+  it("matches the corrected sourced top-ten values and calculations", () => {
+    const ranking = buildProvisionalRanking(importData());
+
+    expect(
+      ranking.map(({ projectId, provisionalOutsideHolderValueUsd }) => ({
+        projectId,
+        provisionalOutsideHolderValueUsd,
+      })),
+    ).toEqual([
+      {
+        projectId: "bitcoin",
+        provisionalOutsideHolderValueUsd: "1282708329625",
+      },
+      {
+        projectId: "ethereum",
+        provisionalOutsideHolderValueUsd: "230235889489",
+      },
+      { projectId: "bnb", provisionalOutsideHolderValueUsd: "76083530883" },
+      { projectId: "xrp", provisionalOutsideHolderValueUsd: "67059007915" },
+      { projectId: "solana", provisionalOutsideHolderValueUsd: "42346654317" },
+      { projectId: "tron", provisionalOutsideHolderValueUsd: "30883085142" },
+      {
+        projectId: "hyperliquid",
+        provisionalOutsideHolderValueUsd: "11989302028",
+      },
+      {
+        projectId: "dogecoin",
+        provisionalOutsideHolderValueUsd: "10883153036",
+      },
+      {
+        projectId: "chainlink",
+        provisionalOutsideHolderValueUsd: "6226092965",
+      },
+      { projectId: "cardano", provisionalOutsideHolderValueUsd: "6045751226" },
+    ]);
   });
 
   it("preserves unknown deductions as null and explicit researched zero as zero", () => {
@@ -218,6 +335,25 @@ describe("research dataset import", () => {
         ),
       }),
     ).toThrow("provisional formula mismatch");
+  });
+
+  it("rejects non-reproducible market methods and inferred funding amounts", () => {
+    expect(() =>
+      importData({
+        provisionalMarketCsv: provisionalMarketCsv.replace(
+          COINGECKO_SNAPSHOT_METHOD,
+          "coingecko_live_page",
+        ),
+      }),
+    ).toThrow("invalid snapshot_method");
+    expect(() =>
+      importData({
+        provisionalCapitalCsv: provisionalCapitalCsv.replace(
+          ",Direct,",
+          ",Inferred,",
+        ),
+      }),
+    ).toThrow("amount_support must be Direct");
   });
 
   it("classifies only eligible exact supported-chain addresses for synchronization", () => {

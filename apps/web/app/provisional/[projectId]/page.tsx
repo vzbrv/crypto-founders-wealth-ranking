@@ -91,6 +91,34 @@ export default async function ProvisionalCalculationPage({
               <strong>{money(calculation.circulatingMarketValueUsd)}</strong>
             </div>
             <div>
+              <span>Observation time</span>
+              <strong>{calculation.marketDataTimestamp}</strong>
+            </div>
+            <div>
+              <span>Fetch time</span>
+              <strong>{calculation.marketFetchTimestamp}</strong>
+            </div>
+            <div>
+              <span>CoinGecko coin ID</span>
+              <strong>{calculation.marketCoinGeckoCoinId}</strong>
+            </div>
+            <div>
+              <span>Snapshot method</span>
+              <strong>{calculation.marketSnapshotMethod}</strong>
+            </div>
+            <div>
+              <span>Direct source URL</span>
+              <strong>
+                <a
+                  href={calculation.marketDirectSourceUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  CoinGecko historical record
+                </a>
+              </strong>
+            </div>
+            <div>
               <span>Affiliated circulating holdings</span>
               <strong>
                 {money(calculation.affiliatedCirculatingHoldingsUsd)}

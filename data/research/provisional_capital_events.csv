@@ -1,19 +1,6 @@
-event_id,project_id,amount_usd,source_id,source_class,notes
-bitcoin-fair-launch,bitcoin,0,BTC-FAIR-LAUNCH,Primary,Complete fair-launch review; no primary capital raise identified.
-ethereum-crowdsale,ethereum,18300000,ETH-CROWDSALE,Primary,Reviewed crowdsale proceeds only; broader financing reconciliation remains incomplete.
-bnb-ico,bnb,15000000,BNB-ICO,Primary,Reviewed ICO proceeds only; Binance corporate financing is not reconciled.
-solana-2021-sale,solana,314159265,SOL-2021-SALE,Primary,Reviewed 2021 private token sale only; earlier and later financing may remain.
-tron-ico,tron,70000000,TRON-ICO,Primary,Reviewed ICO proceeds only; broader financing reconciliation remains incomplete.
-dogecoin-fair-launch,dogecoin,0,DOGE-FAIR-LAUNCH,Primary,Complete fair-launch review; no team token sale identified.
-cardano-ico,cardano,62200000,ADA-ICO,Primary,Reviewed ICO proceeds only; sale tranches and company financing remain to reconcile.
-chainlink-ico,chainlink,32000000,LINK-ICO,Primary,Reviewed ICO proceeds only; equity financing remains to reconcile.
-stellar-stripe,stellar,3000000,XLM-STRIPE,Primary,Reviewed Stripe contribution only; donations and other financing remain to reconcile.
-litecoin-fair-launch,litecoin,0,LTC-FAIR-LAUNCH,Primary,Complete fair-launch review; no team token sale identified.
-hedera-sales,hedera,124000000,HBAR-SALES,Primary,Reviewed token-sale amount only; all tranches and equity financing remain to reconcile.
-sui-series-b,sui,300000000,SUI-SERIES-B,Primary,Reviewed Series B only; other financing remains to reconcile.
-avalanche-2021-sale,avalanche,230000000,AVAX-2021-SALE,Primary,Reviewed 2021 sale only; seed and earlier sales remain to reconcile.
-uniswap-series-b,uniswap,165000000,UNI-SERIES-B,Primary,Reviewed Series B only; other financing remains to reconcile.
-near-2022-round,near,150000000,NEAR-2022-ROUND,Primary,Reviewed 2022 round only; earlier rounds and token sales remain to reconcile.
-ondo-series-a,ondo,20000000,ONDO-SERIES-A,Reliable secondary,Reviewed Series A only; other financing remains to reconcile.
-polkadot-ico,polkadot,144000000,DOT-ICO,Primary,Reviewed ICO proceeds only; later token sales remain to reconcile.
-internet-computer-funding,internet-computer,195000000,ICP-FUNDING,Primary,Reviewed cumulative amount; individual rounds remain to reconcile.
+event_id,project_id,amount_usd,source_id,source_class,amount_support,supporting_text,notes
+solana-2021-sale,solana,314159265,SOL-2021-SALE,Primary,Direct,"Page states Solana Labs completed a private token sale of $314,159,265.",Reviewed 2021 private token sale only; earlier and later financing may remain.
+sui-series-b,sui,300000000,SUI-SERIES-B,Reliable secondary,Direct,Page states the Series B round raised a total of $300 million.,Reviewed Series B only; other financing remains to reconcile.
+uniswap-series-b,uniswap,165000000,UNI-SERIES-B,Primary,Direct,Page states Uniswap Labs raised $165 million in Series B funding.,Reviewed Series B only; other financing remains to reconcile.
+near-2022-round,near,150000000,NEAR-2022-ROUND,Primary,Direct,Page states NEAR Protocol raised $150 million in its latest funding round.,Reviewed 2022 round only; earlier rounds and token sales remain to reconcile.
+ondo-series-a,ondo,20000000,ONDO-SERIES-A,Reliable secondary,Direct,Page states the round was $20 million.,Reviewed Series A only; other financing remains to reconcile.
