@@ -1,0 +1,11 @@
+record_id,project_id,disposition,source_id,reason
+bitcoin-satoshi-cluster,bitcoin,Excluded,ARK-SATOSHI,Estimated BTC cluster is not address-reproducible and is not a verified affiliated holding deduction.
+ethereum-crowdsale-usd,ethereum,Scenario only,ETH-CROWDSALE,Reported USD conversion is approximate and complete external-capital coverage is not reconciled.
+bnb-ico-proceeds,bnb,Disputed,BNB-ICO,Issuer token-sale context does not establish a directly reconciled outside-capital amount for the ranked project.
+bnb-cz-estimate,bnb,Excluded,CZ-WALLET,Public-purpose wallet evidence is not a complete or reproducible estimate of CZ BNB holdings.
+xrp-early-round,xrp,Excluded,XRP-EARLY-ROUND,Workbook early-round estimate is not directly sourced or reconciled with the accepted round ledger.
+solana-prior-rounds,solana,Scenario only,SOL-2021-SALE,Only the directly announced 2021 private sale is accepted; other round totals remain unresolved.
+tron-ico-usd,tron,Scenario only,TRON-ICO,No directly verified USD amount and full financing history remains unresolved.
+tron-justin-estimate,tron,Excluded,ARK-JUSTIN,Estimated TRX holdings are not address-reproducible verified affiliated circulating holdings.
+chainlink-ico-context,chainlink,Unknown,LINK-ICO,Whitepaper context does not itself provide a directly supported USD amount beyond the accepted sale report.
+cardano-ico-usd,cardano,Scenario only,ADA-ICO,BTC conversion and complete financing coverage remain unresolved.

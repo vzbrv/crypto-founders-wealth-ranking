@@ -35,7 +35,7 @@ export default async function ProvisionalPage() {
             Top 10 founders and founding teams using market observations dated{" "}
             {observedAt}. It equals project circulating market value minus
             verified affiliated holdings and reviewed outside capital; it is not
-            founder net worth.
+            founder net worth or personal wealth.
           </p>
         </header>
 
@@ -44,7 +44,7 @@ export default async function ProvisionalPage() {
           <p>
             Unknown deductions are omitted from arithmetic, not treated as $0.
             Values with evidence gaps are upper estimates and may be overstated.
-            This is not founder net worth.
+            This is not founder net worth or personal wealth.
           </p>
         </section>
 
@@ -68,12 +68,13 @@ export default async function ProvisionalPage() {
                   <th>Provisional rank</th>
                   <th>Founder or founding team</th>
                   <th>Project</th>
-                  <th className="number">Market value</th>
-                  <th>Deduction coverage</th>
+                  <th className="number">Circulating market value</th>
+                  <th>Accepted deductions</th>
                   <th className="number">
                     Provisional value created for outside holders.
                   </th>
-                  <th>Coverage</th>
+                  <th>Confidence</th>
+                  <th>Evidence coverage</th>
                 </tr>
               </thead>
               <tbody>
@@ -100,13 +101,22 @@ export default async function ProvisionalPage() {
                       </td>
                       <td>
                         {entry.deductions.length > 0
-                          ? `${entry.deductions.length} reviewed input${entry.deductions.length === 1 ? "" : "s"}`
+                          ? entry.deductions.map((deduction) => (
+                              <small
+                                key={`${deduction.label}-${deduction.sourceIds.join("-")}`}
+                              >
+                                {deduction.label}: {money(deduction.amountUsd)}
+                              </small>
+                            ))
                           : "Unknown"}
                       </td>
                       <td className="number">
                         <strong>
                           {money(entry.provisionalOutsideHolderValueUsd)}
                         </strong>
+                      </td>
+                      <td>
+                        {entry.confidence.score}/100 · {entry.confidence.label}
                       </td>
                       <td>{entry.coverageWarning}</td>
                     </tr>

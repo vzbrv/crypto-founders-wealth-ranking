@@ -78,6 +78,10 @@ export interface ResearchWalletEvidence {
 }
 
 export type FundingSourceClass = "Primary" | "Reliable secondary";
+export type CapitalTreatment =
+  "Outside capital" | "Reviewed $0 outside funding";
+export type ExcludedEvidenceDisposition =
+  "Scenario only" | "Disputed" | "Excluded" | "Unknown";
 export const COINGECKO_SNAPSHOT_METHOD = "coingecko_coin_history_v3" as const;
 
 export interface ResearchMarketObservation {
@@ -98,8 +102,17 @@ export interface ResearchProvisionalCapitalEvent {
   sourceId: string;
   sourceClass: FundingSourceClass;
   amountSupport: "Direct";
+  treatment: CapitalTreatment;
   supportingText: string;
   notes: string;
+}
+
+export interface ResearchProvisionalExcludedEvidence {
+  recordId: string;
+  projectId: string;
+  disposition: ExcludedEvidenceDisposition;
+  sourceId: string;
+  reason: string;
 }
 
 export interface ProvisionalDeduction {
@@ -107,7 +120,21 @@ export interface ProvisionalDeduction {
   amountUsd: string;
   sourceIds: string[];
   sourceClass: FundingSourceClass | null;
+  qualification: string;
   notes: string;
+}
+
+export interface ProvisionalConfidenceComponent {
+  label: string;
+  score: number;
+  maxScore: number;
+  detail: string;
+}
+
+export interface ProvisionalConfidence {
+  score: number;
+  label: "Low" | "Moderate" | "High";
+  components: ProvisionalConfidenceComponent[];
 }
 
 export interface ProvisionalCalculation {
@@ -126,6 +153,8 @@ export interface ProvisionalCalculation {
   reviewedDisclosedOutsideCapitalUsd: string | null;
   provisionalOutsideHolderValueUsd: string;
   deductions: ProvisionalDeduction[];
+  excludedEvidence: ResearchProvisionalExcludedEvidence[];
+  confidence: ProvisionalConfidence;
   evidenceGaps: string[];
   coverageWarning: string;
 }
@@ -140,6 +169,7 @@ export interface ResearchDataset {
   capitalRecords: ResearchCapitalRecord[];
   provisionalMarketObservations: ResearchMarketObservation[];
   provisionalCapitalEvents: ResearchProvisionalCapitalEvent[];
+  provisionalExcludedEvidence: ResearchProvisionalExcludedEvidence[];
   sources: ResearchSource[];
 }
 
@@ -213,8 +243,17 @@ const provisionalCapitalHeaders = [
   "source_id",
   "source_class",
   "amount_support",
+  "treatment",
   "supporting_text",
   "notes",
+] as const;
+
+const provisionalExcludedEvidenceHeaders = [
+  "record_id",
+  "project_id",
+  "disposition",
+  "source_id",
+  "reason",
 ] as const;
 function requireValue(row: CsvRow, key: string, context: string): string {
   const value = row[key]?.trim();
@@ -670,6 +709,26 @@ function fundingSourceClass(
   throw new Error(`${context}: invalid source_class ${value}`);
 }
 
+function capitalTreatment(value: string, context: string): CapitalTreatment {
+  if (value === "Outside capital" || value === "Reviewed $0 outside funding")
+    return value;
+  throw new Error(`${context}: invalid treatment ${value}`);
+}
+
+function excludedEvidenceDisposition(
+  value: string,
+  context: string,
+): ExcludedEvidenceDisposition {
+  if (
+    value === "Scenario only" ||
+    value === "Disputed" ||
+    value === "Excluded" ||
+    value === "Unknown"
+  )
+    return value;
+  throw new Error(`${context}: invalid disposition ${value}`);
+}
+
 function parseProvisionalCapitalEvents(
   csv: string,
   projectIds: Set<string>,
@@ -692,21 +751,44 @@ function parseProvisionalCapitalEvents(
     const amountSupport = requireValue(row, "amount_support", context);
     if (amountSupport !== "Direct")
       throw new Error(`${context}: amount_support must be Direct`);
+    const amountUsd = requireValue(
+      { value: money(row.amount_usd, context) ?? "" },
+      "value",
+      context,
+    );
+    const treatment = capitalTreatment(
+      requireValue(row, "treatment", context),
+      context,
+    );
+    if (
+      new Decimal(amountUsd).isZero() !==
+      (treatment === "Reviewed $0 outside funding")
+    )
+      throw new Error(
+        `${context}: $0 is only valid for reviewed $0 outside funding`,
+      );
+    const supportingText = requireValue(row, "supporting_text", context);
+    if (
+      treatment === "Reviewed $0 outside funding" &&
+      !/(fair launch|self-funded|no (?:VCs?|venture|outside|external) (?:capital|funding|backers?|investors?))/i.test(
+        supportingText,
+      )
+    )
+      throw new Error(
+        `${context}: reviewed $0 treatment needs direct no-outside-funding evidence`,
+      );
     return {
       eventId: requireValue(row, "event_id", context),
       projectId,
-      amountUsd: requireValue(
-        { value: money(row.amount_usd, context) ?? "" },
-        "value",
-        context,
-      ),
+      amountUsd,
       sourceId,
       sourceClass: fundingSourceClass(
         requireValue(row, "source_class", context),
         context,
       ),
       amountSupport,
-      supportingText: requireValue(row, "supporting_text", context),
+      treatment,
+      supportingText,
       notes: row.notes?.trim() ?? "",
     } satisfies ResearchProvisionalCapitalEvent;
   });
@@ -714,13 +796,110 @@ function parseProvisionalCapitalEvents(
     events.map((event) => event.eventId),
     "provisional_capital_events.csv",
   );
+  assertUnique(
+    events.map((event) => event.sourceId),
+    "provisional_capital_events.csv accepted source",
+  );
   return events;
+}
+
+function parseProvisionalExcludedEvidence(
+  csv: string,
+  projectIds: Set<string>,
+  sources: Map<string, ResearchSource>,
+): ResearchProvisionalExcludedEvidence[] {
+  const records = parseCsv(
+    csv,
+    provisionalExcludedEvidenceHeaders,
+    "provisional_excluded_evidence.csv",
+  ).map((row, index) => {
+    const context = `provisional_excluded_evidence.csv row ${index + 2}`;
+    const projectId = requireValue(row, "project_id", context);
+    if (!projectIds.has(projectId))
+      throw new Error(`${context}: unknown project ${projectId}`);
+    const sourceId = requireValue(row, "source_id", context);
+    if (!sources.has(sourceId))
+      throw new Error(`${context}: unknown source ${sourceId}`);
+    return {
+      recordId: requireValue(row, "record_id", context),
+      projectId,
+      disposition: excludedEvidenceDisposition(
+        requireValue(row, "disposition", context),
+        context,
+      ),
+      sourceId,
+      reason: requireValue(row, "reason", context),
+    } satisfies ResearchProvisionalExcludedEvidence;
+  });
+  assertUnique(
+    records.map((record) => record.recordId),
+    "provisional_excluded_evidence.csv",
+  );
+  return records;
 }
 
 function sumAmounts(amounts: string[]): string {
   return amounts
     .reduce((total, amount) => total.plus(amount), new Decimal(0))
     .toFixed(0);
+}
+
+function buildConfidence(
+  market: ResearchMarketObservation,
+  affiliatedCirculatingHoldingsUsd: string | null,
+  reviewedDisclosedOutsideCapitalUsd: string | null,
+  candidate: ResearchCandidate,
+): ProvisionalConfidence {
+  const components: ProvisionalConfidenceComponent[] = [
+    {
+      label: "Reproducible circulating market snapshot",
+      score: market.directSourceUrl ? 30 : 0,
+      maxScore: 30,
+      detail:
+        "July 30, 2026 CoinGecko observation has a reproducible source record.",
+    },
+    {
+      label: "Verified affiliated circulating holdings",
+      score: affiliatedCirculatingHoldingsUsd === null ? 0 : 25,
+      maxScore: 25,
+      detail:
+        affiliatedCirculatingHoldingsUsd === null
+          ? "Unknown: no complete attributed, circulating-supply wallet evidence."
+          : "All displayed affiliated holdings are attributed and verified as circulating.",
+    },
+    {
+      label: "Direct outside-capital evidence",
+      score: reviewedDisclosedOutsideCapitalUsd === null ? 0 : 25,
+      maxScore: 25,
+      detail:
+        reviewedDisclosedOutsideCapitalUsd === null
+          ? "Unknown: no accepted direct funding or reviewed $0 evidence."
+          : "Every accepted capital deduction has a direct supporting source.",
+    },
+    {
+      label: "Coverage completeness",
+      score:
+        candidate.capitalStatus === "Complete" &&
+        candidate.founderHoldingsStatus === "Complete"
+          ? 20
+          : 0,
+      maxScore: 20,
+      detail:
+        candidate.capitalStatus === "Complete" &&
+        candidate.founderHoldingsStatus === "Complete"
+          ? "Funding and affiliated-holdings coverage are complete."
+          : "Funding and/or affiliated-holdings coverage remains incomplete.",
+    },
+  ];
+  const score = components.reduce(
+    (total, component) => total + component.score,
+    0,
+  );
+  return {
+    score,
+    label: score >= 75 ? "High" : score >= 50 ? "Moderate" : "Low",
+    components,
+  };
 }
 
 export function buildProvisionalCalculations(
@@ -765,6 +944,8 @@ export function buildProvisionalCalculations(
                 wallet.sourceId ? [wallet.sourceId] : [],
               ),
               sourceClass: null,
+              qualification:
+                "Included only after wallet attribution and circulating-supply overlap verification.",
               notes:
                 "Wallet attribution and circulating-supply overlap were verified.",
             },
@@ -774,9 +955,16 @@ export function buildProvisionalCalculations(
         amountUsd: event.amountUsd,
         sourceIds: [event.sourceId],
         sourceClass: event.sourceClass,
+        qualification:
+          event.treatment === "Reviewed $0 outside funding"
+            ? "Included as $0 only because the linked source directly supports the reviewed fair-launch or self-funded/no-external-capital treatment."
+            : "Included because the linked source directly states the funding amount and event.",
         notes: event.notes,
       })),
     ];
+    const excludedEvidence = dataset.provisionalExcludedEvidence.filter(
+      (record) => record.projectId === candidate.projectId,
+    );
     const evidenceGaps = [
       ...(affiliatedCirculatingHoldingsUsd === null
         ? [
@@ -818,6 +1006,13 @@ export function buildProvisionalCalculations(
         reviewedDisclosedOutsideCapitalUsd,
         provisionalOutsideHolderValueUsd,
         deductions,
+        excludedEvidence,
+        confidence: buildConfidence(
+          market,
+          affiliatedCirculatingHoldingsUsd,
+          reviewedDisclosedOutsideCapitalUsd,
+          candidate,
+        ),
         evidenceGaps,
         coverageWarning:
           evidenceGaps.length > 0
@@ -857,6 +1052,7 @@ export function importResearchCsv(input: {
   sourceCsv: string;
   provisionalMarketCsv?: string;
   provisionalCapitalCsv?: string;
+  provisionalExcludedEvidenceCsv?: string;
 }): ResearchDataset {
   const sources = parseSources(input.sourceCsv);
   const sourceIds = new Set(sources.map((source) => source.id));
@@ -880,6 +1076,13 @@ export function importResearchCsv(input: {
         sourcesById,
       )
     : [];
+  const provisionalExcludedEvidence = input.provisionalExcludedEvidenceCsv
+    ? parseProvisionalExcludedEvidence(
+        input.provisionalExcludedEvidenceCsv,
+        projectIds,
+        sourcesById,
+      )
+    : [];
   const capitalRecords = candidates.flatMap((candidate) =>
     candidate.capitalSourceId === null
       ? []
@@ -898,6 +1101,7 @@ export function importResearchCsv(input: {
     capitalRecords,
     provisionalMarketObservations,
     provisionalCapitalEvents,
+    provisionalExcludedEvidence,
     sources,
   };
 }
@@ -924,12 +1128,14 @@ export async function loadResearchData(
     sourceCsv,
     provisionalMarketCsv,
     provisionalCapitalCsv,
+    provisionalExcludedEvidenceCsv,
   ] = await Promise.all([
     readFile(path.join(directory, "candidate_universe.csv"), "utf8"),
     readFile(path.join(directory, "wallet_evidence.csv"), "utf8"),
     readFile(path.join(directory, "source_catalog.csv"), "utf8"),
     readOptionalCsv("provisional_market_data.csv"),
     readOptionalCsv("provisional_capital_events.csv"),
+    readOptionalCsv("provisional_excluded_evidence.csv"),
   ]);
   return importResearchCsv({
     candidateCsv,
@@ -937,5 +1143,8 @@ export async function loadResearchData(
     sourceCsv,
     ...(provisionalMarketCsv === undefined ? {} : { provisionalMarketCsv }),
     ...(provisionalCapitalCsv === undefined ? {} : { provisionalCapitalCsv }),
+    ...(provisionalExcludedEvidenceCsv === undefined
+      ? {}
+      : { provisionalExcludedEvidenceCsv }),
   });
 }
