@@ -1,4 +1,6 @@
-import { readFile } from "node:fs/promises";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { beforeAll, describe, expect, it } from "vitest";
@@ -7,6 +9,7 @@ import {
   calculateProvisionalOutsideWealth,
   calculatePublicEquityMarketCap,
   importResearchCsv,
+  loadResearchData,
 } from "./research.js";
 
 const researchDirectory = fileURLToPath(
@@ -98,6 +101,24 @@ describe("research dataset import", () => {
 
   it("is repeatable and does not accumulate records", () => {
     expect(importData()).toEqual(importData());
+  });
+
+  it("loads required research files when provisional inputs are absent", async () => {
+    const directory = await mkdtemp(path.join(tmpdir(), "research-data-"));
+    try {
+      await Promise.all([
+        writeFile(path.join(directory, "candidate_universe.csv"), candidateCsv),
+        writeFile(path.join(directory, "wallet_evidence.csv"), walletCsv),
+        writeFile(path.join(directory, "source_catalog.csv"), sourceCsv),
+      ]);
+
+      const data = await loadResearchData(directory);
+
+      expect(data.provisionalMarketObservations).toEqual([]);
+      expect(data.provisionalCapitalEvents).toEqual([]);
+    } finally {
+      await rm(directory, { recursive: true, force: true });
+    }
   });
 
   it("rejects duplicate project IDs", () => {

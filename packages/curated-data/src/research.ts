@@ -686,7 +686,9 @@ export function buildProvisionalCalculations(
     );
     const affiliatedCirculatingHoldingsUsd =
       wallets.length > 0 && verifiedWallets.length === wallets.length
-        ? sumAmounts(verifiedWallets.map((wallet) => wallet.snapshotHoldingsUsd!))
+        ? sumAmounts(
+            verifiedWallets.map((wallet) => wallet.snapshotHoldingsUsd!),
+          )
         : null;
     const capitalEvents = dataset.provisionalCapitalEvents.filter(
       (event) => event.projectId === candidate.projectId,
@@ -739,7 +741,9 @@ export function buildProvisionalCalculations(
       [affiliatedCirculatingHoldingsUsd, reviewedDisclosedOutsideCapitalUsd],
     );
     if (provisionalOutsideHolderValueUsd === null)
-      throw new Error(`provisional calculation missing market value ${market.projectId}`);
+      throw new Error(
+        `provisional calculation missing market value ${market.projectId}`,
+      );
     return [
       {
         projectId: candidate.projectId,
@@ -772,7 +776,9 @@ export function buildProvisionalRanking(
       const order = new Decimal(right.provisionalOutsideHolderValueUsd).cmp(
         left.provisionalOutsideHolderValueUsd,
       );
-      return order === 0 ? left.projectId.localeCompare(right.projectId) : order;
+      return order === 0
+        ? left.projectId.localeCompare(right.projectId)
+        : order;
     })
     .filter((entry) => {
       const team = entry.foundersTeam.trim().toLocaleLowerCase();
@@ -802,7 +808,11 @@ export function importResearchCsv(input: {
     ? parseMarketObservations(input.provisionalMarketCsv, projectIds, sourceIds)
     : [];
   const provisionalCapitalEvents = input.provisionalCapitalCsv
-    ? parseProvisionalCapitalEvents(input.provisionalCapitalCsv, projectIds, sourceIds)
+    ? parseProvisionalCapitalEvents(
+        input.provisionalCapitalCsv,
+        projectIds,
+        sourceIds,
+      )
     : [];
   const capitalRecords = candidates.flatMap((candidate) =>
     candidate.capitalSourceId === null
@@ -832,12 +842,28 @@ export async function loadResearchData(
     "data/research",
   ),
 ): Promise<ResearchDataset> {
-  const [candidateCsv, walletCsv, sourceCsv, provisionalMarketCsv, provisionalCapitalCsv] = await Promise.all([
+  const readOptionalCsv = async (
+    filename: string,
+  ): Promise<string | undefined> => {
+    try {
+      return await readFile(path.join(directory, filename), "utf8");
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === "ENOENT") return undefined;
+      throw error;
+    }
+  };
+  const [
+    candidateCsv,
+    walletCsv,
+    sourceCsv,
+    provisionalMarketCsv,
+    provisionalCapitalCsv,
+  ] = await Promise.all([
     readFile(path.join(directory, "candidate_universe.csv"), "utf8"),
     readFile(path.join(directory, "wallet_evidence.csv"), "utf8"),
     readFile(path.join(directory, "source_catalog.csv"), "utf8"),
-    readFile(path.join(directory, "provisional_market_data.csv"), "utf8"),
-    readFile(path.join(directory, "provisional_capital_events.csv"), "utf8"),
+    readOptionalCsv("provisional_market_data.csv"),
+    readOptionalCsv("provisional_capital_events.csv"),
   ]);
   return importResearchCsv({
     candidateCsv,
