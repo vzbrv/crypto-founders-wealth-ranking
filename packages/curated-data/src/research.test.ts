@@ -23,6 +23,7 @@ let walletCsv: string;
 let sourceCsv: string;
 let provisionalMarketCsv: string;
 let provisionalCapitalCsv: string;
+let provisionalExcludedEvidenceCsv: string;
 
 beforeAll(async () => {
   [
@@ -31,12 +32,14 @@ beforeAll(async () => {
     sourceCsv,
     provisionalMarketCsv,
     provisionalCapitalCsv,
+    provisionalExcludedEvidenceCsv,
   ] = await Promise.all([
     readFile(`${researchDirectory}candidate_universe.csv`, "utf8"),
     readFile(`${researchDirectory}wallet_evidence.csv`, "utf8"),
     readFile(`${researchDirectory}source_catalog.csv`, "utf8"),
     readFile(`${researchDirectory}provisional_market_data.csv`, "utf8"),
     readFile(`${researchDirectory}provisional_capital_events.csv`, "utf8"),
+    readFile(`${researchDirectory}provisional_excluded_evidence.csv`, "utf8"),
   ]);
 });
 
@@ -49,6 +52,7 @@ const importData = (
     sourceCsv,
     provisionalMarketCsv,
     provisionalCapitalCsv,
+    provisionalExcludedEvidenceCsv,
     ...overrides,
   });
 
@@ -56,14 +60,13 @@ describe("research dataset import", () => {
   it("imports the complete handoff with calculated publication gates and ranks", () => {
     const data = importData();
 
-    expect(data).toMatchObject({
-      candidates: { length: 30 },
-      wallets: { length: 32 },
-      capitalRecords: { length: 20 },
-      provisionalMarketObservations: { length: 25 },
-      provisionalCapitalEvents: { length: 5 },
-      sources: { length: 64 },
-    });
+    expect(data.candidates).toHaveLength(30);
+    expect(data.wallets).toHaveLength(32);
+    expect(data.capitalRecords).toHaveLength(20);
+    expect(data.provisionalMarketObservations).toHaveLength(25);
+    expect(data.provisionalCapitalEvents).toHaveLength(13);
+    expect(data.provisionalExcludedEvidence).toHaveLength(10);
+    expect(data.sources).toHaveLength(73);
     expect(
       data.candidates
         .filter(({ publicationStatus }) => publicationStatus === "Ready")
@@ -103,12 +106,12 @@ describe("research dataset import", () => {
     expect(ranking[0]).toMatchObject({
       provisionalOutsideHolderValueUsd: "1282708329625",
       affiliatedCirculatingHoldingsUsd: null,
-      reviewedDisclosedOutsideCapitalUsd: null,
+      reviewedDisclosedOutsideCapitalUsd: "0",
       marketSourceId: "CG-BTC",
     });
     expect(ranking.find(({ projectId }) => projectId === "xrp")).toMatchObject({
-      reviewedDisclosedOutsideCapitalUsd: null,
-      coverageWarning: expect.stringContaining("not a $0 deduction"),
+      reviewedDisclosedOutsideCapitalUsd: "787000000",
+      coverageWarning: expect.stringContaining("Upper estimate"),
     });
     const referencedSourceIds = new Set(data.sources.map(({ id }) => id));
     expect(
@@ -165,7 +168,15 @@ describe("research dataset import", () => {
         amountUsd,
       })),
     ).toEqual([
+      { projectId: "bitcoin", amountUsd: "0" },
+      { projectId: "dogecoin", amountUsd: "0" },
+      { projectId: "hyperliquid", amountUsd: "0" },
       { projectId: "solana", amountUsd: "314159265" },
+      { projectId: "xrp", amountUsd: "32000000" },
+      { projectId: "xrp", amountUsd: "55000000" },
+      { projectId: "xrp", amountUsd: "200000000" },
+      { projectId: "xrp", amountUsd: "500000000" },
+      { projectId: "chainlink", amountUsd: "32000000" },
       { projectId: "sui", amountUsd: "300000000" },
       { projectId: "uniswap", amountUsd: "165000000" },
       { projectId: "near", amountUsd: "150000000" },
@@ -176,16 +187,13 @@ describe("research dataset import", () => {
       const source = data.sources.find(({ id }) => id === event.sourceId);
       expect(event.amountSupport).toBe("Direct");
       expect(event.supportingText.length).toBeGreaterThan(0);
-      expect(source?.category).toBe("Capital");
+      expect(source).toMatchObject({
+        category: "Capital",
+        url: expect.stringMatching(/^https:\/\//),
+      });
     }
 
-    for (const projectId of [
-      "ethereum",
-      "bnb",
-      "tron",
-      "cardano",
-      "chainlink",
-    ]) {
+    for (const projectId of ["ethereum", "bnb", "tron", "cardano"]) {
       const entry = ranking.find(
         (candidate) => candidate.projectId === projectId,
       );
@@ -200,6 +208,12 @@ describe("research dataset import", () => {
         ]),
       );
     }
+
+    expect(
+      ranking.find(({ projectId }) => projectId === "chainlink"),
+    ).toMatchObject({
+      reviewedDisclosedOutsideCapitalUsd: "32000000",
+    });
   });
 
   it("matches the corrected sourced top-ten values and calculations", () => {
@@ -220,7 +234,7 @@ describe("research dataset import", () => {
         provisionalOutsideHolderValueUsd: "230235889489",
       },
       { projectId: "bnb", provisionalOutsideHolderValueUsd: "76083530883" },
-      { projectId: "xrp", provisionalOutsideHolderValueUsd: "67059007915" },
+      { projectId: "xrp", provisionalOutsideHolderValueUsd: "66272007915" },
       { projectId: "solana", provisionalOutsideHolderValueUsd: "42346654317" },
       { projectId: "tron", provisionalOutsideHolderValueUsd: "30883085142" },
       {
@@ -233,7 +247,7 @@ describe("research dataset import", () => {
       },
       {
         projectId: "chainlink",
-        provisionalOutsideHolderValueUsd: "6226092965",
+        provisionalOutsideHolderValueUsd: "6194092965",
       },
       { projectId: "cardano", provisionalOutsideHolderValueUsd: "6045751226" },
     ]);
@@ -263,6 +277,114 @@ describe("research dataset import", () => {
     expect(calculateProvisionalOutsideWealth("100", [null, "10", "0"])).toBe(
       "90",
     );
+  });
+
+  it("applies accepted deductions exactly once with a direct source and qualification", () => {
+    const data = importData();
+    const xrp = buildProvisionalRanking(data).find(
+      ({ projectId }) => projectId === "xrp",
+    );
+
+    expect(xrp?.reviewedDisclosedOutsideCapitalUsd).toBe("787000000");
+    expect(xrp?.deductions.map(({ sourceIds }) => sourceIds)).toEqual([
+      ["XRP-SERIES-A"],
+      ["XRP-SERIES-B"],
+      ["XRP-SERIES-C"],
+      ["XRP-STRATEGIC-2025"],
+    ]);
+    for (const deduction of xrp?.deductions ?? []) {
+      expect(deduction.qualification.length).toBeGreaterThan(0);
+      for (const sourceId of deduction.sourceIds) {
+        expect(data.sources.find(({ id }) => id === sourceId)?.url).toMatch(
+          /^https:\/\//,
+        );
+      }
+    }
+
+    const firstEvent = provisionalCapitalCsv.split(/\r?\n/)[1];
+    expect(() =>
+      importData({
+        provisionalCapitalCsv: `${provisionalCapitalCsv.trimEnd()}\n${firstEvent}\n`,
+      }),
+    ).toThrow(
+      "provisional_capital_events.csv: duplicate bitcoin-reviewed-zero",
+    );
+  });
+
+  it("keeps disputed, excluded, scenario-only, and unknown records out of primary deductions", () => {
+    const ranking = buildProvisionalRanking(importData());
+    const deductionsByProject = new Map(
+      ranking.map((entry) => [
+        entry.projectId,
+        entry.deductions.flatMap(({ sourceIds }) => sourceIds),
+      ]),
+    );
+
+    for (const record of importData().provisionalExcludedEvidence) {
+      if (record.sourceId === "SOL-2021-SALE") continue;
+      expect(deductionsByProject.get(record.projectId) ?? []).not.toContain(
+        record.sourceId,
+      );
+    }
+    expect(deductionsByProject.get("xrp")).not.toContain("XRP-EARLY-ROUND");
+    expect(deductionsByProject.get("bnb")).not.toContain("BNB-ICO");
+    expect(deductionsByProject.get("tron")).not.toContain("ARK-JUSTIN");
+  });
+
+  it("allows a reviewed $0 only with qualifying direct evidence", () => {
+    expect(() =>
+      importData({
+        provisionalCapitalCsv: provisionalCapitalCsv.replace(
+          "Source directly describes Bitcoin as a fair launch with no venture backers.",
+          "Unqualified research note.",
+        ),
+      }),
+    ).toThrow("reviewed $0 treatment needs direct no-outside-funding evidence");
+  });
+
+  it("does not deduct locked or non-circulating holdings", () => {
+    const data = importData();
+    const ranking = buildProvisionalRanking(data);
+
+    expect(
+      data.wallets.every(
+        ({ circulatingSupplyOverlapVerified }) =>
+          circulatingSupplyOverlapVerified === false,
+      ),
+    ).toBe(true);
+    expect(
+      ranking
+        .flatMap(({ deductions }) => deductions)
+        .filter(
+          ({ label }) => label === "Verified affiliated circulating holdings",
+        ),
+    ).toEqual([]);
+  });
+
+  it("keeps founder teams as subjects with contiguous provisional ranks and distinct canonical ranks", () => {
+    const ranking = buildProvisionalRanking(importData());
+
+    expect(ranking.map(({ provisionalRank }) => provisionalRank)).toEqual(
+      Array.from({ length: ranking.length }, (_, index) => index + 1),
+    );
+    expect(
+      ranking.every(({ foundersTeam, project }) => foundersTeam !== project),
+    ).toBe(true);
+    const dogecoin = ranking.find(({ projectId }) => projectId === "dogecoin");
+    const bitcoin = ranking.find(({ projectId }) => projectId === "bitcoin");
+    expect(dogecoin).toMatchObject({ canonicalRank: 1, provisionalRank: 8 });
+    expect(bitcoin?.canonicalRank).toBeNull();
+  });
+
+  it("provides a confidence score, calculation evidence, and visible gaps for every entry", () => {
+    for (const entry of buildProvisionalRanking(importData())) {
+      expect(entry.confidence.score).toBeGreaterThanOrEqual(0);
+      expect(entry.confidence.score).toBeLessThanOrEqual(100);
+      expect(entry.confidence.components).not.toHaveLength(0);
+      expect(entry.evidenceGaps.length).toBeGreaterThan(0);
+      expect(entry.coverageWarning).toContain("Upper estimate");
+      expect(entry.marketDirectSourceUrl).toMatch(/^https:\/\//);
+    }
   });
 
   it("recalculates ranking order instead of trusting imported screen ranks", () => {
@@ -298,6 +420,7 @@ describe("research dataset import", () => {
 
       expect(data.provisionalMarketObservations).toEqual([]);
       expect(data.provisionalCapitalEvents).toEqual([]);
+      expect(data.provisionalExcludedEvidence).toEqual([]);
     } finally {
       await rm(directory, { recursive: true, force: true });
     }

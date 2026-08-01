@@ -1,6 +1,14 @@
-event_id,project_id,amount_usd,source_id,source_class,amount_support,supporting_text,notes
-solana-2021-sale,solana,314159265,SOL-2021-SALE,Primary,Direct,"Page states Solana Labs completed a private token sale of $314,159,265.",Reviewed 2021 private token sale only; earlier and later financing may remain.
-sui-series-b,sui,300000000,SUI-SERIES-B,Reliable secondary,Direct,Page states the Series B round raised a total of $300 million.,Reviewed Series B only; other financing remains to reconcile.
-uniswap-series-b,uniswap,165000000,UNI-SERIES-B,Primary,Direct,Page states Uniswap Labs raised $165 million in Series B funding.,Reviewed Series B only; other financing remains to reconcile.
-near-2022-round,near,150000000,NEAR-2022-ROUND,Primary,Direct,Page states NEAR Protocol raised $150 million in its latest funding round.,Reviewed 2022 round only; earlier rounds and token sales remain to reconcile.
-ondo-series-a,ondo,20000000,ONDO-SERIES-A,Reliable secondary,Direct,Page states the round was $20 million.,Reviewed Series A only; other financing remains to reconcile.
+event_id,project_id,amount_usd,source_id,source_class,amount_support,treatment,supporting_text,notes
+bitcoin-reviewed-zero,bitcoin,0,BTC-REVIEWED-ZERO,Reliable secondary,Direct,Reviewed $0 outside funding,Source directly describes Bitcoin as a fair launch with no venture backers.,Reviewed absence of outside funding; founder holdings remain Unknown.
+dogecoin-reviewed-zero,dogecoin,0,DOGE-REVIEWED-ZERO,Reliable secondary,Direct,Reviewed $0 outside funding,Source directly describes Dogecoin as a fair launch with no presale pre-mine or VC fundraise.,Reviewed absence of outside funding; founder holdings remain Unknown.
+hyperliquid-reviewed-zero,hyperliquid,0,HYPE-REVIEWED-ZERO,Primary,Direct,Reviewed $0 outside funding,Official documentation says Hyperliquid was fully self-funded with no VCs or external capital.,Reviewed absence of outside funding; founder holdings remain Unknown.
+solana-2021-sale,solana,314159265,SOL-2021-SALE,Primary,Direct,Outside capital,"Page states Solana Labs completed a private token sale of $314,159,265.",Reviewed 2021 private token sale only; earlier and later financing may remain.
+xrp-series-a,xrp,32000000,XRP-SERIES-A,Primary,Direct,Outside capital,Company announcement directly states Ripple added a $32 million Series A investor.,Reviewed Series A only; other financing may remain.
+xrp-series-b,xrp,55000000,XRP-SERIES-B,Primary,Direct,Outside capital,Company announcement directly states Ripple raised $55 million in Series B funding.,Reviewed Series B only; other financing may remain.
+xrp-series-c,xrp,200000000,XRP-SERIES-C,Reliable secondary,Direct,Outside capital,Contemporaneous reporting directly states Ripple raised $200 million in Series C funding.,Reviewed Series C only; other financing may remain.
+xrp-strategic-2025,xrp,500000000,XRP-STRATEGIC-2025,Primary,Direct,Outside capital,Company announcement directly states Ripple announced a $500 million strategic investment.,Reviewed 2025 strategic investment only; other financing may remain.
+chainlink-2017-sale,chainlink,32000000,LINK-2017-SALE,Reliable secondary,Direct,Outside capital,Contemporaneous reporting directly states Chainlink raised $32 million in a token sale.,Reviewed token sale only; other financing may remain.
+sui-series-b,sui,300000000,SUI-SERIES-B,Reliable secondary,Direct,Outside capital,Page states the Series B round raised a total of $300 million.,Reviewed Series B only; other financing remains to reconcile.
+uniswap-series-b,uniswap,165000000,UNI-SERIES-B,Primary,Direct,Outside capital,Page states Uniswap Labs raised $165 million in Series B funding.,Reviewed Series B only; other financing remains to reconcile.
+near-2022-round,near,150000000,NEAR-2022-ROUND,Primary,Direct,Outside capital,Page states NEAR Protocol raised $150 million in its latest funding round.,Reviewed 2022 round only; earlier rounds and token sales remain to reconcile.
+ondo-series-a,ondo,20000000,ONDO-SERIES-A,Reliable secondary,Direct,Outside capital,Page states the round was $20 million.,Reviewed Series A only; other financing remains to reconcile.
