@@ -73,13 +73,62 @@ export interface ResearchWalletEvidence {
   sourceUrl: string | null;
   notes: string;
   syncStatus: WalletSyncStatus;
+  circulatingSupplyOverlapVerified: false;
   mayAffectPublishedScore: false;
+}
+
+export type FundingSourceClass = "Primary" | "Reliable secondary";
+
+export interface ResearchMarketObservation {
+  projectId: string;
+  circulatingMarketValueUsd: string;
+  observedAt: string;
+  sourceId: string;
+}
+
+export interface ResearchProvisionalCapitalEvent {
+  eventId: string;
+  projectId: string;
+  amountUsd: string;
+  sourceId: string;
+  sourceClass: FundingSourceClass;
+  notes: string;
+}
+
+export interface ProvisionalDeduction {
+  label: string;
+  amountUsd: string;
+  sourceIds: string[];
+  sourceClass: FundingSourceClass | null;
+  notes: string;
+}
+
+export interface ProvisionalCalculation {
+  projectId: string;
+  project: string;
+  foundersTeam: string;
+  canonicalRank: number | null;
+  circulatingMarketValueUsd: string;
+  marketDataTimestamp: string;
+  marketSourceId: string;
+  affiliatedCirculatingHoldingsUsd: string | null;
+  reviewedDisclosedOutsideCapitalUsd: string | null;
+  provisionalOutsideHolderValueUsd: string;
+  deductions: ProvisionalDeduction[];
+  evidenceGaps: string[];
+  coverageWarning: string;
+}
+
+export interface ProvisionalRankingEntry extends ProvisionalCalculation {
+  provisionalRank: number;
 }
 
 export interface ResearchDataset {
   candidates: ResearchCandidate[];
   wallets: ResearchWalletEvidence[];
   capitalRecords: ResearchCapitalRecord[];
+  provisionalMarketObservations: ResearchMarketObservation[];
+  provisionalCapitalEvents: ResearchProvisionalCapitalEvent[];
   sources: ResearchSource[];
 }
 
@@ -132,6 +181,22 @@ const sourceHeaders = [
   "date",
   "url",
   "quality",
+  "notes",
+] as const;
+
+const provisionalMarketHeaders = [
+  "project_id",
+  "circulating_market_value_usd",
+  "observed_at",
+  "source_id",
+] as const;
+
+const provisionalCapitalHeaders = [
+  "event_id",
+  "project_id",
+  "amount_usd",
+  "source_id",
+  "source_class",
   "notes",
 ] as const;
 function requireValue(row: CsvRow, key: string, context: string): string {
@@ -492,6 +557,7 @@ function parseWallets(
         sourceUrl,
         notes: row.notes?.trim() ?? "",
         syncStatus: walletSyncStatus(row),
+        circulatingSupplyOverlapVerified: false,
         mayAffectPublishedScore: false,
       } satisfies ResearchWalletEvidence;
     },
@@ -508,10 +574,222 @@ function parseWallets(
   return wallets;
 }
 
+function parseMarketObservations(
+  csv: string,
+  projectIds: Set<string>,
+  sourceIds: Set<string>,
+): ResearchMarketObservation[] {
+  const observations = parseCsv(
+    csv,
+    provisionalMarketHeaders,
+    "provisional_market_data.csv",
+  ).map((row, index) => {
+    const context = `provisional_market_data.csv row ${index + 2}`;
+    const projectId = requireValue(row, "project_id", context);
+    if (!projectIds.has(projectId))
+      throw new Error(`${context}: unknown project ${projectId}`);
+    const sourceId = requireValue(row, "source_id", context);
+    if (!sourceIds.has(sourceId))
+      throw new Error(`${context}: unknown source ${sourceId}`);
+    const observedAt = requireValue(row, "observed_at", context);
+    if (Number.isNaN(Date.parse(observedAt)))
+      throw new Error(`${context}: invalid observed_at ${observedAt}`);
+    return {
+      projectId,
+      circulatingMarketValueUsd: requireValue(
+        { value: money(row.circulating_market_value_usd, context) ?? "" },
+        "value",
+        context,
+      ),
+      observedAt,
+      sourceId,
+    } satisfies ResearchMarketObservation;
+  });
+  assertUnique(
+    observations.map((observation) => observation.projectId),
+    "provisional_market_data.csv",
+  );
+  return observations;
+}
+
+function fundingSourceClass(
+  value: string,
+  context: string,
+): FundingSourceClass {
+  if (value === "Primary" || value === "Reliable secondary") return value;
+  throw new Error(`${context}: invalid source_class ${value}`);
+}
+
+function parseProvisionalCapitalEvents(
+  csv: string,
+  projectIds: Set<string>,
+  sourceIds: Set<string>,
+): ResearchProvisionalCapitalEvent[] {
+  const events = parseCsv(
+    csv,
+    provisionalCapitalHeaders,
+    "provisional_capital_events.csv",
+  ).map((row, index) => {
+    const context = `provisional_capital_events.csv row ${index + 2}`;
+    const projectId = requireValue(row, "project_id", context);
+    if (!projectIds.has(projectId))
+      throw new Error(`${context}: unknown project ${projectId}`);
+    const sourceId = requireValue(row, "source_id", context);
+    if (!sourceIds.has(sourceId))
+      throw new Error(`${context}: unknown source ${sourceId}`);
+    return {
+      eventId: requireValue(row, "event_id", context),
+      projectId,
+      amountUsd: requireValue(
+        { value: money(row.amount_usd, context) ?? "" },
+        "value",
+        context,
+      ),
+      sourceId,
+      sourceClass: fundingSourceClass(
+        requireValue(row, "source_class", context),
+        context,
+      ),
+      notes: row.notes?.trim() ?? "",
+    } satisfies ResearchProvisionalCapitalEvent;
+  });
+  assertUnique(
+    events.map((event) => event.eventId),
+    "provisional_capital_events.csv",
+  );
+  return events;
+}
+
+function sumAmounts(amounts: string[]): string {
+  return amounts
+    .reduce((total, amount) => total.plus(amount), new Decimal(0))
+    .toFixed(0);
+}
+
+export function buildProvisionalCalculations(
+  dataset: ResearchDataset,
+): ProvisionalCalculation[] {
+  const candidates = new Map(
+    dataset.candidates.map((candidate) => [candidate.projectId, candidate]),
+  );
+  return dataset.provisionalMarketObservations.flatMap((market) => {
+    const candidate = candidates.get(market.projectId);
+    if (!candidate) return [];
+    const wallets = dataset.wallets.filter(
+      (wallet) => wallet.projectId === candidate.projectId,
+    );
+    const verifiedWallets = wallets.filter(
+      (wallet) =>
+        wallet.circulatingSupplyOverlapVerified &&
+        wallet.snapshotHoldingsUsd !== null &&
+        wallet.sourceId !== null,
+    );
+    const affiliatedCirculatingHoldingsUsd =
+      wallets.length > 0 && verifiedWallets.length === wallets.length
+        ? sumAmounts(verifiedWallets.map((wallet) => wallet.snapshotHoldingsUsd!))
+        : null;
+    const capitalEvents = dataset.provisionalCapitalEvents.filter(
+      (event) => event.projectId === candidate.projectId,
+    );
+    const reviewedDisclosedOutsideCapitalUsd =
+      capitalEvents.length > 0
+        ? sumAmounts(capitalEvents.map((event) => event.amountUsd))
+        : null;
+    const deductions: ProvisionalDeduction[] = [
+      ...(affiliatedCirculatingHoldingsUsd === null
+        ? []
+        : [
+            {
+              label: "Verified affiliated circulating holdings",
+              amountUsd: affiliatedCirculatingHoldingsUsd,
+              sourceIds: verifiedWallets.flatMap((wallet) =>
+                wallet.sourceId ? [wallet.sourceId] : [],
+              ),
+              sourceClass: null,
+              notes:
+                "Wallet attribution and circulating-supply overlap were verified.",
+            },
+          ]),
+      ...capitalEvents.map((event) => ({
+        label: "Reviewed disclosed outside capital",
+        amountUsd: event.amountUsd,
+        sourceIds: [event.sourceId],
+        sourceClass: event.sourceClass,
+        notes: event.notes,
+      })),
+    ];
+    const evidenceGaps = [
+      ...(affiliatedCirculatingHoldingsUsd === null
+        ? [
+            "Affiliated circulating holdings: Unknown — no wallet attribution and circulating-supply overlap is verified.",
+          ]
+        : []),
+      ...(reviewedDisclosedOutsideCapitalUsd === null
+        ? [
+            "Reviewed disclosed outside capital: Unknown — no reviewed funding event is supported; this is not a $0 deduction.",
+          ]
+        : candidate.capitalStatus !== "Complete"
+          ? [
+              "Reviewed disclosed outside capital coverage is incomplete; only known reviewed events were deducted.",
+            ]
+          : []),
+    ];
+    const provisionalOutsideHolderValueUsd = calculateProvisionalOutsideWealth(
+      market.circulatingMarketValueUsd,
+      [affiliatedCirculatingHoldingsUsd, reviewedDisclosedOutsideCapitalUsd],
+    );
+    if (provisionalOutsideHolderValueUsd === null)
+      throw new Error(`provisional calculation missing market value ${market.projectId}`);
+    return [
+      {
+        projectId: candidate.projectId,
+        project: candidate.project,
+        foundersTeam: candidate.foundersTeam,
+        canonicalRank: candidate.canonicalRank,
+        circulatingMarketValueUsd: market.circulatingMarketValueUsd,
+        marketDataTimestamp: market.observedAt,
+        marketSourceId: market.sourceId,
+        affiliatedCirculatingHoldingsUsd,
+        reviewedDisclosedOutsideCapitalUsd,
+        provisionalOutsideHolderValueUsd,
+        deductions,
+        evidenceGaps,
+        coverageWarning:
+          evidenceGaps.length > 0
+            ? `Upper estimate — may be overstated. ${evidenceGaps.join(" ")}`
+            : "Coverage complete for the documented deduction categories.",
+      } satisfies ProvisionalCalculation,
+    ];
+  });
+}
+
+export function buildProvisionalRanking(
+  dataset: ResearchDataset,
+): ProvisionalRankingEntry[] {
+  const teams = new Set<string>();
+  return buildProvisionalCalculations(dataset)
+    .sort((left, right) => {
+      const order = new Decimal(right.provisionalOutsideHolderValueUsd).cmp(
+        left.provisionalOutsideHolderValueUsd,
+      );
+      return order === 0 ? left.projectId.localeCompare(right.projectId) : order;
+    })
+    .filter((entry) => {
+      const team = entry.foundersTeam.trim().toLocaleLowerCase();
+      if (teams.has(team)) return false;
+      teams.add(team);
+      return true;
+    })
+    .slice(0, 10)
+    .map((entry, index) => ({ ...entry, provisionalRank: index + 1 }));
+}
+
 export function importResearchCsv(input: {
   candidateCsv: string;
   walletCsv: string;
   sourceCsv: string;
+  provisionalMarketCsv?: string;
+  provisionalCapitalCsv?: string;
 }): ResearchDataset {
   const sources = parseSources(input.sourceCsv);
   const sourceIds = new Set(sources.map((source) => source.id));
@@ -520,6 +798,12 @@ export function importResearchCsv(input: {
     candidates.map((candidate) => candidate.projectId),
   );
   const wallets = parseWallets(input.walletCsv, projectIds, sourceIds);
+  const provisionalMarketObservations = input.provisionalMarketCsv
+    ? parseMarketObservations(input.provisionalMarketCsv, projectIds, sourceIds)
+    : [];
+  const provisionalCapitalEvents = input.provisionalCapitalCsv
+    ? parseProvisionalCapitalEvents(input.provisionalCapitalCsv, projectIds, sourceIds)
+    : [];
   const capitalRecords = candidates.flatMap((candidate) =>
     candidate.capitalSourceId === null
       ? []
@@ -532,7 +816,14 @@ export function importResearchCsv(input: {
           } satisfies ResearchCapitalRecord,
         ],
   );
-  return { candidates, wallets, capitalRecords, sources };
+  return {
+    candidates,
+    wallets,
+    capitalRecords,
+    provisionalMarketObservations,
+    provisionalCapitalEvents,
+    sources,
+  };
 }
 
 export async function loadResearchData(
@@ -541,10 +832,18 @@ export async function loadResearchData(
     "data/research",
   ),
 ): Promise<ResearchDataset> {
-  const [candidateCsv, walletCsv, sourceCsv] = await Promise.all([
+  const [candidateCsv, walletCsv, sourceCsv, provisionalMarketCsv, provisionalCapitalCsv] = await Promise.all([
     readFile(path.join(directory, "candidate_universe.csv"), "utf8"),
     readFile(path.join(directory, "wallet_evidence.csv"), "utf8"),
     readFile(path.join(directory, "source_catalog.csv"), "utf8"),
+    readFile(path.join(directory, "provisional_market_data.csv"), "utf8"),
+    readFile(path.join(directory, "provisional_capital_events.csv"), "utf8"),
   ]);
-  return importResearchCsv({ candidateCsv, walletCsv, sourceCsv });
+  return importResearchCsv({
+    candidateCsv,
+    walletCsv,
+    sourceCsv,
+    provisionalMarketCsv,
+    provisionalCapitalCsv,
+  });
 }
