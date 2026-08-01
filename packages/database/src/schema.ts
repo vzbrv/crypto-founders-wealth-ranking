@@ -370,6 +370,33 @@ export const projectScores = pgTable(
   ],
 );
 
+export const projectConfidenceEvidence = pgTable(
+  "project_confidence_evidence",
+  {
+    id: bigserial({ mode: "number" }).primaryKey(),
+    calculationRunId: uuid("calculation_run_id")
+      .notNull()
+      .references(() => calculationRuns.id),
+    projectId: uuid("project_id")
+      .notNull()
+      .references(() => projects.id),
+    component: text().notNull(),
+    maximumScore: numeric("maximum_score", {
+      precision: 5,
+      scale: 2,
+    }).notNull(),
+    score: numeric({ precision: 5, scale: 2 }).notNull(),
+    complete: boolean().notNull(),
+    evidence: jsonb().notNull().default([]),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    unique().on(table.calculationRunId, table.projectId, table.component),
+  ],
+);
+
 export const foundingUnitScores = pgTable(
   "founding_unit_scores",
   {

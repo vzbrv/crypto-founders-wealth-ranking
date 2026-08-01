@@ -66,6 +66,10 @@ const marketObservationSourcesMigrationUrl = new URL(
   "../../../supabase/migrations/202607310018_market_observation_sources.sql",
   import.meta.url,
 );
+const sqlConfidenceEvidenceMigrationUrl = new URL(
+  "../../../supabase/migrations/202607310019_sql_confidence_evidence.sql",
+  import.meta.url,
+);
 const seedUrl = new URL(
   "../../../supabase/tests/seed.synthetic.sql",
   import.meta.url,
@@ -85,6 +89,7 @@ const migrationSql = [
   await readFile(rankingPublicEvidenceMigrationUrl, "utf8"),
   await readFile(fundingReviewEligibilityMigrationUrl, "utf8"),
   await readFile(marketObservationSourcesMigrationUrl, "utf8"),
+  await readFile(sqlConfidenceEvidenceMigrationUrl, "utf8"),
 ].join("\n");
 const seedSql = await readFile(seedUrl, "utf8");
 const productionDataDirectory = fileURLToPath(
@@ -100,6 +105,7 @@ const expectedTables = [
   "funding_rounds",
   "market_observations",
   "people",
+  "project_confidence_evidence",
   "project_founding_units",
   "project_scores",
   "projects",
@@ -818,6 +824,90 @@ describe("Phase 4 market sync", () => {
     expect(result.rows[0]?.calculation_run_id).not.toBeNull();
     expect(score.rows).toEqual([
       { score_usd: "499437.50000000", run_status: "completed" },
+    ]);
+  });
+
+  it("derives confidence and eligibility from stored SQL evidence", async () => {
+    const database = await createDatabase(true);
+    await prepareWalletObservation(database);
+    await database.exec(`
+      update projects
+      set confidence_level = 'insufficient'
+      where id = '11111111-1111-4111-8111-111111111111'
+    `);
+
+    await ingest(database, [observation("3", new Date(Date.now() - 60_000))]);
+
+    const score = await database.query<{
+      eligibility_status: string;
+      confidence_label: string;
+      confidence_score: string;
+      confidence_complete: boolean;
+    }>(`
+      select
+        eligibility_status,
+        confidence_label,
+        (calculation_breakdown -> 'confidence' ->> 'score') as confidence_score,
+        (calculation_breakdown -> 'confidence' ->> 'complete')::boolean
+          as confidence_complete
+      from current_project_scores
+    `);
+    const evidence = await database.query<{
+      component: string;
+      maximum_score: string;
+      score: string;
+      complete: boolean;
+    }>(`
+      select component, maximum_score::text, score::text, complete
+      from project_confidence_evidence
+      order by component
+    `);
+
+    expect(score.rows).toEqual([
+      {
+        eligibility_status: "ranked",
+        confidence_label: "high",
+        confidence_score: "100",
+        confidence_complete: true,
+      },
+    ]);
+    expect(evidence.rows).toEqual([
+      {
+        component: "circulation_treatment",
+        maximum_score: "15.00",
+        score: "15.00",
+        complete: true,
+      },
+      {
+        component: "founder_identity_evidence",
+        maximum_score: "20.00",
+        score: "20.00",
+        complete: true,
+      },
+      {
+        component: "founder_wallet_coverage",
+        maximum_score: "20.00",
+        score: "20.00",
+        complete: true,
+      },
+      {
+        component: "funding_completeness",
+        maximum_score: "15.00",
+        score: "15.00",
+        complete: true,
+      },
+      {
+        component: "market_reliability",
+        maximum_score: "15.00",
+        score: "15.00",
+        complete: true,
+      },
+      {
+        component: "team_foundation_treasury_coverage",
+        maximum_score: "15.00",
+        score: "15.00",
+        complete: true,
+      },
     ]);
   });
 
