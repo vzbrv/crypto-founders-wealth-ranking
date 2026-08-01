@@ -461,6 +461,33 @@ test("publishes the dated research universe separately", async ({ page }) => {
   ).toBeVisible();
 });
 
+test("publishes provisional calculations and sources separately", async ({
+  page,
+}) => {
+  await page.goto("/provisional/");
+
+  await expect(
+    page.getByRole("heading", {
+      name: "Provisional outside-holder value screen",
+    }),
+  ).toBeVisible();
+  await expect(page.getByText("Unknown deductions are omitted")).toBeVisible();
+  await expect(page.getByRole("row")).toHaveCount(11);
+
+  await page.getByRole("link", { name: "Bitcoin", exact: true }).click();
+  await expect(page).toHaveURL(/\/provisional\/bitcoin\/?$/);
+  await expect(
+    page.getByRole("heading", { name: "Calculation" }),
+  ).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Sources" })).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "CoinGecko — Bitcoin" }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("Unknown", { exact: true }).first(),
+  ).toBeVisible();
+});
+
 test("shows sanitized provider monitoring state", async ({ page }) => {
   await page.route("**/rest/v1/public_provider_status**", (route) =>
     route.fulfill({

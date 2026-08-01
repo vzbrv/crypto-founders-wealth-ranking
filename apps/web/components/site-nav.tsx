@@ -8,6 +8,7 @@ export function SiteNav() {
       </Link>
       <div className="nav-links">
         <Link href="/#ranking">Ranking</Link>
+        <Link href="/provisional/">Provisional</Link>
         <Link href="/research/">Research</Link>
         <Link href="/methodology/">Methodology</Link>
         <Link href="/sources/">Sources</Link>
