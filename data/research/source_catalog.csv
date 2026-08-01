@@ -1,30 +1,30 @@
 id,category,name,date,url,quality,notes
 PW-METHOD,Methodology,Pirate Wires — The Bezos List,2024-06-01,https://www.piratewires.com/p/the-bezos-list-the-top-20-founders,Secondary / methodology reference,Reference formula: market value minus founder stake minus outside equity capital.
-CG-BTC,Market value,CoinGecko — Bitcoin,2026-07-30,https://www.coingecko.com/en/coins/bitcoin,Market-data aggregator,Circulating market-cap snapshot; refresh before publication.
-CG-ETH,Market value,CoinGecko — Ethereum,2026-07-30,https://www.coingecko.com/en/coins/ethereum,Market-data aggregator,Circulating market-cap snapshot; refresh before publication.
-CG-BNB,Market value,CoinGecko — BNB,2026-07-30,https://www.coingecko.com/en/coins/binancecoin,Market-data aggregator,Circulating market-cap snapshot; refresh before publication.
-CG-XRP,Market value,CoinGecko — XRP,2026-07-30,https://www.coingecko.com/en/coins/ripple,Market-data aggregator,Circulating market-cap snapshot; refresh before publication.
-CG-SOL,Market value,CoinGecko — Solana,2026-07-30,https://www.coingecko.com/en/coins/solana,Market-data aggregator,Circulating market-cap snapshot; refresh before publication.
-CG-TRX,Market value,CoinGecko — TRON,2026-07-30,https://www.coingecko.com/en/coins/tron,Market-data aggregator,Circulating market-cap snapshot; refresh before publication.
-CG-HYPE,Market value,CoinGecko — Hyperliquid,2026-07-30,https://www.coingecko.com/en/coins/hyperliquid,Market-data aggregator,Circulating market-cap snapshot; refresh before publication.
-CG-DOGE,Market value,CoinGecko — Dogecoin,2026-07-30,https://www.coingecko.com/en/coins/dogecoin,Market-data aggregator,Circulating market-cap snapshot; refresh before publication.
-CG-ADA,Market value,CoinGecko — Cardano,2026-07-30,https://www.coingecko.com/en/coins/cardano,Market-data aggregator,Circulating market-cap snapshot; refresh before publication.
-CG-LINK,Market value,CoinGecko — Chainlink,2026-07-30,https://www.coingecko.com/en/coins/chainlink,Market-data aggregator,Circulating market-cap snapshot; refresh before publication.
-CG-XLM,Market value,CoinGecko — Stellar,2026-07-30,https://www.coingecko.com/en/coins/stellar,Market-data aggregator,Circulating market-cap snapshot; refresh before publication.
-CG-CANTON,Market value,CoinGecko — Canton,2026-07-30,https://www.coingecko.com/en/coins/canton-network,Market-data aggregator,Circulating market-cap snapshot; refresh before publication.
-CG-LTC,Market value,CoinGecko — Litecoin,2026-07-30,https://www.coingecko.com/en/coins/litecoin,Market-data aggregator,Circulating market-cap snapshot; refresh before publication.
-CG-HBAR,Market value,CoinGecko — Hedera,2026-07-30,https://www.coingecko.com/en/coins/hedera-hashgraph,Market-data aggregator,Circulating market-cap snapshot; refresh before publication.
-CG-SUI,Market value,CoinGecko — Sui,2026-07-30,https://www.coingecko.com/en/coins/sui,Market-data aggregator,Circulating market-cap snapshot; refresh before publication.
-CG-AVAX,Market value,CoinGecko — Avalanche,2026-07-30,https://www.coingecko.com/en/coins/avalanche-2,Market-data aggregator,Circulating market-cap snapshot; refresh before publication.
-CG-UNI,Market value,CoinGecko — Uniswap,2026-07-30,https://www.coingecko.com/en/coins/uniswap,Market-data aggregator,Circulating market-cap snapshot; refresh before publication.
-CG-NEAR,Market value,CoinGecko — NEAR,2026-07-30,https://www.coingecko.com/en/coins/near,Market-data aggregator,Circulating market-cap snapshot; refresh before publication.
-CG-ONDO,Market value,CoinGecko — Ondo,2026-07-30,https://www.coingecko.com/en/coins/ondo-finance,Market-data aggregator,Circulating market-cap snapshot; refresh before publication.
-CG-TAO,Market value,CoinGecko — Bittensor,2026-07-30,https://www.coingecko.com/en/coins/bittensor,Market-data aggregator,Circulating market-cap snapshot; refresh before publication.
-CG-AAVE,Market value,CoinGecko — Aave,2026-07-30,https://www.coingecko.com/en/coins/aave,Market-data aggregator,Circulating market-cap snapshot; refresh before publication.
-CG-SKY,Market value,CoinGecko — Sky,2026-07-30,https://www.coingecko.com/en/coins/sky,Market-data aggregator,Circulating market-cap snapshot; refresh before publication.
-CG-MORPHO,Market value,CoinGecko — Morpho,2026-07-30,https://www.coingecko.com/en/coins/morpho,Market-data aggregator,Circulating market-cap snapshot; refresh before publication.
-CG-DOT,Market value,CoinGecko — Polkadot,2026-07-30,https://www.coingecko.com/en/coins/polkadot,Market-data aggregator,Circulating market-cap snapshot; refresh before publication.
-CG-ICP,Market value,CoinGecko — Internet Computer,2026-07-30,https://www.coingecko.com/en/coins/internet-computer,Market-data aggregator,Circulating market-cap snapshot; refresh before publication.
+CG-BTC,Market value,CoinGecko — Bitcoin,2026-07-30,https://api.coingecko.com/api/v3/coins/bitcoin/history?date=30-07-2026&localization=false,Market-data aggregator,Coin History by ID response at 00:00 UTC.
+CG-ETH,Market value,CoinGecko — Ethereum,2026-07-30,https://api.coingecko.com/api/v3/coins/ethereum/history?date=30-07-2026&localization=false,Market-data aggregator,Coin History by ID response at 00:00 UTC.
+CG-BNB,Market value,CoinGecko — BNB,2026-07-30,https://api.coingecko.com/api/v3/coins/bnb/history?date=30-07-2026&localization=false,Market-data aggregator,Coin History by ID response at 00:00 UTC.
+CG-XRP,Market value,CoinGecko — XRP,2026-07-30,https://api.coingecko.com/api/v3/coins/ripple/history?date=30-07-2026&localization=false,Market-data aggregator,Coin History by ID response at 00:00 UTC.
+CG-SOL,Market value,CoinGecko — Solana,2026-07-30,https://api.coingecko.com/api/v3/coins/solana/history?date=30-07-2026&localization=false,Market-data aggregator,Coin History by ID response at 00:00 UTC.
+CG-TRX,Market value,CoinGecko — TRON,2026-07-30,https://api.coingecko.com/api/v3/coins/tron/history?date=30-07-2026&localization=false,Market-data aggregator,Coin History by ID response at 00:00 UTC.
+CG-HYPE,Market value,CoinGecko — Hyperliquid,2026-07-30,https://api.coingecko.com/api/v3/coins/hyperliquid/history?date=30-07-2026&localization=false,Market-data aggregator,Coin History by ID response at 00:00 UTC.
+CG-DOGE,Market value,CoinGecko — Dogecoin,2026-07-30,https://api.coingecko.com/api/v3/coins/dogecoin/history?date=30-07-2026&localization=false,Market-data aggregator,Coin History by ID response at 00:00 UTC.
+CG-ADA,Market value,CoinGecko — Cardano,2026-07-30,https://api.coingecko.com/api/v3/coins/cardano/history?date=30-07-2026&localization=false,Market-data aggregator,Coin History by ID response at 00:00 UTC.
+CG-LINK,Market value,CoinGecko — Chainlink,2026-07-30,https://api.coingecko.com/api/v3/coins/chainlink/history?date=30-07-2026&localization=false,Market-data aggregator,Coin History by ID response at 00:00 UTC.
+CG-XLM,Market value,CoinGecko — Stellar,2026-07-30,https://api.coingecko.com/api/v3/coins/stellar/history?date=30-07-2026&localization=false,Market-data aggregator,Coin History by ID response at 00:00 UTC.
+CG-CANTON,Market value,CoinGecko — Canton,2026-07-30,https://api.coingecko.com/api/v3/coins/canton-network/history?date=30-07-2026&localization=false,Market-data aggregator,Coin History by ID response at 00:00 UTC.
+CG-LTC,Market value,CoinGecko — Litecoin,2026-07-30,https://api.coingecko.com/api/v3/coins/litecoin/history?date=30-07-2026&localization=false,Market-data aggregator,Coin History by ID response at 00:00 UTC.
+CG-HBAR,Market value,CoinGecko — Hedera,2026-07-30,https://api.coingecko.com/api/v3/coins/hedera-hashgraph/history?date=30-07-2026&localization=false,Market-data aggregator,Coin History by ID response at 00:00 UTC.
+CG-SUI,Market value,CoinGecko — Sui,2026-07-30,https://api.coingecko.com/api/v3/coins/sui/history?date=30-07-2026&localization=false,Market-data aggregator,Coin History by ID response at 00:00 UTC.
+CG-AVAX,Market value,CoinGecko — Avalanche,2026-07-30,https://api.coingecko.com/api/v3/coins/avalanche-2/history?date=30-07-2026&localization=false,Market-data aggregator,Coin History by ID response at 00:00 UTC.
+CG-UNI,Market value,CoinGecko — Uniswap,2026-07-30,https://api.coingecko.com/api/v3/coins/uniswap/history?date=30-07-2026&localization=false,Market-data aggregator,Coin History by ID response at 00:00 UTC.
+CG-NEAR,Market value,CoinGecko — NEAR,2026-07-30,https://api.coingecko.com/api/v3/coins/near/history?date=30-07-2026&localization=false,Market-data aggregator,Coin History by ID response at 00:00 UTC.
+CG-ONDO,Market value,CoinGecko — Ondo,2026-07-30,https://api.coingecko.com/api/v3/coins/ondo-finance/history?date=30-07-2026&localization=false,Market-data aggregator,Coin History by ID response at 00:00 UTC.
+CG-TAO,Market value,CoinGecko — Bittensor,2026-07-30,https://api.coingecko.com/api/v3/coins/bittensor/history?date=30-07-2026&localization=false,Market-data aggregator,Coin History by ID response at 00:00 UTC.
+CG-AAVE,Market value,CoinGecko — Aave,2026-07-30,https://api.coingecko.com/api/v3/coins/aave/history?date=30-07-2026&localization=false,Market-data aggregator,Coin History by ID response at 00:00 UTC.
+CG-SKY,Market value,CoinGecko — Sky,2026-07-30,https://api.coingecko.com/api/v3/coins/sky/history?date=30-07-2026&localization=false,Market-data aggregator,Coin History by ID response at 00:00 UTC.
+CG-MORPHO,Market value,CoinGecko — Morpho,2026-07-30,https://api.coingecko.com/api/v3/coins/morpho/history?date=30-07-2026&localization=false,Market-data aggregator,Coin History by ID response at 00:00 UTC.
+CG-DOT,Market value,CoinGecko — Polkadot,2026-07-30,https://api.coingecko.com/api/v3/coins/polkadot/history?date=30-07-2026&localization=false,Market-data aggregator,Coin History by ID response at 00:00 UTC.
+CG-ICP,Market value,CoinGecko — Internet Computer,2026-07-30,https://api.coingecko.com/api/v3/coins/internet-computer/history?date=30-07-2026&localization=false,Market-data aggregator,Coin History by ID response at 00:00 UTC.
 COIN-MARKETCAP,Market value,COIN market capitalization snapshot,2026-07-30,https://finance.yahoo.com/quote/COIN/,Market-data reference,"Refresh with current price and shares; this workbook snapshot uses $42,599,649,750."
 COIN-PROXY-2026,Founder ownership,Coinbase 2026 proxy statement,2026-03-31,https://www.sec.gov/Archives/edgar/data/1679788/000167978826000045/coin-20260424.htm,Primary / SEC filing,Brian Armstrong and Fred Ehrsam share ownership. Workbook values founder shares at the same snapshot equity price.
 COIN-FUNDING,Capital,Crunchbase News — Coinbase direct listing,2021-04-14,https://news.crunchbase.com/fintech-ecommerce/coinbase-chooses-direct-listing/,Secondary,Reports $547.3M known venture funding; reconciliation required.
@@ -42,8 +42,8 @@ AAVE-STANI,Wallet attribution,Etherscan — Stani-linked wallet,,https://ethersc
 AAVE-STANI-SAFE,Wallet attribution,Etherscan — Stani-linked Safe,,https://etherscan.io/address/0x47ca539b3f546078d97bd851130741c6bf370100,Researcher attribution,Verify Safe owners.
 SOL-2021-SALE,Capital,Solana Labs $314.15M private token sale,2021-06-09,https://solana.com/news/solana-labs-completes-a-314-15m-private-token-sale-led-by-andreessen-horowitz-and-polychain-capital,Primary / company announcement,Verified round only.
 SUI-SERIES-B,Capital,Sui $300M Series B,2022-09-08,https://forums.sui.io/t/looking-back-sui-in-q3-2022/466,Primary ecosystem forum,Verified Series B only.
-UNI-SERIES-B,Capital,Uniswap Labs Series B,2022-10-13,https://blog.uniswap.org/uniswap-labs-series-b,Primary / company announcement,Series B only.
-ONDO-SERIES-A,Capital,Ondo Finance Series A,2022-04-27,https://www.coindesk.com/business/2022/04/27/defi-protocol-ondo-finance-raises-20m-in-series-a-round/,Secondary,Series A only.
+UNI-SERIES-B,Capital,Uniswap Labs Series B,2022-10-13,https://blog.uniswap.org/bringing-web3-to-everyone,Primary / company announcement,Directly states the $165 million Series B amount.
+ONDO-SERIES-A,Capital,Ondo Finance Series A,2022-04-27,https://www.coindesk.com/business/2022/04/27/founders-fund-pantera-invest-in-defi-investment-bank-ondo-finance,Reliable secondary,Directly states the $20 million round amount.
 LINK-FOUNDERS,Founder identity,Chainlink Block Stories — founders,,https://chain.link/block-stories,Primary / project site,Sergey Nazarov and Steve Ellis.
 BINANCE-PRIVATE-CONTEXT,Private valuation context,Sacra — Binance valuation,2025-03-01,https://sacra.com/c/binance-holdings-ltd/,Secondary / private-market estimate,Context only; do not combine with BNB market cap absent a double-count bridge.
 BTC-FAIR-LAUNCH,Capital,bitcoin capital source,2009-01-03,https://bitcoin.org/bitcoin.pdf,Primary / protocol history,Fair launch; no primary capital raise identified.
@@ -58,7 +58,7 @@ XLM-STRIPE,Capital,stellar capital source,2014-01-01,https://stripe.com/blog/ste
 LTC-FAIR-LAUNCH,Capital,litecoin capital source,2011-10-13,https://litecoin.org/,Primary / protocol history,Fair launch; no team token sale identified.
 HBAR-SALES,Capital,hedera capital source,2018-08-01,https://hedera.com/treasury-management-report,Needs full reconciliation,Approximate; reconcile all sale tranches and equity financing.
 AVAX-2021-SALE,Capital,avalanche capital source,2021-09-16,https://www.avax.network/about/blog/polychain-and-three-arrows-capital-lead-230m-investment-in-avalanche,Needs full reconciliation,"Add seed, earlier private sale, and public token sale."
-NEAR-2022-ROUND,Capital,near capital source,2022-01-13,https://near.org/blog/near-raises-150m-to-accelerate-mass-adoption-of-web3-technologies,Needs full reconciliation,Add earlier rounds and token sale proceeds.
+NEAR-2022-ROUND,Capital,NEAR $150M funding round,2022-01-13,https://medium.com/nearprotocol/near-raises-150m-to-help-accelerate-mass-adoption-of-web3-f93eb106dbb1,Primary / company announcement,Directly states the $150 million round amount; earlier rounds remain unresolved.
 DOT-ICO,Capital,polkadot capital source,2017-10-17,https://polkadot.com/blog/polkadot-network-launch,Needs full reconciliation,Add later token sales and external financing.
 ICP-FUNDING,Capital,internet-computer capital source,2018-08-29,https://dfinity.org/foundation,Needs full reconciliation,Approximate cumulative amount; reconcile each primary round.
 DOGE-DIVESTED,Founder holdings,Billy Markus divestment reporting,2015-01-01,https://www.reddit.com/r/dogecoin/comments/6ch2f2/,Founder statement / secondary context,Declaration-based; not a complete wallet audit.

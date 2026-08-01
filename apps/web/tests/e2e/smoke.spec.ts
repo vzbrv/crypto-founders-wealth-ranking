@@ -83,7 +83,7 @@ async function mockPublicData(page: Page) {
   );
 }
 
-test("loads, filters, and separates research entries", async ({ page }) => {
+test.skip("retired project-first dashboard filters", async ({ page }) => {
   await mockPublicData(page);
   await page.goto("/");
 
@@ -107,15 +107,20 @@ test("loads, filters, and separates research entries", async ({ page }) => {
   ).toBeVisible();
 });
 
-test("fits the public ranking on a mobile viewport", async ({ page }) => {
+test("fits the founder ranking on a mobile viewport", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await mockPublicData(page);
   await page.goto("/");
-  await expect(page.getByRole("cell", { name: "Alice Founder" })).toBeVisible();
-  const rankingRow = page
-    .getByRole("row")
-    .filter({ has: page.getByRole("cell", { name: "Alice Founder" }) });
-  await expect(rankingRow.getByText("high", { exact: true })).toBeVisible();
+  await expect(
+    page.getByRole("heading", {
+      name: "Top Crypto Founders Ranked by Value Created for Others.",
+    }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("columnheader", { name: "Founder or founding team" }),
+  ).toBeVisible();
+  await expect(
+    page.locator("tbody tr td:nth-child(2) > a").first(),
+  ).toBeVisible();
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= window.innerWidth,
@@ -123,7 +128,7 @@ test("fits the public ranking on a mobile viewport", async ({ page }) => {
   ).toBe(true);
 });
 
-test("updates supported live scores and preserves them during reconnect", async ({
+test.skip("retired project-first dashboard live score behavior", async ({
   page,
 }) => {
   await page.addInitScript(
@@ -458,6 +463,80 @@ test("publishes the dated research universe separately", async ({ page }) => {
     page.getByText("not a live ranking or personal-wealth claim", {
       exact: false,
     }),
+  ).toBeVisible();
+});
+
+test("publishes provisional founder calculations and sources separately", async ({
+  page,
+}) => {
+  await page.goto("/");
+
+  await expect(
+    page.getByRole("heading", {
+      name: "Top Crypto Founders Ranked by Value Created for Others.",
+    }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("columnheader", { name: "Founder or founding team" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("columnheader", { name: "Project" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("columnheader", {
+      name: "Provisional value created for outside holders.",
+    }),
+  ).toBeVisible();
+  await expect(page.getByText("Unknown deductions are omitted")).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Coverage warning" }),
+  ).toBeVisible();
+  await expect(page.getByRole("row")).toHaveCount(11);
+  await expect(
+    page.getByRole("link", { name: "Calculation & sources" }),
+  ).toHaveCount(10);
+  await expect(
+    page.getByText("Observed 2026-07-30T00:00:00Z", { exact: true }),
+  ).toHaveCount(10);
+
+  const rankedProjects = await page
+    .locator("tbody tr td:nth-child(3)")
+    .allTextContents();
+  expect(rankedProjects.indexOf("Chainlink")).toBeLessThan(
+    rankedProjects.indexOf("Cardano"),
+  );
+
+  const founderLink = page.locator("tbody tr td:nth-child(2) > a").first();
+  const founderName = await founderLink.innerText();
+  await founderLink.click();
+  await expect(page).toHaveURL(/\/provisional\//);
+  await expect(page.getByRole("heading", { name: founderName })).toBeVisible();
+  await expect(page.getByText("Project:", { exact: false })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Calculation" }),
+  ).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Sources" })).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "CoinGecko — Bitcoin" }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("Observation time", { exact: true }),
+  ).toBeVisible();
+  await expect(page.getByText("Fetch time", { exact: true })).toBeVisible();
+  await expect(
+    page.getByText("CoinGecko coin ID", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("Snapshot method", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "CoinGecko historical record" }),
+  ).toHaveAttribute(
+    "href",
+    "https://api.coingecko.com/api/v3/coins/bitcoin/history?date=30-07-2026&localization=false",
+  );
+  await expect(
+    page.getByText("Unknown", { exact: true }).first(),
   ).toBeVisible();
 });
 

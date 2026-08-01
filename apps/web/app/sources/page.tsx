@@ -8,7 +8,8 @@ import { getAllSourceClaims } from "../../lib/transparency-data";
 
 export const metadata: Metadata = {
   title: "Source registry",
-  description: "Claim-level sources behind the Crypto Founding Units Index.",
+  description:
+    "Claim-level sources behind the Crypto Founders Value Created Index.",
   alternates: { canonical: "/sources/" },
 };
 

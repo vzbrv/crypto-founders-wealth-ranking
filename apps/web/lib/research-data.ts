@@ -3,7 +3,11 @@ import "server-only";
 import { resolve } from "node:path";
 
 import {
+  buildProvisionalCalculations,
+  buildProvisionalRanking,
   loadResearchData,
+  type ProvisionalCalculation,
+  type ProvisionalRankingEntry,
   type ResearchCandidate,
   type ResearchDataset,
 } from "@crypto-founders/curated-data/research";
@@ -79,4 +83,24 @@ export async function getResearchSnapshot(): Promise<ResearchSnapshot> {
       missingEvidence: candidate.missingEvidence,
     })),
   };
+}
+
+export async function getProvisionalRanking(): Promise<
+  ProvisionalRankingEntry[]
+> {
+  return buildProvisionalRanking(await getResearchDataset());
+}
+
+export async function getProvisionalProjectIds(): Promise<string[]> {
+  return buildProvisionalCalculations(await getResearchDataset()).map(
+    ({ projectId }) => projectId,
+  );
+}
+
+export async function getProvisionalCalculation(
+  projectId: string,
+): Promise<ProvisionalCalculation | undefined> {
+  return buildProvisionalCalculations(await getResearchDataset()).find(
+    (calculation) => calculation.projectId === projectId,
+  );
 }

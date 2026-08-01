@@ -1,0 +1,6 @@
+event_id,project_id,amount_usd,source_id,source_class,amount_support,supporting_text,notes
+solana-2021-sale,solana,314159265,SOL-2021-SALE,Primary,Direct,"Page states Solana Labs completed a private token sale of $314,159,265.",Reviewed 2021 private token sale only; earlier and later financing may remain.
+sui-series-b,sui,300000000,SUI-SERIES-B,Reliable secondary,Direct,Page states the Series B round raised a total of $300 million.,Reviewed Series B only; other financing remains to reconcile.
+uniswap-series-b,uniswap,165000000,UNI-SERIES-B,Primary,Direct,Page states Uniswap Labs raised $165 million in Series B funding.,Reviewed Series B only; other financing remains to reconcile.
+near-2022-round,near,150000000,NEAR-2022-ROUND,Primary,Direct,Page states NEAR Protocol raised $150 million in its latest funding round.,Reviewed 2022 round only; earlier rounds and token sales remain to reconcile.
+ondo-series-a,ondo,20000000,ONDO-SERIES-A,Reliable secondary,Direct,Page states the round was $20 million.,Reviewed Series A only; other financing remains to reconcile.

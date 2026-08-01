@@ -73,13 +73,73 @@ export interface ResearchWalletEvidence {
   sourceUrl: string | null;
   notes: string;
   syncStatus: WalletSyncStatus;
+  circulatingSupplyOverlapVerified: false;
   mayAffectPublishedScore: false;
+}
+
+export type FundingSourceClass = "Primary" | "Reliable secondary";
+export const COINGECKO_SNAPSHOT_METHOD = "coingecko_coin_history_v3" as const;
+
+export interface ResearchMarketObservation {
+  projectId: string;
+  coinGeckoCoinId: string;
+  circulatingMarketValueUsd: string;
+  observedAt: string;
+  fetchedAt: string;
+  snapshotMethod: typeof COINGECKO_SNAPSHOT_METHOD;
+  directSourceUrl: string;
+  sourceId: string;
+}
+
+export interface ResearchProvisionalCapitalEvent {
+  eventId: string;
+  projectId: string;
+  amountUsd: string;
+  sourceId: string;
+  sourceClass: FundingSourceClass;
+  amountSupport: "Direct";
+  supportingText: string;
+  notes: string;
+}
+
+export interface ProvisionalDeduction {
+  label: string;
+  amountUsd: string;
+  sourceIds: string[];
+  sourceClass: FundingSourceClass | null;
+  notes: string;
+}
+
+export interface ProvisionalCalculation {
+  projectId: string;
+  project: string;
+  foundersTeam: string;
+  canonicalRank: number | null;
+  circulatingMarketValueUsd: string;
+  marketDataTimestamp: string;
+  marketFetchTimestamp: string;
+  marketCoinGeckoCoinId: string;
+  marketSnapshotMethod: typeof COINGECKO_SNAPSHOT_METHOD;
+  marketDirectSourceUrl: string;
+  marketSourceId: string;
+  affiliatedCirculatingHoldingsUsd: string | null;
+  reviewedDisclosedOutsideCapitalUsd: string | null;
+  provisionalOutsideHolderValueUsd: string;
+  deductions: ProvisionalDeduction[];
+  evidenceGaps: string[];
+  coverageWarning: string;
+}
+
+export interface ProvisionalRankingEntry extends ProvisionalCalculation {
+  provisionalRank: number;
 }
 
 export interface ResearchDataset {
   candidates: ResearchCandidate[];
   wallets: ResearchWalletEvidence[];
   capitalRecords: ResearchCapitalRecord[];
+  provisionalMarketObservations: ResearchMarketObservation[];
+  provisionalCapitalEvents: ResearchProvisionalCapitalEvent[];
   sources: ResearchSource[];
 }
 
@@ -132,6 +192,28 @@ const sourceHeaders = [
   "date",
   "url",
   "quality",
+  "notes",
+] as const;
+
+const provisionalMarketHeaders = [
+  "project_id",
+  "coingecko_coin_id",
+  "circulating_market_value_usd",
+  "observed_at",
+  "fetched_at",
+  "snapshot_method",
+  "direct_source_url",
+  "source_id",
+] as const;
+
+const provisionalCapitalHeaders = [
+  "event_id",
+  "project_id",
+  "amount_usd",
+  "source_id",
+  "source_class",
+  "amount_support",
+  "supporting_text",
   "notes",
 ] as const;
 function requireValue(row: CsvRow, key: string, context: string): string {
@@ -492,6 +574,7 @@ function parseWallets(
         sourceUrl,
         notes: row.notes?.trim() ?? "",
         syncStatus: walletSyncStatus(row),
+        circulatingSupplyOverlapVerified: false,
         mayAffectPublishedScore: false,
       } satisfies ResearchWalletEvidence;
     },
@@ -508,18 +591,295 @@ function parseWallets(
   return wallets;
 }
 
+function parseMarketObservations(
+  csv: string,
+  projectIds: Set<string>,
+  sources: Map<string, ResearchSource>,
+): ResearchMarketObservation[] {
+  const observations = parseCsv(
+    csv,
+    provisionalMarketHeaders,
+    "provisional_market_data.csv",
+  ).map((row, index) => {
+    const context = `provisional_market_data.csv row ${index + 2}`;
+    const projectId = requireValue(row, "project_id", context);
+    if (!projectIds.has(projectId))
+      throw new Error(`${context}: unknown project ${projectId}`);
+    const sourceId = requireValue(row, "source_id", context);
+    const source = sources.get(sourceId);
+    if (!source) throw new Error(`${context}: unknown source ${sourceId}`);
+    const observedAt = requireValue(row, "observed_at", context);
+    if (Number.isNaN(Date.parse(observedAt)))
+      throw new Error(`${context}: invalid observed_at ${observedAt}`);
+    const fetchedAt = requireValue(row, "fetched_at", context);
+    if (Number.isNaN(Date.parse(fetchedAt)))
+      throw new Error(`${context}: invalid fetched_at ${fetchedAt}`);
+    if (Date.parse(fetchedAt) < Date.parse(observedAt))
+      throw new Error(`${context}: fetched_at precedes observed_at`);
+    const coinGeckoCoinId = requireValue(row, "coingecko_coin_id", context);
+    if (!/^[a-z0-9-]+$/.test(coinGeckoCoinId))
+      throw new Error(`${context}: invalid CoinGecko coin ID`);
+    const snapshotMethod = requireValue(row, "snapshot_method", context);
+    if (snapshotMethod !== COINGECKO_SNAPSHOT_METHOD)
+      throw new Error(`${context}: invalid snapshot_method ${snapshotMethod}`);
+    const date = new Date(observedAt);
+    const historyDate = [
+      String(date.getUTCDate()).padStart(2, "0"),
+      String(date.getUTCMonth() + 1).padStart(2, "0"),
+      date.getUTCFullYear(),
+    ].join("-");
+    const expectedSourceUrl = `https://api.coingecko.com/api/v3/coins/${coinGeckoCoinId}/history?date=${historyDate}&localization=false`;
+    const directSourceUrl = requireValue(row, "direct_source_url", context);
+    if (directSourceUrl !== expectedSourceUrl)
+      throw new Error(`${context}: direct_source_url is not reproducible`);
+    if (source.category !== "Market value" || source.url !== directSourceUrl)
+      throw new Error(`${context}: source catalog does not match observation`);
+    return {
+      projectId,
+      coinGeckoCoinId,
+      circulatingMarketValueUsd: requireValue(
+        { value: money(row.circulating_market_value_usd, context) ?? "" },
+        "value",
+        context,
+      ),
+      observedAt,
+      fetchedAt,
+      snapshotMethod,
+      directSourceUrl,
+      sourceId,
+    } satisfies ResearchMarketObservation;
+  });
+  assertUnique(
+    observations.map((observation) => observation.projectId),
+    "provisional_market_data.csv",
+  );
+  if (new Set(observations.map((item) => item.snapshotMethod)).size !== 1)
+    throw new Error("provisional_market_data.csv: snapshot method mismatch");
+  if (new Set(observations.map((item) => item.observedAt)).size !== 1)
+    throw new Error(
+      "provisional_market_data.csv: observation timestamp mismatch",
+    );
+  return observations;
+}
+
+function fundingSourceClass(
+  value: string,
+  context: string,
+): FundingSourceClass {
+  if (value === "Primary" || value === "Reliable secondary") return value;
+  throw new Error(`${context}: invalid source_class ${value}`);
+}
+
+function parseProvisionalCapitalEvents(
+  csv: string,
+  projectIds: Set<string>,
+  sources: Map<string, ResearchSource>,
+): ResearchProvisionalCapitalEvent[] {
+  const events = parseCsv(
+    csv,
+    provisionalCapitalHeaders,
+    "provisional_capital_events.csv",
+  ).map((row, index) => {
+    const context = `provisional_capital_events.csv row ${index + 2}`;
+    const projectId = requireValue(row, "project_id", context);
+    if (!projectIds.has(projectId))
+      throw new Error(`${context}: unknown project ${projectId}`);
+    const sourceId = requireValue(row, "source_id", context);
+    const source = sources.get(sourceId);
+    if (!source) throw new Error(`${context}: unknown source ${sourceId}`);
+    if (source.category !== "Capital")
+      throw new Error(`${context}: source ${sourceId} is not a capital source`);
+    const amountSupport = requireValue(row, "amount_support", context);
+    if (amountSupport !== "Direct")
+      throw new Error(`${context}: amount_support must be Direct`);
+    return {
+      eventId: requireValue(row, "event_id", context),
+      projectId,
+      amountUsd: requireValue(
+        { value: money(row.amount_usd, context) ?? "" },
+        "value",
+        context,
+      ),
+      sourceId,
+      sourceClass: fundingSourceClass(
+        requireValue(row, "source_class", context),
+        context,
+      ),
+      amountSupport,
+      supportingText: requireValue(row, "supporting_text", context),
+      notes: row.notes?.trim() ?? "",
+    } satisfies ResearchProvisionalCapitalEvent;
+  });
+  assertUnique(
+    events.map((event) => event.eventId),
+    "provisional_capital_events.csv",
+  );
+  return events;
+}
+
+function sumAmounts(amounts: string[]): string {
+  return amounts
+    .reduce((total, amount) => total.plus(amount), new Decimal(0))
+    .toFixed(0);
+}
+
+export function buildProvisionalCalculations(
+  dataset: ResearchDataset,
+): ProvisionalCalculation[] {
+  const candidates = new Map(
+    dataset.candidates.map((candidate) => [candidate.projectId, candidate]),
+  );
+  return dataset.provisionalMarketObservations.flatMap((market) => {
+    const candidate = candidates.get(market.projectId);
+    if (!candidate) return [];
+    const wallets = dataset.wallets.filter(
+      (wallet) => wallet.projectId === candidate.projectId,
+    );
+    const verifiedWallets = wallets.filter(
+      (wallet) =>
+        wallet.circulatingSupplyOverlapVerified &&
+        wallet.snapshotHoldingsUsd !== null &&
+        wallet.sourceId !== null,
+    );
+    const affiliatedCirculatingHoldingsUsd =
+      wallets.length > 0 && verifiedWallets.length === wallets.length
+        ? sumAmounts(
+            verifiedWallets.map((wallet) => wallet.snapshotHoldingsUsd!),
+          )
+        : null;
+    const capitalEvents = dataset.provisionalCapitalEvents.filter(
+      (event) => event.projectId === candidate.projectId,
+    );
+    const reviewedDisclosedOutsideCapitalUsd =
+      capitalEvents.length > 0
+        ? sumAmounts(capitalEvents.map((event) => event.amountUsd))
+        : null;
+    const deductions: ProvisionalDeduction[] = [
+      ...(affiliatedCirculatingHoldingsUsd === null
+        ? []
+        : [
+            {
+              label: "Verified affiliated circulating holdings",
+              amountUsd: affiliatedCirculatingHoldingsUsd,
+              sourceIds: verifiedWallets.flatMap((wallet) =>
+                wallet.sourceId ? [wallet.sourceId] : [],
+              ),
+              sourceClass: null,
+              notes:
+                "Wallet attribution and circulating-supply overlap were verified.",
+            },
+          ]),
+      ...capitalEvents.map((event) => ({
+        label: "Reviewed disclosed outside capital",
+        amountUsd: event.amountUsd,
+        sourceIds: [event.sourceId],
+        sourceClass: event.sourceClass,
+        notes: event.notes,
+      })),
+    ];
+    const evidenceGaps = [
+      ...(affiliatedCirculatingHoldingsUsd === null
+        ? [
+            "Affiliated circulating holdings: Unknown — no wallet attribution and circulating-supply overlap is verified.",
+          ]
+        : []),
+      ...(reviewedDisclosedOutsideCapitalUsd === null
+        ? [
+            "Reviewed disclosed outside capital: Unknown — no reviewed funding event is supported; this is not a $0 deduction.",
+          ]
+        : candidate.capitalStatus !== "Complete"
+          ? [
+              "Reviewed disclosed outside capital coverage is incomplete; only known reviewed events were deducted.",
+            ]
+          : []),
+    ];
+    const provisionalOutsideHolderValueUsd = calculateProvisionalOutsideWealth(
+      market.circulatingMarketValueUsd,
+      [affiliatedCirculatingHoldingsUsd, reviewedDisclosedOutsideCapitalUsd],
+    );
+    if (provisionalOutsideHolderValueUsd === null)
+      throw new Error(
+        `provisional calculation missing market value ${market.projectId}`,
+      );
+    return [
+      {
+        projectId: candidate.projectId,
+        project: candidate.project,
+        foundersTeam: candidate.foundersTeam,
+        canonicalRank: candidate.canonicalRank,
+        circulatingMarketValueUsd: market.circulatingMarketValueUsd,
+        marketDataTimestamp: market.observedAt,
+        marketFetchTimestamp: market.fetchedAt,
+        marketCoinGeckoCoinId: market.coinGeckoCoinId,
+        marketSnapshotMethod: market.snapshotMethod,
+        marketDirectSourceUrl: market.directSourceUrl,
+        marketSourceId: market.sourceId,
+        affiliatedCirculatingHoldingsUsd,
+        reviewedDisclosedOutsideCapitalUsd,
+        provisionalOutsideHolderValueUsd,
+        deductions,
+        evidenceGaps,
+        coverageWarning:
+          evidenceGaps.length > 0
+            ? `Upper estimate — may be overstated. ${evidenceGaps.join(" ")}`
+            : "Coverage complete for the documented deduction categories.",
+      } satisfies ProvisionalCalculation,
+    ];
+  });
+}
+
+export function buildProvisionalRanking(
+  dataset: ResearchDataset,
+): ProvisionalRankingEntry[] {
+  const teams = new Set<string>();
+  return buildProvisionalCalculations(dataset)
+    .sort((left, right) => {
+      const order = new Decimal(right.provisionalOutsideHolderValueUsd).cmp(
+        left.provisionalOutsideHolderValueUsd,
+      );
+      return order === 0
+        ? left.projectId.localeCompare(right.projectId)
+        : order;
+    })
+    .filter((entry) => {
+      const team = entry.foundersTeam.trim().toLocaleLowerCase();
+      if (teams.has(team)) return false;
+      teams.add(team);
+      return true;
+    })
+    .slice(0, 10)
+    .map((entry, index) => ({ ...entry, provisionalRank: index + 1 }));
+}
+
 export function importResearchCsv(input: {
   candidateCsv: string;
   walletCsv: string;
   sourceCsv: string;
+  provisionalMarketCsv?: string;
+  provisionalCapitalCsv?: string;
 }): ResearchDataset {
   const sources = parseSources(input.sourceCsv);
   const sourceIds = new Set(sources.map((source) => source.id));
+  const sourcesById = new Map(sources.map((source) => [source.id, source]));
   const candidates = parseCandidates(input.candidateCsv, sourceIds);
   const projectIds = new Set(
     candidates.map((candidate) => candidate.projectId),
   );
   const wallets = parseWallets(input.walletCsv, projectIds, sourceIds);
+  const provisionalMarketObservations = input.provisionalMarketCsv
+    ? parseMarketObservations(
+        input.provisionalMarketCsv,
+        projectIds,
+        sourcesById,
+      )
+    : [];
+  const provisionalCapitalEvents = input.provisionalCapitalCsv
+    ? parseProvisionalCapitalEvents(
+        input.provisionalCapitalCsv,
+        projectIds,
+        sourcesById,
+      )
+    : [];
   const capitalRecords = candidates.flatMap((candidate) =>
     candidate.capitalSourceId === null
       ? []
@@ -532,7 +892,14 @@ export function importResearchCsv(input: {
           } satisfies ResearchCapitalRecord,
         ],
   );
-  return { candidates, wallets, capitalRecords, sources };
+  return {
+    candidates,
+    wallets,
+    capitalRecords,
+    provisionalMarketObservations,
+    provisionalCapitalEvents,
+    sources,
+  };
 }
 
 export async function loadResearchData(
@@ -541,10 +908,34 @@ export async function loadResearchData(
     "data/research",
   ),
 ): Promise<ResearchDataset> {
-  const [candidateCsv, walletCsv, sourceCsv] = await Promise.all([
+  const readOptionalCsv = async (
+    filename: string,
+  ): Promise<string | undefined> => {
+    try {
+      return await readFile(path.join(directory, filename), "utf8");
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === "ENOENT") return undefined;
+      throw error;
+    }
+  };
+  const [
+    candidateCsv,
+    walletCsv,
+    sourceCsv,
+    provisionalMarketCsv,
+    provisionalCapitalCsv,
+  ] = await Promise.all([
     readFile(path.join(directory, "candidate_universe.csv"), "utf8"),
     readFile(path.join(directory, "wallet_evidence.csv"), "utf8"),
     readFile(path.join(directory, "source_catalog.csv"), "utf8"),
+    readOptionalCsv("provisional_market_data.csv"),
+    readOptionalCsv("provisional_capital_events.csv"),
   ]);
-  return importResearchCsv({ candidateCsv, walletCsv, sourceCsv });
+  return importResearchCsv({
+    candidateCsv,
+    walletCsv,
+    sourceCsv,
+    ...(provisionalMarketCsv === undefined ? {} : { provisionalMarketCsv }),
+    ...(provisionalCapitalCsv === undefined ? {} : { provisionalCapitalCsv }),
+  });
 }

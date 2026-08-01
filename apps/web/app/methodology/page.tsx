@@ -4,7 +4,8 @@ import { SiteNav } from "../../components/site-nav";
 
 export const metadata: Metadata = {
   title: "Methodology",
-  description: "How the Crypto Founding Units Index is calculated and sourced.",
+  description:
+    "How the Crypto Founders Value Created Index is calculated and sourced.",
   alternates: { canonical: "/methodology/" },
 };
 

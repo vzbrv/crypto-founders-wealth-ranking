@@ -6,7 +6,7 @@ import { SiteNav } from "../../components/site-nav";
 export const metadata: Metadata = {
   alternates: { canonical: "/status/" },
   description:
-    "Current data-provider monitoring state for the Crypto Founding Units Index.",
+    "Current data-provider monitoring state for the Crypto Founders Value Created Index.",
   title: "System status",
 };
 
