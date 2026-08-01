@@ -5,9 +5,9 @@ import { SiteNav } from "../../components/site-nav";
 import { getProvisionalRanking } from "../../lib/research-data";
 
 export const metadata: Metadata = {
-  title: "Provisional outside-holder value screen",
+  title: "Provisional founder ranking",
   description:
-    "A dated provisional screen using sourced circulating market values and reviewed deductions.",
+    "A dated, source-linked ranking of crypto founders and founding teams by provisional value created for outside holders.",
   alternates: { canonical: "/provisional/" },
 };
 
@@ -30,11 +30,12 @@ export default async function ProvisionalPage() {
       <main className="content-page" id="main-content" tabIndex={-1}>
         <header className="page-header">
           <p className="eyebrow">Dated provisional screen</p>
-          <h1>Provisional outside-holder value screen</h1>
+          <h1>Top Crypto Founders Ranked by Value Created for Others.</h1>
           <p>
-            Top 10 founding units using market observations dated {observedAt}.
-            This is a research screen, not the canonical ranking or a personal-
-            wealth claim.
+            Top 10 founders and founding teams using market observations dated{" "}
+            {observedAt}. It equals project circulating market value minus
+            verified affiliated holdings and reviewed outside capital; it is not
+            founder net worth.
           </p>
         </header>
 
@@ -43,24 +44,35 @@ export default async function ProvisionalPage() {
           <p>
             Unknown deductions are omitted from arithmetic, not treated as $0.
             Values with evidence gaps are upper estimates and may be overstated.
+            This is not founder net worth.
           </p>
         </section>
 
-        <section className="panel" aria-labelledby="provisional-table-heading">
+        <section
+          id="ranking"
+          className="panel"
+          aria-labelledby="provisional-table-heading"
+        >
           <div className="section-heading compact">
-            <h2 id="provisional-table-heading">Provisional top 10</h2>
-            <p>One entry per founding unit. Every row links to its inputs.</p>
+            <h2 id="provisional-table-heading">Provisional founder ranking</h2>
+            <p>
+              One entry per joint founding unit; a co-founded project&apos;s
+              value is not duplicated across people. Every row links to its
+              inputs.
+            </p>
           </div>
           <div className="table-shell evidence-shell">
             <table className="evidence-table research-universe-table">
               <thead>
                 <tr>
                   <th>Provisional rank</th>
+                  <th>Founder or founding team</th>
                   <th>Project</th>
-                  <th>Founding unit</th>
                   <th className="number">Market value</th>
                   <th>Deduction coverage</th>
-                  <th className="number">Provisional value</th>
+                  <th className="number">
+                    Provisional value created for outside holders.
+                  </th>
                   <th>Coverage</th>
                 </tr>
               </thead>
@@ -71,7 +83,7 @@ export default async function ProvisionalPage() {
                       <td className="rank">{entry.provisionalRank}</td>
                       <td>
                         <Link href={`/provisional/${entry.projectId}/`}>
-                          <strong>{entry.project}</strong>
+                          <strong>{entry.foundersTeam}</strong>
                         </Link>
                         <small>
                           <Link href={`/provisional/${entry.projectId}/`}>
@@ -79,7 +91,9 @@ export default async function ProvisionalPage() {
                           </Link>
                         </small>
                       </td>
-                      <td>{entry.foundersTeam}</td>
+                      <td>
+                        <strong>{entry.project}</strong>
+                      </td>
                       <td className="number">
                         {money(entry.circulatingMarketValueUsd)}
                         <small>Observed {entry.marketDataTimestamp}</small>

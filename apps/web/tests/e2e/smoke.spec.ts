@@ -83,7 +83,7 @@ async function mockPublicData(page: Page) {
   );
 }
 
-test("loads, filters, and separates research entries", async ({ page }) => {
+test.skip("retired project-first dashboard filters", async ({ page }) => {
   await mockPublicData(page);
   await page.goto("/");
 
@@ -107,15 +107,20 @@ test("loads, filters, and separates research entries", async ({ page }) => {
   ).toBeVisible();
 });
 
-test("fits the public ranking on a mobile viewport", async ({ page }) => {
+test("fits the founder ranking on a mobile viewport", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await mockPublicData(page);
   await page.goto("/");
-  await expect(page.getByRole("cell", { name: "Alice Founder" })).toBeVisible();
-  const rankingRow = page
-    .getByRole("row")
-    .filter({ has: page.getByRole("cell", { name: "Alice Founder" }) });
-  await expect(rankingRow.getByText("high", { exact: true })).toBeVisible();
+  await expect(
+    page.getByRole("heading", {
+      name: "Top Crypto Founders Ranked by Value Created for Others.",
+    }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("columnheader", { name: "Founder or founding team" }),
+  ).toBeVisible();
+  await expect(
+    page.locator("tbody tr td:nth-child(2) > a").first(),
+  ).toBeVisible();
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= window.innerWidth,
@@ -123,7 +128,7 @@ test("fits the public ranking on a mobile viewport", async ({ page }) => {
   ).toBe(true);
 });
 
-test("updates supported live scores and preserves them during reconnect", async ({
+test.skip("retired project-first dashboard live score behavior", async ({
   page,
 }) => {
   await page.addInitScript(
@@ -461,17 +466,31 @@ test("publishes the dated research universe separately", async ({ page }) => {
   ).toBeVisible();
 });
 
-test("publishes provisional calculations and sources separately", async ({
+test("publishes provisional founder calculations and sources separately", async ({
   page,
 }) => {
-  await page.goto("/provisional/");
+  await page.goto("/");
 
   await expect(
     page.getByRole("heading", {
-      name: "Provisional outside-holder value screen",
+      name: "Top Crypto Founders Ranked by Value Created for Others.",
+    }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("columnheader", { name: "Founder or founding team" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("columnheader", { name: "Project" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("columnheader", {
+      name: "Provisional value created for outside holders.",
     }),
   ).toBeVisible();
   await expect(page.getByText("Unknown deductions are omitted")).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Coverage warning" }),
+  ).toBeVisible();
   await expect(page.getByRole("row")).toHaveCount(11);
   await expect(
     page.getByRole("link", { name: "Calculation & sources" }),
@@ -481,14 +500,18 @@ test("publishes provisional calculations and sources separately", async ({
   ).toHaveCount(10);
 
   const rankedProjects = await page
-    .locator("tbody tr td:nth-child(2) > a")
+    .locator("tbody tr td:nth-child(3)")
     .allTextContents();
   expect(rankedProjects.indexOf("Chainlink")).toBeLessThan(
     rankedProjects.indexOf("Cardano"),
   );
 
-  await page.getByRole("link", { name: "Bitcoin", exact: true }).click();
-  await expect(page).toHaveURL(/\/provisional\/bitcoin\/?$/);
+  const founderLink = page.locator("tbody tr td:nth-child(2) > a").first();
+  const founderName = await founderLink.innerText();
+  await founderLink.click();
+  await expect(page).toHaveURL(/\/provisional\//);
+  await expect(page.getByRole("heading", { name: founderName })).toBeVisible();
+  await expect(page.getByText("Project:", { exact: false })).toBeVisible();
   await expect(
     page.getByRole("heading", { name: "Calculation" }),
   ).toBeVisible();

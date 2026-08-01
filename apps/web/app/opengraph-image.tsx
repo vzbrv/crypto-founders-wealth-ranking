@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 
 export const dynamic = "force-static";
-export const alt = "Crypto Founding Units Index";
+export const alt = "Top Crypto Founders Ranked by Value Created for Others.";
 export const size = { height: 630, width: 1200 };
 export const contentType = "image/png";
 
@@ -21,12 +21,10 @@ export default function OpenGraphImage() {
       }}
     >
       <div style={{ color: "#79e7ae", fontSize: 30, letterSpacing: 4 }}>
-        OUTSIDE-HOLDER VALUE
+        PROVISIONAL VALUE CREATED FOR OUTSIDE HOLDERS
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-        <div style={{ fontSize: 82, letterSpacing: -4 }}>
-          Crypto Founding Units
-        </div>
+        <div style={{ fontSize: 82, letterSpacing: -4 }}>Crypto Founders</div>
         <div style={{ color: "#9eaaa4", fontSize: 40 }}>
           Index · Transparent calculations and sources
         </div>

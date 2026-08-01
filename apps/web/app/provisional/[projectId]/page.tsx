@@ -34,8 +34,8 @@ export async function generateMetadata({
   const calculation = await getProvisionalCalculation(projectId);
   return calculation
     ? {
-        title: `${calculation.project} provisional calculation`,
-        description: `Dated provisional calculation and source trail for ${calculation.project}.`,
+        title: `${calculation.foundersTeam} — ${calculation.project} calculation`,
+        description: `Dated provisional calculation and source trail for ${calculation.foundersTeam} and ${calculation.project}.`,
         alternates: { canonical: `/provisional/${projectId}/` },
       }
     : { title: "Provisional calculation not found" };
@@ -70,10 +70,10 @@ export default async function ProvisionalCalculationPage({
           <p className="eyebrow">
             Provisional calculation · {calculation.marketDataTimestamp}
           </p>
-          <h1>{calculation.project}</h1>
+          <h1>{calculation.foundersTeam}</h1>
           <p>
-            {calculation.foundersTeam}. This is a dated research screen, not the
-            canonical ranking or a personal-wealth claim.
+            Project: <strong>{calculation.project}</strong>. This is a dated
+            research screen, not founder net worth.
           </p>
         </header>
 
@@ -131,7 +131,7 @@ export default async function ProvisionalCalculationPage({
               </strong>
             </div>
             <div>
-              <span>Provisional outside-holder value</span>
+              <span>Provisional value created for outside holders.</span>
               <strong>
                 {money(calculation.provisionalOutsideHolderValueUsd)}
               </strong>
@@ -142,7 +142,7 @@ export default async function ProvisionalCalculationPage({
             {money(calculation.affiliatedCirculatingHoldingsUsd)} −{" "}
             {money(calculation.reviewedDisclosedOutsideCapitalUsd)} ={" "}
             {money(calculation.provisionalOutsideHolderValueUsd)} provisional
-            outside-holder value
+            value created for outside holders.
           </p>
           <p className="warning-text">{calculation.coverageWarning}</p>
           {calculation.evidenceGaps.length > 0 && (
