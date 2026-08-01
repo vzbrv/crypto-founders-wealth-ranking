@@ -4,7 +4,7 @@ export function SiteNav() {
   return (
     <nav className="site-nav" aria-label="Primary navigation">
       <Link className="wordmark" href="/">
-        Crypto Founders
+        Crypto Founding Units
       </Link>
       <div className="nav-links">
         <Link href="/#ranking">Ranking</Link>

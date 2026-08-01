@@ -7,20 +7,20 @@ import "./globals.css";
 export const metadata: Metadata = {
   metadataBase: getSiteUrl(),
   title: {
-    default: "Crypto Founders Wealth Index",
-    template: "%s · Crypto Founders Wealth Index",
+    default: "Crypto Founding Units Index",
+    template: "%s · Crypto Founding Units Index",
   },
   description:
-    "A transparent ranking of crypto founders and teams by estimated outside-holder wealth created.",
-  applicationName: "Crypto Founders Wealth Index",
+    "A transparent ranking of crypto founding units by estimated outside-holder token value.",
+  applicationName: "Crypto Founding Units Index",
   alternates: { canonical: "/" },
   category: "finance",
   openGraph: {
     description:
-      "A transparent ranking of crypto founders and teams by estimated outside-holder wealth created.",
-    images: [{ alt: "Crypto Founders Wealth Index", url: "/opengraph-image" }],
-    siteName: "Crypto Founders Wealth Index",
-    title: "Crypto Founders Wealth Index",
+      "A transparent ranking of crypto founding units by estimated outside-holder token value.",
+    images: [{ alt: "Crypto Founding Units Index", url: "/opengraph-image" }],
+    siteName: "Crypto Founding Units Index",
+    title: "Crypto Founding Units Index",
     type: "website",
     url: "/",
   },
@@ -28,9 +28,9 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     description:
-      "A transparent ranking of crypto founders and teams by estimated outside-holder wealth created.",
+      "A transparent ranking of crypto founding units by estimated outside-holder token value.",
     images: ["/opengraph-image"],
-    title: "Crypto Founders Wealth Index",
+    title: "Crypto Founding Units Index",
   },
 };
 

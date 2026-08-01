@@ -116,15 +116,20 @@ export function createCuratedImportStatements(
       statements.push(
         statement(
           `insert into project_founding_units (
-            project_id, founding_unit_id, attribution_fraction, attribution_method
-          ) values ($1, $2, $3, $4)
+            project_id, founding_unit_id, attribution_fraction, attribution_method,
+            is_canonical, allocation_methodology
+          ) values ($1, $2, $3, $4, $5, $6)
           on conflict (project_id, founding_unit_id) do update set
             attribution_fraction = excluded.attribution_fraction,
-            attribution_method = excluded.attribution_method`,
+            attribution_method = excluded.attribution_method,
+            is_canonical = excluded.is_canonical,
+            allocation_methodology = excluded.allocation_methodology`,
           link.projectId,
           unit.id,
           link.attributionFraction,
           link.attributionMethod,
+          link.isCanonical,
+          link.allocationMethodology,
         ),
       );
     }
@@ -198,10 +203,11 @@ export function createCuratedImportStatements(
           id, project_id, founding_unit_id, chain_code, address, normalized_address,
           label, owner_name, classification, ownership_confidence,
           circulating_inclusion_fraction, balance_included_in_circulating_supply,
-          affects_score, deduplication_key, review_status, reviewer, reviewed_at,
-          evidence_source_ids, status, research_reviewed_at, notes
+          circulating_inclusion_explanation, affects_score, deduplication_key,
+          review_status, reviewer, reviewed_at, evidence_source_ids, status,
+          research_reviewed_at, notes
         ) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12,
-          $13, $14, $15, $16, $17, $18::text::jsonb, $19, $20, $21)
+          $13, $14, $15, $16, $17, $18, $19::text::jsonb, $20, $21, $22)
         on conflict (id) do update set
           project_id = excluded.project_id, founding_unit_id = excluded.founding_unit_id,
           chain_code = excluded.chain_code, address = excluded.address,
@@ -210,6 +216,7 @@ export function createCuratedImportStatements(
           ownership_confidence = excluded.ownership_confidence,
           circulating_inclusion_fraction = excluded.circulating_inclusion_fraction,
           balance_included_in_circulating_supply = excluded.balance_included_in_circulating_supply,
+          circulating_inclusion_explanation = excluded.circulating_inclusion_explanation,
           affects_score = excluded.affects_score, deduplication_key = excluded.deduplication_key,
           review_status = excluded.review_status, reviewer = excluded.reviewer,
           reviewed_at = excluded.reviewed_at, evidence_source_ids = excluded.evidence_source_ids,
@@ -228,6 +235,7 @@ export function createCuratedImportStatements(
         wallet.ownershipConfidence,
         wallet.circulatingInclusionFraction,
         wallet.balanceIncludedInCirculatingSupply,
+        wallet.circulatingInclusionExplanation,
         wallet.affectsScore,
         wallet.deduplicationKey,
         wallet.reviewStatus,
@@ -269,17 +277,21 @@ export function createCuratedImportStatements(
       statement(
         `insert into funding_rounds (
           id, project_id, event_date, round_type, original_amount,
-          original_currency, amount_usd_at_event, usd_conversion_method,
-          include_in_capital_deduction, deduplication_key, review_status,
-          reviewer, evidence_source_ids, status, reviewed_at, notes
-        ) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13::text::jsonb, $14, $15, $16)
+          original_currency, amount_usd_at_event, amount_status,
+          usd_conversion_method, usd_conversion_date,
+          include_in_capital_deduction, inclusion_reason, deduplication_key,
+          review_status, reviewer, evidence_source_ids, status, reviewed_at, notes
+        ) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16::text::jsonb, $17, $18, $19)
         on conflict (id) do update set
           project_id = excluded.project_id, event_date = excluded.event_date,
           round_type = excluded.round_type, original_amount = excluded.original_amount,
           original_currency = excluded.original_currency,
           amount_usd_at_event = excluded.amount_usd_at_event,
+          amount_status = excluded.amount_status,
           usd_conversion_method = excluded.usd_conversion_method,
+          usd_conversion_date = excluded.usd_conversion_date,
           include_in_capital_deduction = excluded.include_in_capital_deduction,
+          inclusion_reason = excluded.inclusion_reason,
           deduplication_key = excluded.deduplication_key,
           review_status = excluded.review_status, reviewer = excluded.reviewer,
           evidence_source_ids = excluded.evidence_source_ids,
@@ -292,8 +304,11 @@ export function createCuratedImportStatements(
         round.originalAmount ?? null,
         round.originalCurrency ?? null,
         round.amountUsdAtEvent ?? null,
+        round.amountStatus,
         round.conversionMethod ?? null,
+        round.usdConversionDate ?? null,
         round.includeInCapitalDeduction,
+        round.inclusionReason,
         round.deduplicationKey,
         round.reviewStatus,
         round.reviewer,

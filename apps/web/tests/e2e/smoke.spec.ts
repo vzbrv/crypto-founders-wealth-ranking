@@ -89,7 +89,7 @@ test("loads, filters, and separates research entries", async ({ page }) => {
 
   await expect(
     page.getByRole("heading", {
-      name: "Crypto founders, ranked by value created.",
+      name: "Crypto founding units, ranked by outside-holder value.",
     }),
   ).toBeVisible();
   await expect(page.getByRole("cell", { name: "Alice Founder" })).toBeVisible();
@@ -230,7 +230,7 @@ test("updates supported live scores and preserves them during reconnect", async 
   await expect(page.getByText("$842.5M", { exact: true })).toBeVisible();
   await expect(page.getByText("Live estimate", { exact: true })).toBeVisible();
   await expect(
-    page.getByText("Canonical $800M", { exact: true }),
+    page.getByText("Published $800M", { exact: true }),
   ).toBeVisible();
   await expect(page.getByText("Reconnecting", { exact: true })).toBeVisible();
   await expect(page.getByText("$842.5M", { exact: true })).toBeVisible();
@@ -239,6 +239,11 @@ test("updates supported live scores and preserves them during reconnect", async 
 test("shows a reproducible project score and its evidence", async ({
   page,
 }) => {
+  const marketObservationId = "66666666-6666-4666-8666-666666666666";
+  const marketSourceUrl =
+    "https://api.coingecko.com/api/v3/coins/markets?ids=synthetic-horizon";
+  let exposeMarketSource = true;
+
   await page.route("**/rest/v1/public_project_details**", (route) =>
     route.fulfill({
       contentType: "application/json",
@@ -246,6 +251,7 @@ test("shows a reproducible project score and its evidence", async ({
         {
           id: "11111111-1111-4111-8111-111111111111",
           slug: "synthetic-horizon",
+          eligibility_status: "ranked",
           market_cap_usd: "1000000000",
           price_usd: "2",
           circulating_supply: "500000000",
@@ -254,6 +260,39 @@ test("shows a reproducible project score and its evidence", async ({
           outside_holder_supply: "425000000",
           capital_raised_usd: "50000000",
           calculated_at: now,
+          market_observation_id: marketObservationId,
+          market_provider: "coingecko",
+          market_source_url: exposeMarketSource ? marketSourceUrl : null,
+          market_source_description: exposeMarketSource
+            ? "CoinGecko coins markets API observation"
+            : null,
+          market_observed_at: now,
+          market_fetched_at: now,
+          market_freshness_status: "current",
+          wallet_review_status: "approved_sufficient",
+          wallet_review_reviewer: "Synthetic reviewer",
+          wallet_review_reviewed_at: now,
+          wallet_review_evidence: [
+            {
+              id: "44444444-4444-4444-8444-444444444444",
+              title: "Synthetic Horizon fixture source",
+              url: "https://example.com/research/synthetic-horizon",
+              publisher: "Example Research",
+              sourceType: "official_documentation",
+            },
+          ],
+          funding_review_status: "approved_sufficient",
+          funding_review_reviewer: "Synthetic reviewer",
+          funding_review_reviewed_at: now,
+          funding_review_evidence: [
+            {
+              id: "44444444-4444-4444-8444-444444444444",
+              title: "Synthetic Horizon fixture source",
+              url: "https://example.com/research/synthetic-horizon",
+              publisher: "Example Research",
+              sourceType: "official_documentation",
+            },
+          ],
         },
       ]),
     }),
@@ -265,10 +304,22 @@ test("shows a reproducible project score and its evidence", async ({
         {
           id: "55555555-5555-4555-8555-555555555555",
           balance: "100000000",
-          balance_observed_at: now,
+          balance_observed_at: null,
           balance_provider: "mock provider",
           deductible_balance: "75000000",
           deductible_value_usd: "150000000",
+          review_status: "approved_sufficient",
+          reviewer: "Synthetic reviewer",
+          reviewed_at: now,
+          review_evidence: [
+            {
+              id: "44444444-4444-4444-8444-444444444444",
+              title: "Synthetic Horizon fixture source",
+              url: "https://example.com/research/synthetic-horizon",
+              publisher: "Example Research",
+              sourceType: "official_documentation",
+            },
+          ],
         },
       ]),
     }),
@@ -309,7 +360,56 @@ test("shows a reproducible project score and its evidence", async ({
   await expect(page.getByTestId("score-equation")).toHaveText(
     "max(0, $1,000,000,000.00 − $150,000,000.00 − $50,000,000.00) = $800,000,000.00",
   );
+  await expect(page.getByTestId("score-equation")).toHaveAttribute(
+    "data-market-observation-id",
+    marketObservationId,
+  );
+  const marketObservation = page.getByTestId("market-observation");
+  await expect(marketObservation).toHaveAttribute(
+    "data-market-observation-id",
+    marketObservationId,
+  );
+  await expect(
+    marketObservation.getByRole("link", {
+      name: "CoinGecko coins markets API observation",
+    }),
+  ).toHaveAttribute("href", marketSourceUrl);
+  await expect(marketObservation).toContainText(
+    `Observation ${marketObservationId}`,
+  );
   await expect(page.getByText("mock provider", { exact: false })).toBeVisible();
+  await expect(page.getByText("Unknown · mock provider")).toBeVisible();
+  await expect(
+    page
+      .locator("#wallets .section-heading")
+      .getByRole("link", { name: "Example Research" }),
+  ).toHaveAttribute("href", "https://example.com/research/synthetic-horizon");
+  const walletEvidenceLinks = page
+    .locator("#wallets tbody")
+    .getByRole("link", { name: "Example Research" });
+  await expect(walletEvidenceLinks).toHaveCount(2);
+  for (const link of await walletEvidenceLinks.all()) {
+    await expect(link).toHaveAttribute(
+      "href",
+      "https://example.com/research/synthetic-horizon",
+    );
+  }
+  await expect(
+    page
+      .locator("#funding .section-heading")
+      .getByRole("link", { name: "Example Research" }),
+  ).toHaveAttribute("href", "https://example.com/research/synthetic-horizon");
+
+  exposeMarketSource = false;
+  await page.reload();
+  await expect(page.getByTestId("market-observation")).toContainText(
+    "Unknown — missing evidence",
+  );
+  await expect(
+    page
+      .getByTestId("market-observation")
+      .getByRole("link", { name: "CoinGecko coins markets API observation" }),
+  ).toHaveCount(0);
 });
 
 test("filters the claim-level source registry", async ({ page }) => {
@@ -345,7 +445,7 @@ test("publishes the dated research universe separately", async ({ page }) => {
   await page.goto("/research/");
 
   await expect(
-    page.getByRole("heading", { name: "Founder research universe" }),
+    page.getByRole("heading", { name: "Founding-unit research universe" }),
   ).toBeVisible();
   await expect(page.getByText("30 candidates screened")).toBeVisible();
 

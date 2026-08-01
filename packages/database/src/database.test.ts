@@ -54,6 +54,30 @@ const scalarSafeReviewEvidenceMigrationUrl = new URL(
   "../../../supabase/migrations/202607300015_scalar_safe_review_evidence.sql",
   import.meta.url,
 );
+const rankingPublicEvidenceMigrationUrl = new URL(
+  "../../../supabase/migrations/202607300016_ranking_public_evidence.sql",
+  import.meta.url,
+);
+const fundingReviewEligibilityMigrationUrl = new URL(
+  "../../../supabase/migrations/202607310017_funding_review_eligibility.sql",
+  import.meta.url,
+);
+const marketObservationSourcesMigrationUrl = new URL(
+  "../../../supabase/migrations/202607310018_market_observation_sources.sql",
+  import.meta.url,
+);
+const sqlConfidenceEvidenceMigrationUrl = new URL(
+  "../../../supabase/migrations/202607310019_sql_confidence_evidence.sql",
+  import.meta.url,
+);
+const rankingIntegrityMigrationUrl = new URL(
+  "../../../supabase/migrations/202607310020_ranking_integrity.sql",
+  import.meta.url,
+);
+const sqlConfidenceEvidence = await readFile(
+  sqlConfidenceEvidenceMigrationUrl,
+  "utf8",
+);
 const seedUrl = new URL(
   "../../../supabase/tests/seed.synthetic.sql",
   import.meta.url,
@@ -70,6 +94,11 @@ const migrationSql = [
   await readFile(serviceRoleReadsMigrationUrl, "utf8"),
   await readFile(methodologyIntegrityMigrationUrl, "utf8"),
   await readFile(scalarSafeReviewEvidenceMigrationUrl, "utf8"),
+  await readFile(rankingPublicEvidenceMigrationUrl, "utf8"),
+  await readFile(fundingReviewEligibilityMigrationUrl, "utf8"),
+  await readFile(marketObservationSourcesMigrationUrl, "utf8"),
+  sqlConfidenceEvidence,
+  await readFile(rankingIntegrityMigrationUrl, "utf8"),
 ].join("\n");
 const seedSql = await readFile(seedUrl, "utf8");
 const productionDataDirectory = fileURLToPath(
@@ -85,6 +114,7 @@ const expectedTables = [
   "funding_rounds",
   "market_observations",
   "people",
+  "project_confidence_evidence",
   "project_founding_units",
   "project_scores",
   "projects",
@@ -143,6 +173,17 @@ afterEach(async () => {
 });
 
 describe("Phase 3 database", () => {
+  it("keeps SQL confidence weights and label boundaries aligned", () => {
+    expect(
+      [...sqlConfidenceEvidence.matchAll(/'maximum_score', (\d+)/g)].map(
+        ([, score]) => score,
+      ),
+    ).toEqual(["10", "20", "20", "20", "20", "10"]);
+    expect(sqlConfidenceEvidence).toMatch(
+      /when not confidence_complete or confidence_score < 40 then 'insufficient'[\s\S]*?when confidence_score < 65 then 'low'[\s\S]*?when confidence_score < 85 then 'medium'[\s\S]*?else 'high'/,
+    );
+  });
+
   it("keeps serialized JSON parameters text-typed before JSONB casts", async () => {
     const statements = createCuratedImportStatements(await loadCuratedData());
     const sql = statements.map(({ text }) => text).join("\n");
@@ -264,7 +305,7 @@ describe("Phase 3 database", () => {
         rank: null,
         score_usd: null,
         research_status: "Research in progress",
-        eligibility_status: "ineligible",
+        eligibility_status: "research_in_progress",
         reviewed_confidence: "insufficient",
         wallet_review_status: "reviewed_insufficient",
         funding_review_status: "reviewed_insufficient",
@@ -274,7 +315,7 @@ describe("Phase 3 database", () => {
         rank: null,
         score_usd: null,
         research_status: "Research in progress",
-        eligibility_status: "ineligible",
+        eligibility_status: "research_in_progress",
         reviewed_confidence: "insufficient",
         wallet_review_status: "reviewed_insufficient",
         funding_review_status: "reviewed_insufficient",
@@ -284,7 +325,7 @@ describe("Phase 3 database", () => {
         rank: null,
         score_usd: null,
         research_status: "Research in progress",
-        eligibility_status: "ineligible",
+        eligibility_status: "research_in_progress",
         reviewed_confidence: "insufficient",
         wallet_review_status: "reviewed_insufficient",
         funding_review_status: "reviewed_insufficient",
@@ -329,6 +370,66 @@ describe("Phase 3 database", () => {
         score_usd: null,
       },
     ]);
+  });
+
+  it("publishes only review evidence linked to its record", async () => {
+    const database = await createDatabase(true);
+    const unlinkedSourceId = "47777777-7777-4777-8777-777777777777";
+
+    await database.exec(`
+      insert into source_records (
+        id, title, url, publisher, source_type, accessed_at, description, status
+      ) values (
+        '${unlinkedSourceId}', 'Unlinked source', 'https://example.com/unlinked',
+        'Unlinked Publisher', 'official_documentation', now(),
+        'Must not be exposed by public evidence views', 'active'
+      );
+
+      update projects
+      set wallet_review_evidence_source_ids =
+            wallet_review_evidence_source_ids || '["${unlinkedSourceId}"]'::jsonb,
+          funding_review_evidence_source_ids =
+            funding_review_evidence_source_ids || '["${unlinkedSourceId}"]'::jsonb;
+
+      update tracked_wallets
+      set evidence_source_ids =
+        evidence_source_ids || '["${unlinkedSourceId}"]'::jsonb;
+    `);
+
+    type Evidence = {
+      id: string;
+      title: string;
+      url: string;
+      publisher: string;
+      sourceType: string;
+    };
+    const projects = await database.query<{
+      eligibility_status: string;
+      wallet_review_evidence: Evidence[];
+      funding_review_evidence: Evidence[];
+    }>(`
+      select eligibility_status, wallet_review_evidence, funding_review_evidence
+      from public_project_details
+    `);
+    const wallets = await database.query<{ review_evidence: Evidence[] }>(`
+      select review_evidence from public_wallet_evidence
+    `);
+    const expectedEvidence = expect.objectContaining({
+      id: "44444444-4444-4444-8444-444444444444",
+      title: "Synthetic Horizon fixture source",
+      url: "https://example.com/research/synthetic-horizon",
+      publisher: "Example Research",
+      sourceType: "official_documentation",
+    });
+
+    expect(projects.rows[0]?.eligibility_status).toBe("research_in_progress");
+    expect(projects.rows[0]?.wallet_review_evidence).toEqual([
+      expectedEvidence,
+    ]);
+    expect(projects.rows[0]?.funding_review_evidence).toEqual([
+      expectedEvidence,
+    ]);
+    expect(wallets.rows[0]?.review_evidence).toEqual([expectedEvidence]);
   });
 
   it("enforces provider health read and write privileges", async () => {
@@ -520,6 +621,316 @@ describe("Phase 3 database", () => {
   });
 });
 
+describe("Funding review ranking eligibility", () => {
+  async function prepareRankableInputs(database: PGlite): Promise<void> {
+    await database.exec(`
+      insert into market_observations (
+        asset_id, provider, observed_at, price_usd, circulating_supply, market_cap_usd
+      ) values (
+        '33333333-3333-4333-8333-333333333333', 'funding-regression',
+        now() - interval '1 minute', 3, 1000000, 3000000
+      );
+
+      insert into wallet_balance_observations (
+        tracked_wallet_id, asset_id, provider, observed_at, raw_balance, normalized_balance
+      ) values (
+        '55555555-5555-4555-8555-555555555555',
+        '33333333-3333-4333-8333-333333333333', 'funding-regression',
+        now() - interval '1 minute', 250000000000000000000, 250
+      );
+    `);
+  }
+
+  async function recalculate(database: PGlite) {
+    await database.exec("select recalculate_rankings('funding-regression')");
+    const result = await database.query<{
+      capital_raised_usd: string | null;
+      eligibility_status: "ranked" | "research_in_progress";
+      rank: number | null;
+    }>(`
+      select
+        project.capital_raised_usd::text,
+        project.eligibility_status,
+        unit.rank
+      from current_project_scores as project
+      join current_founding_unit_scores as unit
+        on unit.calculation_run_id = project.calculation_run_id
+      where project.project_id = '11111111-1111-4111-8111-111111111111'
+        and unit.founding_unit_id = '22222222-2222-4222-8222-222222222222'
+    `);
+    return result.rows[0];
+  }
+
+  it("blocks an unresolved excluded event despite approved project funding", async () => {
+    const database = await createDatabase(true);
+    await prepareRankableInputs(database);
+    await database.exec(`
+      update funding_rounds
+      set include_in_capital_deduction = false,
+          inclusion_reason = 'Excluded pending complete review.',
+          review_status = 'not_reviewed',
+          reviewer = null
+      where id = '66666666-6666-4666-8666-666666666666'
+    `);
+    const project = await database.query<{ funding_review_status: string }>(`
+      select funding_review_status
+      from projects
+      where id = '11111111-1111-4111-8111-111111111111'
+    `);
+
+    expect(project.rows[0]?.funding_review_status).toBe("approved_sufficient");
+    expect(await recalculate(database)).toEqual({
+      capital_raised_usd: null,
+      eligibility_status: "research_in_progress",
+      rank: null,
+    });
+  });
+
+  it("does not deduct a properly reviewed excluded event", async () => {
+    const database = await createDatabase(true);
+    await prepareRankableInputs(database);
+    await database.exec(`
+      update funding_rounds
+      set include_in_capital_deduction = false,
+          inclusion_reason = 'Reviewed and excluded from capital deduction.',
+          amount_usd_at_event = null,
+          amount_status = 'unknown',
+          usd_conversion_method = null,
+          usd_conversion_date = null
+      where id = '66666666-6666-4666-8666-666666666666'
+    `);
+
+    expect(await recalculate(database)).toEqual({
+      capital_raised_usd: "0.00000000",
+      eligibility_status: "ranked",
+      rank: 1,
+    });
+  });
+
+  it("deducts a properly reviewed included event exactly once", async () => {
+    const database = await createDatabase(true);
+    await prepareRankableInputs(database);
+
+    expect(await recalculate(database)).toEqual({
+      capital_raised_usd: "2500000.00000000",
+      eligibility_status: "ranked",
+      rank: 1,
+    });
+  });
+
+  it("does not deduct a duplicate funding event twice", async () => {
+    const database = await createDatabase(true);
+    await prepareRankableInputs(database);
+    await database.exec(`
+      insert into funding_rounds (
+        id, project_id, event_date, round_type, original_amount, original_currency,
+        amount_usd_at_event, amount_status, usd_conversion_method,
+        usd_conversion_date, include_in_capital_deduction, inclusion_reason,
+        status, reviewed_at, notes, deduplication_key, review_status, reviewer,
+        evidence_source_ids
+      )
+      select
+        '67676767-6767-4767-8767-676767676767', project_id, event_date,
+        round_type, original_amount, original_currency, amount_usd_at_event,
+        amount_status, usd_conversion_method, usd_conversion_date,
+        include_in_capital_deduction, inclusion_reason, status, reviewed_at,
+        notes, deduplication_key, review_status, reviewer, evidence_source_ids
+      from funding_rounds
+      where id = '66666666-6666-4666-8666-666666666666'
+      on conflict (project_id, deduplication_key) do nothing
+    `);
+    const count = await database.query<{ count: number }>(`
+      select count(*)::int as count
+      from funding_rounds
+      where project_id = '11111111-1111-4111-8111-111111111111'
+    `);
+
+    expect(count.rows[0]?.count).toBe(1);
+    expect(await recalculate(database)).toEqual({
+      capital_raised_usd: "2500000.00000000",
+      eligibility_status: "ranked",
+      rank: 1,
+    });
+  });
+
+  it("keeps rank null when funding review evidence is incomplete", async () => {
+    const database = await createDatabase(true);
+    await prepareRankableInputs(database);
+    await database.exec(`
+      delete from record_sources
+      where id = '70000000-0000-4000-8000-000000000005'
+    `);
+
+    expect(await recalculate(database)).toEqual({
+      capital_raised_usd: null,
+      eligibility_status: "research_in_progress",
+      rank: null,
+    });
+  });
+});
+
+describe("Ranking integrity", () => {
+  const projectId = "f1000000-0000-4000-8000-000000000001";
+  const individualUnitId = "f2000000-0000-4000-8000-000000000001";
+  const teamUnitId = "f2000000-0000-4000-8000-000000000002";
+  const secondTeamUnitId = "f2000000-0000-4000-8000-000000000003";
+
+  async function prepareIntegrityFixture(database: PGlite): Promise<void> {
+    await database.exec(`
+      insert into projects (
+        id, slug, name, description, project_type, calculation_category, status,
+        confidence_level, methodology_notes, website_url, research_reviewed_at
+      ) values (
+        '${projectId}', 'ranking-integrity-fixture', 'Ranking integrity fixture',
+        'Fixture for founding-unit integrity checks.', 'protocol', 'liquid_token',
+        'active', 'insufficient', 'Fixture only.', 'https://example.com', now()
+      );
+      insert into founding_units (
+        id, slug, display_name, description, entity_type, status, research_reviewed_at
+      ) values
+        ('${individualUnitId}', 'integrity-individual', 'Integrity individual', 'Fixture', 'individual', 'active', now()),
+        ('${teamUnitId}', 'integrity-team', 'Integrity team', 'Fixture', 'team', 'active', now()),
+        ('${secondTeamUnitId}', 'integrity-team-two', 'Integrity team two', 'Fixture', 'team', 'active', now());
+      insert into people (id, slug, display_name, status) values
+        ('f3000000-0000-4000-8000-000000000001', 'integrity-person', 'Integrity person', 'active');
+    `);
+  }
+
+  it("rejects multiple canonical founding units for one project", async () => {
+    const database = await createDatabase();
+    await prepareIntegrityFixture(database);
+
+    await database.exec(`
+      insert into project_founding_units (
+        project_id, founding_unit_id, attribution_fraction, attribution_method, is_canonical
+      ) values ('${projectId}', '${individualUnitId}', 1, 'documented_split', true);
+    `);
+
+    await expect(
+      database.exec(`
+        insert into project_founding_units (
+          project_id, founding_unit_id, attribution_fraction, attribution_method, is_canonical
+        ) values ('${projectId}', '${teamUnitId}', 0, 'documented_split', true);
+      `),
+    ).rejects.toThrow(/project_founding_units_one_canonical_per_project_idx/);
+  });
+
+  it("rejects a person assigned to individual and team founding units", async () => {
+    const database = await createDatabase();
+    await prepareIntegrityFixture(database);
+    await database.exec(`
+      insert into founding_unit_members (founding_unit_id, person_id) values
+        ('${individualUnitId}', 'f3000000-0000-4000-8000-000000000001'),
+        ('${teamUnitId}', 'f3000000-0000-4000-8000-000000000001');
+    `);
+
+    await expect(
+      database.exec(`
+        begin;
+        insert into project_founding_units (
+          project_id, founding_unit_id, attribution_fraction, attribution_method
+        ) values
+          ('${projectId}', '${individualUnitId}', 0.5, 'documented_split'),
+          ('${projectId}', '${teamUnitId}', 0.5, 'documented_split');
+        commit;
+      `),
+    ).rejects.toThrow(/allocated individually and through a team/);
+  });
+
+  it("accepts complete documented founding-unit splits", async () => {
+    const database = await createDatabase();
+    await prepareIntegrityFixture(database);
+
+    await database.exec(`
+      begin;
+      insert into project_founding_units (
+        project_id, founding_unit_id, attribution_fraction, attribution_method
+      ) values
+        ('${projectId}', '${teamUnitId}', 0.6, 'documented_split'),
+        ('${projectId}', '${secondTeamUnitId}', 0.4, 'documented_split');
+      commit;
+    `);
+
+    const result = await database.query<{ allocation: string }>(`
+      select sum(attribution_fraction)::text as allocation
+      from project_founding_units
+      where project_id = '${projectId}'
+    `);
+    expect(result.rows[0]?.allocation).toBe("1.000000000000000000");
+  });
+
+  it("rejects incomplete founding-unit allocations", async () => {
+    const database = await createDatabase();
+    await prepareIntegrityFixture(database);
+
+    await expect(
+      database.exec(`
+        begin;
+        insert into project_founding_units (
+          project_id, founding_unit_id, attribution_fraction, attribution_method
+        ) values
+          ('${projectId}', '${teamUnitId}', 0.6, 'documented_split'),
+          ('${projectId}', '${secondTeamUnitId}', 0.3, 'documented_split');
+        commit;
+      `),
+    ).rejects.toThrow(/allocations must sum to 1/);
+  });
+
+  it("does not let manual high confidence bypass calculated evidence", async () => {
+    const database = await createDatabase();
+    await database.exec(`
+      insert into projects (
+        id, slug, name, description, project_type, calculation_category, status,
+        confidence_level, methodology_notes, website_url, research_reviewed_at
+      ) values (
+        '${projectId}', 'manual-high-fixture', 'Manual high fixture', 'Fixture',
+        'protocol', 'liquid_token', 'active', 'high', 'Fixture only.',
+        'https://example.com', now()
+      );
+      insert into assets (id, project_id, asset_type, symbol, name, is_primary) values
+        ('f4000000-0000-4000-8000-000000000001', '${projectId}', 'token', 'MHI', 'Manual high', true);
+      insert into calculation_runs (id, trigger_type, methodology_version, status, completed_at) values
+        ('f5000000-0000-4000-8000-000000000001', 'manual', 'fixture', 'completed', now());
+      insert into project_scores (
+        calculation_run_id, project_id, asset_id, score_usd, confidence_label,
+        data_freshness, calculation_breakdown
+      ) values (
+        'f5000000-0000-4000-8000-000000000001', '${projectId}',
+        'f4000000-0000-4000-8000-000000000001', 100, 'insufficient', '{}'::jsonb,
+        '{"confidence":{"score":70,"complete":false,"components":[{"component":"founder_wallet_coverage","maximumScore":20,"score":null,"complete":false}]}}'::jsonb
+      );
+    `);
+
+    const result = await database.query<{
+      reviewed_confidence: string;
+      calculated_confidence_label: string;
+      confidence_total: string;
+      confidence_components: unknown;
+      confidence_explanation: string;
+    }>(`
+      select reviewed_confidence, calculated_confidence_label, confidence_total::text,
+        confidence_components, confidence_explanation
+      from public_project_details
+      where id = '${projectId}'
+    `);
+
+    expect(result.rows[0]).toMatchObject({
+      reviewed_confidence: "insufficient",
+      calculated_confidence_label: "insufficient",
+      confidence_total: "70",
+    });
+    expect(result.rows[0]?.confidence_components).toEqual([
+      {
+        component: "founder_wallet_coverage",
+        complete: false,
+        maximumScore: 20,
+        score: null,
+      },
+    ]);
+    expect(result.rows[0]?.confidence_explanation).toContain("incomplete");
+  });
+});
+
 describe("Phase 4 market sync", () => {
   async function prepareWalletObservation(database: PGlite): Promise<void> {
     await database.exec(`
@@ -551,13 +962,23 @@ describe("Phase 4 market sync", () => {
     ]);
   }
 
-  function observation(priceUsd: string, observedAt: Date) {
+  function observation(
+    priceUsd: string,
+    observedAt: Date,
+    options: {
+      fetchedAt?: Date;
+      sourceUrl?: string | null;
+      sourceDescription?: string | null;
+    } = {},
+  ) {
     return {
       assetId: "33333333-3333-4333-8333-333333333333",
       coingeckoId: "synthetic-horizon-token",
       provider: "coingecko",
       observedAt: observedAt.toISOString(),
-      fetchedAt: new Date().toISOString(),
+      fetchedAt: (options.fetchedAt ?? new Date()).toISOString(),
+      sourceUrl: options.sourceUrl,
+      sourceDescription: options.sourceDescription,
       priceUsd,
       circulatingSupply: "1000000",
       marketCapUsd: String(Number(priceUsd) * 1_000_000),
@@ -585,6 +1006,209 @@ describe("Phase 4 market sync", () => {
     expect(result.rows[0]?.calculation_run_id).not.toBeNull();
     expect(score.rows).toEqual([
       { score_usd: "499437.50000000", run_status: "completed" },
+    ]);
+  });
+
+  it("derives confidence and eligibility from stored SQL evidence", async () => {
+    const database = await createDatabase(true);
+    await prepareWalletObservation(database);
+    await database.exec(`
+      update projects
+      set confidence_level = 'insufficient'
+      where id = '11111111-1111-4111-8111-111111111111'
+    `);
+
+    await ingest(database, [observation("3", new Date(Date.now() - 60_000))]);
+
+    const score = await database.query<{
+      eligibility_status: string;
+      confidence_label: string;
+      confidence_score: string;
+      confidence_complete: boolean;
+    }>(`
+      select
+        eligibility_status,
+        confidence_label,
+        (calculation_breakdown -> 'confidence' ->> 'score') as confidence_score,
+        (calculation_breakdown -> 'confidence' ->> 'complete')::boolean
+          as confidence_complete
+      from current_project_scores
+    `);
+    const evidence = await database.query<{
+      component: string;
+      maximum_score: string;
+      score: string;
+      complete: boolean;
+    }>(`
+      select component, maximum_score::text, score::text, complete
+      from project_confidence_evidence
+      order by component
+    `);
+
+    expect(score.rows).toEqual([
+      {
+        eligibility_status: "ranked",
+        confidence_label: "high",
+        confidence_score: "100",
+        confidence_complete: true,
+      },
+    ]);
+    expect(evidence.rows).toEqual([
+      {
+        component: "circulation_treatment",
+        maximum_score: "20.00",
+        score: "20.00",
+        complete: true,
+      },
+      {
+        component: "founder_identity_evidence",
+        maximum_score: "10.00",
+        score: "10.00",
+        complete: true,
+      },
+      {
+        component: "founder_wallet_coverage",
+        maximum_score: "20.00",
+        score: "20.00",
+        complete: true,
+      },
+      {
+        component: "funding_completeness",
+        maximum_score: "20.00",
+        score: "20.00",
+        complete: true,
+      },
+      {
+        component: "market_reliability",
+        maximum_score: "10.00",
+        score: "10.00",
+        complete: true,
+      },
+      {
+        component: "team_foundation_treasury_coverage",
+        maximum_score: "20.00",
+        score: "20.00",
+        complete: true,
+      },
+    ]);
+  });
+
+  it("retains and publicly exposes the linked market source and timestamps", async () => {
+    const database = await createDatabase(true);
+    await prepareWalletObservation(database);
+    const observedAt = new Date(Date.now() - 60_000);
+    const fetchedAt = new Date(observedAt.getTime() + 15_000);
+    const sourceUrl =
+      "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=synthetic-horizon-token&precision=full";
+    const sourceDescription = "CoinGecko coins markets API observation";
+
+    await ingest(database, [
+      observation("3", observedAt, {
+        fetchedAt,
+        sourceUrl,
+        sourceDescription,
+      }),
+    ]);
+
+    const result = await database.query<{
+      observation_id: string;
+      project_observation_id: string;
+      wallet_observation_id: string;
+      source_url: string;
+      source_description: string;
+      observed_at_matches: boolean;
+      fetched_at_matches: boolean;
+      project_source_url: string;
+      project_source_description: string;
+      project_timestamps_match: boolean;
+      wallet_source_url: string;
+      wallet_source_description: string;
+      wallet_timestamps_match: boolean;
+    }>(`
+      select
+        observations.id::text as observation_id,
+        details.market_observation_id::text as project_observation_id,
+        wallet.market_observation_id::text as wallet_observation_id,
+        observations.source_url,
+        observations.source_description,
+        observations.observed_at = '${observedAt.toISOString()}'::timestamptz as observed_at_matches,
+        observations.fetched_at = '${fetchedAt.toISOString()}'::timestamptz as fetched_at_matches,
+        details.market_source_url as project_source_url,
+        details.market_source_description as project_source_description,
+        details.market_observed_at = observations.observed_at
+          and details.market_fetched_at = observations.fetched_at as project_timestamps_match,
+        wallet.market_source_url as wallet_source_url,
+        wallet.market_source_description as wallet_source_description,
+        wallet.market_observed_at = observations.observed_at
+          and wallet.market_fetched_at = observations.fetched_at as wallet_timestamps_match
+      from market_observations observations
+      join public_project_details details
+        on details.market_observation_id = observations.id
+      join public_wallet_evidence wallet
+        on wallet.market_observation_id = observations.id
+    `);
+
+    expect(result.rows).toEqual([
+      {
+        observation_id: result.rows[0]?.observation_id,
+        project_observation_id: result.rows[0]?.observation_id,
+        wallet_observation_id: result.rows[0]?.observation_id,
+        source_url: sourceUrl,
+        source_description: sourceDescription,
+        observed_at_matches: true,
+        fetched_at_matches: true,
+        project_source_url: sourceUrl,
+        project_source_description: sourceDescription,
+        project_timestamps_match: true,
+        wallet_source_url: sourceUrl,
+        wallet_source_description: sourceDescription,
+        wallet_timestamps_match: true,
+      },
+    ]);
+  });
+
+  it("preserves an explicit null market source state", async () => {
+    const database = await createDatabase(true);
+    await prepareWalletObservation(database);
+
+    await ingest(database, [
+      observation("3", new Date(Date.now() - 60_000), {
+        sourceUrl: null,
+        sourceDescription: null,
+      }),
+    ]);
+
+    const result = await database.query<{
+      source_url: string | null;
+      source_description: string | null;
+      project_source_url: string | null;
+      project_source_description: string | null;
+      wallet_source_url: string | null;
+      wallet_source_description: string | null;
+    }>(`
+      select
+        observations.source_url,
+        observations.source_description,
+        details.market_source_url as project_source_url,
+        details.market_source_description as project_source_description,
+        wallet.market_source_url as wallet_source_url,
+        wallet.market_source_description as wallet_source_description
+      from market_observations observations
+      join public_project_details details
+        on details.market_observation_id = observations.id
+      join public_wallet_evidence wallet
+        on wallet.market_observation_id = observations.id
+    `);
+
+    expect(result.rows).toEqual([
+      {
+        source_url: null,
+        source_description: null,
+        project_source_url: null,
+        project_source_description: null,
+        wallet_source_url: null,
+        wallet_source_description: null,
+      },
     ]);
   });
 

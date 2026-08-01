@@ -22,6 +22,8 @@ export const PROJECT_SCORE_GOLDEN_FIXTURES: ProjectScoreGoldenFixture[] = [
       priceUsd: "20",
       circulatingSupply: "500000000",
       providerMarketCapUsd: "10000000000",
+      walletReviewStatus: "approved_sufficient",
+      fundingReviewStatus: "approved_sufficient",
       wallets: [
         {
           walletId: "wallet-partial",
@@ -52,6 +54,7 @@ export const PROJECT_SCORE_GOLDEN_FIXTURES: ProjectScoreGoldenFixture[] = [
           deduplicationKey: "project-positive:seed",
           amountUsdAtEvent: "400000000",
           includeInCapitalDeduction: true,
+          inclusionReason: "Reviewed and included.",
           reviewStatus: "approved_sufficient",
           evidenceComplete: true,
         },
@@ -73,6 +76,8 @@ export const PROJECT_SCORE_GOLDEN_FIXTURES: ProjectScoreGoldenFixture[] = [
       assetId: "asset-negative",
       priceUsd: "2",
       circulatingSupply: "100000000",
+      walletReviewStatus: "approved_sufficient",
+      fundingReviewStatus: "approved_sufficient",
       wallets: [
         {
           walletId: "wallet-negative",
@@ -92,6 +97,7 @@ export const PROJECT_SCORE_GOLDEN_FIXTURES: ProjectScoreGoldenFixture[] = [
           deduplicationKey: "project-negative:round-negative",
           amountUsdAtEvent: "350000000",
           includeInCapitalDeduction: true,
+          inclusionReason: "Reviewed and included.",
           reviewStatus: "approved_sufficient",
           evidenceComplete: true,
         },
@@ -113,6 +119,8 @@ export const PROJECT_SCORE_GOLDEN_FIXTURES: ProjectScoreGoldenFixture[] = [
       assetId: "asset-unknown-circulation",
       priceUsd: "1",
       circulatingSupply: "1000",
+      walletReviewStatus: "approved_sufficient",
+      fundingReviewStatus: "approved_sufficient",
       wallets: [
         {
           walletId: "wallet-unknown-circulation",
@@ -148,6 +156,8 @@ export const PROJECT_SCORE_GOLDEN_FIXTURES: ProjectScoreGoldenFixture[] = [
       assetId: "asset-unknown-funding",
       priceUsd: "5",
       circulatingSupply: "1000",
+      walletReviewStatus: "approved_sufficient",
+      fundingReviewStatus: "in_progress",
       wallets: [],
       fundingRounds: [
         {
@@ -155,6 +165,7 @@ export const PROJECT_SCORE_GOLDEN_FIXTURES: ProjectScoreGoldenFixture[] = [
           deduplicationKey: "project-unknown-funding:round-known",
           amountUsdAtEvent: "100",
           includeInCapitalDeduction: true,
+          inclusionReason: "Reviewed and included.",
           reviewStatus: "approved_sufficient",
           evidenceComplete: true,
         },
@@ -163,6 +174,7 @@ export const PROJECT_SCORE_GOLDEN_FIXTURES: ProjectScoreGoldenFixture[] = [
           deduplicationKey: "project-unknown-funding:round-unknown",
           amountUsdAtEvent: null,
           includeInCapitalDeduction: true,
+          inclusionReason: "Reviewed and included.",
           reviewStatus: "in_progress",
           evidenceComplete: false,
         },
@@ -174,7 +186,7 @@ export const PROJECT_SCORE_GOLDEN_FIXTURES: ProjectScoreGoldenFixture[] = [
       qualifyingCapitalUsd: null,
       outsideHolderSupply: null,
       scoreUsd: null,
-      warningCodes: ["FUNDING_DATA_INCOMPLETE", "FUNDING_REVIEW_INCOMPLETE"],
+      warningCodes: ["FUNDING_REVIEW_INCOMPLETE", "FUNDING_DATA_INCOMPLETE"],
     },
   },
 ];

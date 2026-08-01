@@ -108,6 +108,10 @@ Deno.serve(async (request) => {
     mappingsUrl.searchParams.set("tracked_wallets.status", "eq.active");
     mappingsUrl.searchParams.set("tracked_wallets.affects_score", "eq.true");
     mappingsUrl.searchParams.set(
+      "tracked_wallets.review_status",
+      "eq.approved_sufficient",
+    );
+    mappingsUrl.searchParams.set(
       "tracked_wallets.chain_code",
       "in.(ethereum,solana)",
     );

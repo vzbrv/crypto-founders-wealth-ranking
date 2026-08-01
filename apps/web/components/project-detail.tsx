@@ -14,14 +14,20 @@ interface ApiProjectDetail {
   score_usd?: number | string | null;
   confidence_label?: string | null;
   reviewed_confidence?: string | null;
+  calculated_confidence_label?: string | null;
+  confidence_total?: number | string | null;
+  confidence_components?: unknown;
+  confidence_explanation?: string | null;
   eligibility_status?: "ranked" | "research_in_progress" | null;
   ineligibility_reasons?: unknown;
   wallet_review_status?: string | null;
-  wallet_reviewer?: string | null;
-  wallet_reviewed_at?: string | null;
+  wallet_review_reviewer?: string | null;
+  wallet_review_reviewed_at?: string | null;
+  wallet_review_evidence?: unknown;
   funding_review_status?: string | null;
-  funding_reviewer?: string | null;
-  funding_reviewed_at?: string | null;
+  funding_review_reviewer?: string | null;
+  funding_review_reviewed_at?: string | null;
+  funding_review_evidence?: unknown;
   price_usd?: number | string | null;
   circulating_supply?: number | string | null;
   excluded_supply?: number | string | null;
@@ -31,6 +37,13 @@ interface ApiProjectDetail {
   capital_raised_usd?: number | string | null;
   data_freshness?: Record<string, unknown> | null;
   calculated_at?: string | null;
+  market_observation_id?: string | null;
+  market_provider?: string | null;
+  market_source_url?: string | null;
+  market_source_description?: string | null;
+  market_observed_at?: string | null;
+  market_fetched_at?: string | null;
+  market_freshness_status?: "current" | "stale" | "unknown" | null;
 }
 
 interface ApiWalletEvidence {
@@ -44,6 +57,21 @@ interface ApiWalletEvidence {
   reviewer?: string | null;
   reviewed_at?: string | null;
   evidence_source_ids?: unknown;
+  review_evidence?: unknown;
+  market_observation_id?: string | null;
+  market_provider?: string | null;
+  market_source_url?: string | null;
+  market_source_description?: string | null;
+  market_observed_at?: string | null;
+  market_fetched_at?: string | null;
+  market_freshness_status?: "current" | "stale" | "unknown" | null;
+}
+
+interface ReviewEvidence {
+  id: string;
+  title: string;
+  url: string;
+  publisher: string;
 }
 
 interface ApiLeaderboardRow {
@@ -56,10 +84,38 @@ interface ApiLeaderboardRow {
   project_breakdown: unknown;
 }
 
+interface ConfidenceComponent {
+  component: string;
+  maximumScore: number | null;
+  score: number | null;
+  complete: boolean;
+}
+
 function numberOrNull(value: unknown): number | null {
   if (value === null || value === undefined || value === "") return null;
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : null;
+}
+
+function confidenceComponents(value: unknown): ConfidenceComponent[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((item) => {
+    if (!item || typeof item !== "object") return [];
+    const component = item as Record<string, unknown>;
+    if (typeof component.component !== "string") return [];
+    return [
+      {
+        component: component.component,
+        maximumScore: numberOrNull(component.maximumScore),
+        score: numberOrNull(component.score),
+        complete: component.complete === true,
+      },
+    ];
+  });
+}
+
+function confidenceComponentName(component: string): string {
+  return component.replace(/_/g, " ");
 }
 
 function strings(value: unknown): string[] {
@@ -69,7 +125,7 @@ function strings(value: unknown): string[] {
 }
 
 function money(value: number | null): string {
-  if (value === null) return "Awaiting API observation";
+  if (value === null) return "Unknown";
   return new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: "USD",
@@ -78,7 +134,7 @@ function money(value: number | null): string {
 }
 
 function amount(value: number | null): string {
-  if (value === null) return "Awaiting API observation";
+  if (value === null) return "Unknown";
   return new Intl.NumberFormat("en-US", { maximumFractionDigits: 6 }).format(
     value,
   );
@@ -90,7 +146,31 @@ function date(value: string | null | undefined): string {
         dateStyle: "medium",
         timeStyle: "short",
       }).format(new Date(value))
-    : "Not observed";
+    : "Unknown";
+}
+
+function reviewEvidence(value: unknown): ReviewEvidence[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((item) => {
+    if (!item || typeof item !== "object") return [];
+    const source = item as Record<string, unknown>;
+    if (
+      typeof source.id !== "string" ||
+      typeof source.title !== "string" ||
+      typeof source.url !== "string" ||
+      typeof source.publisher !== "string"
+    ) {
+      return [];
+    }
+    return [
+      {
+        id: source.id,
+        title: source.title,
+        url: source.url,
+        publisher: source.publisher,
+      },
+    ];
+  });
 }
 
 function claimFor(claims: SourceClaim[], recordId: string, field?: string) {
@@ -105,7 +185,25 @@ function SourceLink({ claim }: { claim: SourceClaim | undefined }) {
       {claim.source.publisher}
     </a>
   ) : (
-    <span className="warning-text">Source missing</span>
+    <span className="warning-text">Unknown — missing evidence</span>
+  );
+}
+
+function ReviewEvidenceLinks({ value }: { value: unknown }) {
+  const sources = reviewEvidence(value);
+  return sources.length > 0 ? (
+    <>
+      {sources.map((source, index) => (
+        <span key={source.id}>
+          {index > 0 ? ", " : ""}
+          <a href={source.url} rel="noreferrer" target="_blank">
+            {source.publisher}
+          </a>
+        </span>
+      ))}
+    </>
+  ) : (
+    <span className="warning-text">Unknown — missing evidence</span>
   );
 }
 
@@ -165,16 +263,18 @@ export function ProjectDetail({ evidence }: { evidence: ProjectEvidence }) {
     ])
       .then(([details, walletRows, leaderboard]) => {
         const ranking = leaderboardMatch(leaderboard, evidence.project.id);
+        const calculatedConfidenceLabel =
+          details[0]?.calculated_confidence_label ??
+          details[0]?.confidence_label ??
+          ranking?.confidence_label ??
+          "insufficient";
         setDetail({
           ...(details[0] ?? {}),
           rank: ranking?.rank ?? null,
           score_usd: ranking?.score_usd ?? details[0]?.score_usd ?? null,
-          confidence_label:
-            ranking?.confidence_label ?? evidence.project.confidenceLevel,
-          reviewed_confidence:
-            ranking?.reviewed_confidence ??
-            details[0]?.reviewed_confidence ??
-            null,
+          confidence_label: calculatedConfidenceLabel,
+          calculated_confidence_label: calculatedConfidenceLabel,
+          reviewed_confidence: calculatedConfidenceLabel,
           eligibility_status:
             ranking?.eligibility_status ??
             details[0]?.eligibility_status ??
@@ -193,11 +293,7 @@ export function ProjectDetail({ evidence }: { evidence: ProjectEvidence }) {
             : "Live observations unavailable",
         );
       });
-  }, [
-    evidence.project.confidenceLevel,
-    evidence.project.id,
-    evidence.project.slug,
-  ]);
+  }, [evidence.project.id, evidence.project.slug]);
 
   const values = useMemo(() => {
     const marketCap = numberOrNull(detail?.market_cap_usd);
@@ -208,13 +304,18 @@ export function ProjectDetail({ evidence }: { evidence: ProjectEvidence }) {
       excluded,
       capital,
       score:
-        marketCap !== null && excluded !== null && capital !== null
+        detail?.eligibility_status === "ranked" &&
+        marketCap !== null &&
+        excluded !== null &&
+        capital !== null
           ? calculateScoreBreakdown({
               marketCapUsd: marketCap,
               excludedValueUsd: excluded,
               capitalRaisedUsd: capital,
             })
-          : numberOrNull(detail?.score_usd),
+          : detail?.eligibility_status === "ranked"
+            ? numberOrNull(detail?.score_usd)
+            : null,
     };
   }, [detail]);
 
@@ -244,6 +345,12 @@ export function ProjectDetail({ evidence }: { evidence: ProjectEvidence }) {
       ),
     evidence.project.methodologyNotes,
   ].filter((item): item is string => Boolean(item));
+  const confidenceRows = confidenceComponents(detail?.confidence_components);
+  const confidenceTotal = numberOrNull(detail?.confidence_total);
+  const confidenceLabel =
+    detail?.calculated_confidence_label ??
+    detail?.confidence_label ??
+    "insufficient";
 
   return (
     <main className="detail-page" id="main-content" tabIndex={-1}>
@@ -265,17 +372,10 @@ export function ProjectDetail({ evidence }: { evidence: ProjectEvidence }) {
           <div>
             <span>Estimated outside-holder token value</span>
             <strong>{money(values.score)}</strong>
-            {detail?.rank === null && values.score !== null ? (
-              <small>Provisional calculation · unranked</small>
-            ) : null}
           </div>
           <div>
             <span>Confidence</span>
-            <strong>
-              {detail?.reviewed_confidence ??
-                detail?.confidence_label ??
-                evidence.project.confidenceLevel}
-            </strong>
+            <strong>{confidenceLabel}</strong>
           </div>
         </div>
       </header>
@@ -298,15 +398,44 @@ export function ProjectDetail({ evidence }: { evidence: ProjectEvidence }) {
           outside capital). It is not personal wealth.
         </p>
         <div className="formula-grid" id="market-data">
+          <div
+            data-testid="market-observation"
+            data-market-observation-id={
+              detail?.market_observation_id ?? undefined
+            }
+          >
+            <span>Market observation</span>
+            <strong>
+              {detail?.market_source_url ? (
+                <a
+                  href={detail.market_source_url}
+                  rel="noreferrer"
+                  target="_blank"
+                >
+                  {detail.market_source_description ??
+                    detail.market_provider ??
+                    "Market data source"}
+                </a>
+              ) : (
+                <span className="warning-text">Unknown — missing evidence</span>
+              )}
+            </strong>
+            <small>
+              Observation {detail?.market_observation_id ?? "Unknown"} ·
+              Observed {date(detail?.market_observed_at)} · Fetched{" "}
+              {date(detail?.market_fetched_at)} ·{" "}
+              {detail?.market_freshness_status ?? "unknown"}
+            </small>
+          </div>
           <div>
             <span>Price</span>
             <strong>{money(numberOrNull(detail?.price_usd))}</strong>
-            <small>API observation</small>
+            <small>Linked market observation</small>
           </div>
           <div>
             <span>Circulating supply</span>
             <strong>{amount(numberOrNull(detail?.circulating_supply))}</strong>
-            <small>API observation</small>
+            <small>Linked market observation</small>
           </div>
           <div>
             <span>Excluded supply</span>
@@ -339,17 +468,96 @@ export function ProjectDetail({ evidence }: { evidence: ProjectEvidence }) {
             <span>Estimated outside-holder token value</span>
             <strong>{money(values.score)}</strong>
             <small>
-              {detail?.rank === null ? "Provisional · unranked" : "Ranked"}
+              {detail?.eligibility_status === "ranked"
+                ? "Ranked"
+                : "Research in progress"}
             </small>
           </div>
         </div>
-        <p className="equation" data-testid="score-equation">
+        <p
+          className="equation"
+          data-testid="score-equation"
+          data-market-observation-id={
+            detail?.market_observation_id ?? undefined
+          }
+        >
           {values.marketCap === null ||
           values.excluded === null ||
           values.capital === null
-            ? "The full numeric equation appears when canonical market and wallet observations are available."
+            ? "The full numeric equation appears when published market and wallet observations are available."
             : `max(0, ${money(values.marketCap)} − ${money(values.excluded)} − ${money(values.capital)}) = ${money(values.score)}`}
         </p>
+      </section>
+
+      <section
+        className="panel"
+        id="confidence"
+        aria-labelledby="confidence-heading"
+      >
+        <div className="section-heading">
+          <div>
+            <p className="eyebrow">Calculated from stored evidence</p>
+            <h2 id="confidence-heading">Confidence explanation</h2>
+          </div>
+        </div>
+        <div className="formula-grid">
+          <div>
+            <span>Calculated label</span>
+            <strong>{confidenceLabel}</strong>
+            <small>Used for ranking eligibility</small>
+          </div>
+          <div>
+            <span>Total</span>
+            <strong>
+              {confidenceTotal === null
+                ? "Unavailable"
+                : `${confidenceTotal.toFixed(2)} / 100`}
+            </strong>
+            <small>Required evidence components</small>
+          </div>
+        </div>
+        <p>
+          {detail?.confidence_explanation ??
+            "Calculated confidence is unavailable until a current calculation is published."}
+        </p>
+        <div className="table-shell evidence-shell">
+          <table className="evidence-table">
+            <thead>
+              <tr>
+                <th>Component</th>
+                <th>Score</th>
+                <th>Maximum</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {confidenceRows.length > 0 ? (
+                confidenceRows.map((component) => (
+                  <tr key={component.component}>
+                    <td>{confidenceComponentName(component.component)}</td>
+                    <td>
+                      {component.score === null
+                        ? "Missing"
+                        : component.score.toFixed(2)}
+                    </td>
+                    <td>
+                      {component.maximumScore === null
+                        ? "Unknown"
+                        : component.maximumScore.toFixed(2)}
+                    </td>
+                    <td>{component.complete ? "Complete" : "Incomplete"}</td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={4}>
+                    No current confidence evidence is published.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </section>
 
       <section className="panel" id="wallets" aria-labelledby="wallet-heading">
@@ -361,13 +569,17 @@ export function ProjectDetail({ evidence }: { evidence: ProjectEvidence }) {
               Review:{" "}
               {detail?.wallet_review_status ??
                 evidence.project.walletReview.status}
-              {detail?.wallet_reviewer || evidence.project.walletReview.reviewer
-                ? ` · ${detail?.wallet_reviewer ?? evidence.project.walletReview.reviewer}`
+              {detail?.wallet_review_reviewer ||
+              evidence.project.walletReview.reviewer
+                ? ` · ${detail?.wallet_review_reviewer ?? evidence.project.walletReview.reviewer}`
                 : ""}
-              {detail?.wallet_reviewed_at ||
+              {detail?.wallet_review_reviewed_at ||
               evidence.project.walletReview.reviewedAt
-                ? ` · ${date(detail?.wallet_reviewed_at ?? evidence.project.walletReview.reviewedAt)}`
+                ? ` · ${date(detail?.wallet_review_reviewed_at ?? evidence.project.walletReview.reviewedAt)}`
                 : ""}
+              <br />
+              Review evidence:{" "}
+              <ReviewEvidenceLinks value={detail?.wallet_review_evidence} />
             </p>
           </div>
         </div>
@@ -430,6 +642,9 @@ export function ProjectDetail({ evidence }: { evidence: ProjectEvidence }) {
                           "ownership",
                         )}
                       />
+                      <br />
+                      Review evidence:{" "}
+                      <ReviewEvidenceLinks value={observed?.review_evidence} />
                       <small>
                         Reviewed {date(wallet.researchReviewedAt)}
                         <br />
@@ -453,14 +668,17 @@ export function ProjectDetail({ evidence }: { evidence: ProjectEvidence }) {
               Review:{" "}
               {detail?.funding_review_status ??
                 evidence.project.fundingReview.status}
-              {detail?.funding_reviewer ||
+              {detail?.funding_review_reviewer ||
               evidence.project.fundingReview.reviewer
-                ? ` · ${detail?.funding_reviewer ?? evidence.project.fundingReview.reviewer}`
+                ? ` · ${detail?.funding_review_reviewer ?? evidence.project.fundingReview.reviewer}`
                 : ""}
-              {detail?.funding_reviewed_at ||
+              {detail?.funding_review_reviewed_at ||
               evidence.project.fundingReview.reviewedAt
-                ? ` · ${date(detail?.funding_reviewed_at ?? evidence.project.fundingReview.reviewedAt)}`
+                ? ` · ${date(detail?.funding_review_reviewed_at ?? evidence.project.fundingReview.reviewedAt)}`
                 : ""}
+              <br />
+              Review evidence:{" "}
+              <ReviewEvidenceLinks value={detail?.funding_review_evidence} />
             </p>
           </div>
         </div>

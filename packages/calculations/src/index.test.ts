@@ -41,6 +41,7 @@ const funding = (
   deduplicationKey: input.fundingRoundId,
   amountUsdAtEvent: "1",
   includeInCapitalDeduction: true,
+  inclusionReason: "Reviewed and included.",
   reviewStatus: "approved_sufficient",
   evidenceComplete: true,
   ...input,
@@ -50,7 +51,7 @@ const ranking = (
   input: Partial<RankingInput> & Pick<RankingInput, "foundingUnitId">,
 ): RankingInput => ({
   scoreUsd: "1",
-  confidenceLabel: "medium",
+  calculatedConfidenceLabel: "medium",
   marketDataStatus: "recent_sourced",
   fundingReviewStatus: "approved_sufficient",
   walletReviewStatus: "approved_sufficient",
@@ -98,19 +99,22 @@ describe("wallet and supply deductions", () => {
   });
 
   it("sums only known deductions and exposes incompleteness", () => {
-    const result = calculateExcludedSupply([
-      wallet({
-        walletId: "known",
-        normalizedBalance: "10.5",
-        circulatingInclusionFraction: "0.5",
-      }),
-      wallet({
-        walletId: "unknown",
-        normalizedBalance: "7",
-        circulatingInclusionFraction: null,
-        balanceIncludedInCirculatingSupply: null,
-      }),
-    ]);
+    const result = calculateExcludedSupply(
+      [
+        wallet({
+          walletId: "known",
+          normalizedBalance: "10.5",
+          circulatingInclusionFraction: "0.5",
+        }),
+        wallet({
+          walletId: "unknown",
+          normalizedBalance: "7",
+          circulatingInclusionFraction: null,
+          balanceIncludedInCirculatingSupply: null,
+        }),
+      ],
+      "approved_sufficient",
+    );
 
     expect(result).toMatchObject({
       excludedSupply: null,
@@ -160,15 +164,19 @@ describe("wallet and supply deductions", () => {
 
 describe("qualifying capital", () => {
   it("accepts explicitly reviewed zero deductions", () => {
-    const wallets = calculateExcludedSupply([
-      wallet({ walletId: "reviewed-zero-wallet", normalizedBalance: "0" }),
-    ]);
-    const capital = calculateQualifyingCapital([
-      funding({
-        fundingRoundId: "reviewed-zero-funding",
-        amountUsdAtEvent: "0",
-      }),
-    ]);
+    const wallets = calculateExcludedSupply(
+      [wallet({ walletId: "reviewed-zero-wallet", normalizedBalance: "0" })],
+      "approved_sufficient",
+    );
+    const capital = calculateQualifyingCapital(
+      [
+        funding({
+          fundingRoundId: "reviewed-zero-funding",
+          amountUsdAtEvent: "0",
+        }),
+      ],
+      "approved_sufficient",
+    );
 
     expect(wallets).toMatchObject({
       excludedSupply: "0",
@@ -182,26 +190,30 @@ describe("qualifying capital", () => {
     });
   });
 
-  it("ignores explicitly excluded rounds", () => {
+  it("keeps unresolved excluded financing incomplete", () => {
     expect(
-      calculateQualifyingCapital([
-        funding({
-          fundingRoundId: "included",
-          amountUsdAtEvent: "12.3456789",
-        }),
-        funding({
-          fundingRoundId: "excluded",
-          amountUsdAtEvent: null,
-          includeInCapitalDeduction: false,
-          reviewStatus: "not_reviewed",
-          evidenceComplete: false,
-        }),
-      ]),
+      calculateQualifyingCapital(
+        [
+          funding({
+            fundingRoundId: "included",
+            amountUsdAtEvent: "12.3456789",
+          }),
+          funding({
+            fundingRoundId: "excluded",
+            amountUsdAtEvent: null,
+            includeInCapitalDeduction: false,
+            reviewStatus: "not_reviewed",
+            evidenceComplete: false,
+            inclusionReason: "Excluded pending review.",
+          }),
+        ],
+        "approved_sufficient",
+      ),
     ).toMatchObject({
-      qualifyingCapitalUsd: "12.34567890",
+      qualifyingCapitalUsd: null,
       knownQualifyingCapitalUsd: "12.34567890",
-      complete: true,
-      warnings: [],
+      complete: false,
+      warnings: [{ code: "FUNDING_REVIEW_INCOMPLETE" }],
     });
   });
 });
@@ -235,6 +247,8 @@ describe("project score safeguards", () => {
       assetId: "asset-over",
       priceUsd: "2",
       circulatingSupply: "10",
+      walletReviewStatus: "approved_sufficient",
+      fundingReviewStatus: "approved_sufficient",
       wallets: [
         wallet({
           walletId: "wallet-over",
@@ -304,47 +318,45 @@ describe("founding-unit aggregation", () => {
 });
 
 describe("confidence", () => {
-  const componentsFor = (founderIdentityEvidence: string) => ({
-    founderIdentityEvidence,
-    founderWalletCoverage: "20",
-    teamFoundationTreasuryCoverage: "20",
-    circulationTreatment: "20",
-    fundingCompleteness: "20",
-    marketReliability: "0",
-  });
-
   it.each([
-    ["5", "high", "85.00"],
-    ["4.99", "medium", "84.99"],
-    ["0", "medium", "80.00"],
-  ] as const)("labels score %s correctly", (identity, label, score) => {
-    expect(calculateConfidence(componentsFor(identity))).toMatchObject({
-      label,
-      score,
-    });
-  });
+    ["39", "insufficient", "9", "0", "0"],
+    ["40", "low", "10", "0", "0"],
+    ["64", "low", "20", "14", "0"],
+    ["65", "medium", "20", "15", "0"],
+    ["84", "medium", "20", "14", "20"],
+    ["85", "high", "20", "15", "20"],
+  ] as const)(
+    "labels score %s correctly",
+    (score, label, teamScore, circulationScore, fundingScore) => {
+      expect(
+        calculateConfidence({
+          founderIdentityEvidence: "10",
+          founderWalletCoverage: "20",
+          teamFoundationTreasuryCoverage: teamScore,
+          circulationTreatment: circulationScore,
+          fundingCompleteness: fundingScore,
+          marketReliability: "0",
+        }),
+      ).toMatchObject({ label, score: `${score}.00`, complete: true });
+    },
+  );
 
-  it("covers low and insufficient thresholds", () => {
+  it("does not assume missing evidence points or award a high label", () => {
     expect(
       calculateConfidence({
         founderIdentityEvidence: "10",
-        founderWalletCoverage: "10",
-        teamFoundationTreasuryCoverage: "10",
-        circulationTreatment: "10",
-        fundingCompleteness: "0",
-        marketReliability: "0",
-      }).label,
-    ).toBe("low");
-    expect(
-      calculateConfidence({
-        founderIdentityEvidence: "9.99",
-        founderWalletCoverage: "10",
-        teamFoundationTreasuryCoverage: "10",
-        circulationTreatment: "10",
-        fundingCompleteness: "0",
-        marketReliability: "0",
-      }).label,
-    ).toBe("insufficient");
+        founderWalletCoverage: null,
+        teamFoundationTreasuryCoverage: "20",
+        circulationTreatment: "20",
+        fundingCompleteness: "20",
+        marketReliability: "10",
+      }),
+    ).toMatchObject({
+      score: "80.00",
+      label: "insufficient",
+      complete: false,
+      missingComponents: ["founderWalletCoverage"],
+    });
   });
 });
 
@@ -359,14 +371,14 @@ describe("rankings", () => {
       ranking({
         foundingUnitId: "unit-a",
         scoreUsd: "10",
-        confidenceLabel: "high",
+        calculatedConfidenceLabel: "high",
         previousRank: 3,
       }),
       ranking({ foundingUnitId: "unit-zero", scoreUsd: "0" }),
       ranking({
         foundingUnitId: "unit-insufficient",
         scoreUsd: "100",
-        confidenceLabel: "insufficient",
+        calculatedConfidenceLabel: "insufficient",
       }),
       ranking({
         foundingUnitId: "unit-unavailable",
@@ -417,14 +429,35 @@ describe("rankings", () => {
       ],
     });
   });
+
+  it("does not use manual confidence to bypass calculated eligibility", () => {
+    const [result] = calculateRankings([
+      ranking({
+        foundingUnitId: "unit-manual-high",
+        scoreUsd: "100",
+        calculatedConfidenceLabel: "insufficient",
+        manualConfidenceLabel: "high",
+      }),
+    ]);
+
+    expect(result).toMatchObject({
+      rank: null,
+      status: "research",
+      eligibilityStatus: "ineligible",
+      ineligibilityReasons: ["confidence is insufficient"],
+    });
+  });
 });
 
 describe("deduplication safeguards", () => {
   it("blocks duplicate wallet deductions", () => {
-    const result = calculateExcludedSupply([
-      wallet({ walletId: "wallet-a", deduplicationKey: "same-address" }),
-      wallet({ walletId: "wallet-b", deduplicationKey: "same-address" }),
-    ]);
+    const result = calculateExcludedSupply(
+      [
+        wallet({ walletId: "wallet-a", deduplicationKey: "same-address" }),
+        wallet({ walletId: "wallet-b", deduplicationKey: "same-address" }),
+      ],
+      "approved_sufficient",
+    );
 
     expect(result.excludedSupply).toBeNull();
     expect(result.knownExcludedSupply).toBe("1");
@@ -434,10 +467,13 @@ describe("deduplication safeguards", () => {
   });
 
   it("blocks duplicate funding deductions", () => {
-    const result = calculateQualifyingCapital([
-      funding({ fundingRoundId: "round-a", deduplicationKey: "same-round" }),
-      funding({ fundingRoundId: "round-b", deduplicationKey: "same-round" }),
-    ]);
+    const result = calculateQualifyingCapital(
+      [
+        funding({ fundingRoundId: "round-a", deduplicationKey: "same-round" }),
+        funding({ fundingRoundId: "round-b", deduplicationKey: "same-round" }),
+      ],
+      "approved_sufficient",
+    );
 
     expect(result.qualifyingCapitalUsd).toBeNull();
     expect(result.knownQualifyingCapitalUsd).toBe("1.00000000");

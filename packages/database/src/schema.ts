@@ -120,6 +120,8 @@ export const projectFoundingUnits = pgTable(
       scale: 18,
     }).notNull(),
     attributionMethod: text("attribution_method").notNull(),
+    isCanonical: boolean("is_canonical").notNull().default(false),
+    allocationMethodology: text("allocation_methodology"),
   },
   (table) => [unique().on(table.projectId, table.foundingUnitId)],
 );
@@ -151,6 +153,8 @@ export const marketObservations = pgTable("market_observations", {
     .notNull()
     .references(() => assets.id),
   provider: text().notNull(),
+  sourceUrl: text("source_url"),
+  sourceDescription: text("source_description"),
   observedAt: timestamp("observed_at", { withTimezone: true }).notNull(),
   fetchedAt: timestamp("fetched_at", { withTimezone: true })
     .defaultNow()
@@ -186,6 +190,7 @@ export const trackedWallets = pgTable("tracked_wallets", {
   balanceIncludedInCirculatingSupply: boolean(
     "balance_included_in_circulating_supply",
   ),
+  circulatingInclusionExplanation: text("circulating_inclusion_explanation"),
   affectsScore: boolean("affects_score").notNull().default(true),
   deduplicationKey: text("deduplication_key").notNull(),
   reviewStatus: text("review_status").notNull(),
@@ -255,10 +260,13 @@ export const fundingRounds = pgTable("funding_rounds", {
   originalAmount: numeric("original_amount", { precision: 38, scale: 18 }),
   originalCurrency: text("original_currency"),
   amountUsdAtEvent: numeric("amount_usd_at_event", { precision: 38, scale: 8 }),
+  amountStatus: text("amount_status").notNull(),
   usdConversionMethod: text("usd_conversion_method"),
+  usdConversionDate: date("usd_conversion_date"),
   includeInCapitalDeduction: boolean("include_in_capital_deduction")
     .notNull()
     .default(true),
+  inclusionReason: text("inclusion_reason").notNull(),
   deduplicationKey: text("deduplication_key").notNull(),
   reviewStatus: text("review_status").notNull(),
   reviewer: text(),
@@ -359,6 +367,33 @@ export const projectScores = pgTable(
   },
   (table) => [
     unique().on(table.calculationRunId, table.projectId, table.assetId),
+  ],
+);
+
+export const projectConfidenceEvidence = pgTable(
+  "project_confidence_evidence",
+  {
+    id: bigserial({ mode: "number" }).primaryKey(),
+    calculationRunId: uuid("calculation_run_id")
+      .notNull()
+      .references(() => calculationRuns.id),
+    projectId: uuid("project_id")
+      .notNull()
+      .references(() => projects.id),
+    component: text().notNull(),
+    maximumScore: numeric("maximum_score", {
+      precision: 5,
+      scale: 2,
+    }).notNull(),
+    score: numeric({ precision: 5, scale: 2 }).notNull(),
+    complete: boolean().notNull(),
+    evidence: jsonb().notNull().default([]),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    unique().on(table.calculationRunId, table.projectId, table.component),
   ],
 );
 

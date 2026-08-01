@@ -6,10 +6,10 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     background_color: "#07100e",
     description:
-      "A transparent ranking of crypto founders and teams by estimated outside-holder wealth created.",
+      "A transparent ranking of crypto founding units by estimated outside-holder token value.",
     display: "standalone",
-    name: "Crypto Founders Wealth Index",
-    short_name: "Crypto Founders",
+    name: "Crypto Founding Units Index",
+    short_name: "Founding Units",
     start_url: "/",
     theme_color: "#07100e",
   };

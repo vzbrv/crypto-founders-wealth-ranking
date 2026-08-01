@@ -8,7 +8,7 @@ import { getAllSourceClaims } from "../../lib/transparency-data";
 
 export const metadata: Metadata = {
   title: "Source registry",
-  description: "Claim-level sources behind the Crypto Founders Wealth Ranking.",
+  description: "Claim-level sources behind the Crypto Founding Units Index.",
   alternates: { canonical: "/sources/" },
 };
 
@@ -35,11 +35,13 @@ export default async function SourcesPage() {
           <div className="section-heading compact">
             <div>
               <p className="eyebrow">Separate dated register</p>
-              <h2 id="research-sources-heading">Founder research references</h2>
+              <h2 id="research-sources-heading">
+                Founding-unit research references
+              </h2>
             </div>
             <p>
-              These {researchSources.length} sources support the founder
-              research universe. They are not canonical ranking inputs unless
+              These {researchSources.length} sources support the founding-unit
+              research universe. They are not published ranking inputs unless
               separately promoted through the publication gate.
             </p>
           </div>
