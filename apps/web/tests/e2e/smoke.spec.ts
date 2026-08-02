@@ -451,24 +451,15 @@ test("documents the public methodology", async ({ page }) => {
   ).toBeVisible();
 });
 
-test("publishes the dated research universe separately", async ({ page }) => {
-  await page.goto("/research/");
-
-  await expect(
-    page.getByRole("heading", { name: "Founding-unit research universe" }),
-  ).toBeVisible();
-  await expect(page.getByText("30 candidates screened")).toBeVisible();
-
-  await page.goto("/research/dogecoin/");
-  await expect(page.getByRole("heading", { name: "Dogecoin" })).toBeVisible();
-  await expect(
-    page.getByRole("heading", { name: "Evidence completeness" }),
-  ).toBeVisible();
-  await expect(
-    page.getByText("not a live ranking or personal-wealth claim", {
-      exact: false,
-    }),
-  ).toBeVisible();
+test("redirects removed research routes to sources", async ({ page }) => {
+  for (const path of ["/research", "/research/", "/research/dogecoin/"]) {
+    await page.goto(path);
+    await expect(page).toHaveURL(/\/sources\/$/);
+    await expect(page.getByRole("heading", { name: "Sources" })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Founding-unit research universe" }),
+    ).toHaveCount(0);
+  }
 });
 
 test("publishes unified founder calculations and sources separately", async ({

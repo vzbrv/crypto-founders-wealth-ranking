@@ -1,3 +1,6 @@
 /provisional / 301
 /provisional/ / 301
 /provisional/* /ranking/:splat 301
+/research /sources/ 301
+/research/ /sources/ 301
+/research/* /sources/ 301

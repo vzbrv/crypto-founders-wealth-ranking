@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import {
@@ -15,7 +14,6 @@ import {
   type RawLeaderboardRow,
   type RawProjectDetail,
 } from "../lib/ranking";
-import type { ResearchSnapshot } from "../lib/research-data";
 import { useLivePrices } from "../lib/use-live-prices";
 import { SiteNav } from "./site-nav";
 
@@ -195,73 +193,6 @@ function LeaderboardTable({
   );
 }
 
-function ResearchList({ entries }: { entries: RankingEntry[] }) {
-  if (!entries.length)
-    return <p className="empty">No research entries match these filters.</p>;
-  return (
-    <div className="research-grid">
-      {entries.map((entry) => (
-        <article className="research-card" key={entry.foundingUnitId}>
-          <div>
-            <p className="card-kicker">Research in progress</p>
-            <h3>{entry.displayName}</h3>
-            <p>
-              <ProjectNames entry={entry} />
-            </p>
-          </div>
-          <ConfidenceBadge value={entry.confidence} />
-          <p className="research-reason">
-            {entry.ineligibilityReasons.join(" ") ||
-              entry.warnings.join(" ") ||
-              "Required public inputs are incomplete."}
-          </p>
-        </article>
-      ))}
-    </div>
-  );
-}
-
-function researchMoney(value: string | null): string {
-  return value === null ? "Unknown" : money(Number(value));
-}
-
-function ResearchSnapshotList({ snapshot }: { snapshot: ResearchSnapshot }) {
-  return (
-    <>
-      <div className="research-grid">
-        {snapshot.candidates.slice(0, 6).map((candidate) => (
-          <article className="research-card" key={candidate.projectId}>
-            <div>
-              <p className="card-kicker">
-                Gross screen #{candidate.grossScreenRank ?? "—"}
-              </p>
-              <h3>
-                <Link href={`/research/${candidate.projectId}/`}>
-                  {candidate.project}
-                </Link>
-              </h3>
-              <p>{candidate.foundersTeam}</p>
-            </div>
-            <span className="badge">{candidate.publicationStatus}</span>
-            <p className="research-reason">
-              Research estimate:{" "}
-              <strong>
-                {researchMoney(candidate.provisionalOutsideWealthUsd)}
-              </strong>
-              . {candidate.missingEvidence.join(" ") || "Inputs complete."}
-            </p>
-          </article>
-        ))}
-      </div>
-      <p className="research-link">
-        <Link href="/research/">
-          View all {snapshot.totalCandidates} candidates and evidence →
-        </Link>
-      </p>
-    </>
-  );
-}
-
 async function loadRanking(): Promise<RankingEntry[]> {
   const baseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, "");
   const publicKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
@@ -287,11 +218,7 @@ async function loadRanking(): Promise<RankingEntry[]> {
   );
 }
 
-export function RankingDashboard({
-  researchSnapshot,
-}: {
-  researchSnapshot: ResearchSnapshot;
-}) {
+export function RankingDashboard() {
   const [entries, setEntries] = useState<RankingEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -329,10 +256,6 @@ export function RankingDashboard({
     [entries, query, confidence, project],
   );
   const ranked = filtered.filter(({ status }) => status === "ranked");
-  const research = filtered.filter(({ status }) => status === "research");
-  const hasCanonicalResearch = entries.some(
-    ({ status }) => status === "research",
-  );
   const rankedRef = useRef(ranked);
   const liveEstimatesRef = useRef(liveEstimates);
 
@@ -427,10 +350,6 @@ export function RankingDashboard({
           <div>
             <span>Ranked</span>
             <strong>{ranked.length}</strong>
-          </div>
-          <div>
-            <span>Research snapshot</span>
-            <strong>{researchSnapshot.totalCandidates}</strong>
           </div>
           <div>
             <span>Live price overlay</span>
@@ -528,26 +447,6 @@ export function RankingDashboard({
             liveEstimates={liveEstimates}
             sortEpoch={sortEpoch}
           />
-        ) : null}
-      </section>
-
-      <section className="research-section" aria-labelledby="research-heading">
-        <div className="section-heading compact">
-          <div>
-            <p className="eyebrow">Dated snapshot · Not part of the ranking</p>
-            <h2 id="research-heading">Founding-unit research universe</h2>
-          </div>
-          <p>
-            {researchSnapshot.snapshotDate} research inputs. Values are not live
-            observations and are excluded from the published leaderboard.
-          </p>
-        </div>
-        <ResearchSnapshotList snapshot={researchSnapshot} />
-        {!loading && !error && hasCanonicalResearch ? (
-          <div className="canonical-research">
-            <h3>Reviewed ranking pipeline</h3>
-            <ResearchList entries={research} />
-          </div>
         ) : null}
       </section>
 

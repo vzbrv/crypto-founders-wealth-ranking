@@ -91,7 +91,7 @@ async function LegacyProvisionalCalculationPage({
           <h1>{calculation.foundersTeam}</h1>
           <p>
             Project: <strong>{calculation.project}</strong>. This is a dated
-            research screen, not founder net worth or personal wealth.
+            calculation screen, not founder net worth or personal wealth.
           </p>
         </header>
 
