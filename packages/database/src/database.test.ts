@@ -74,6 +74,14 @@ const rankingIntegrityMigrationUrl = new URL(
   "../../../supabase/migrations/202607310020_ranking_integrity.sql",
   import.meta.url,
 );
+const hourlySnapshotsMigrationUrl = new URL(
+  "../../../supabase/migrations/202608010021_hourly_ranking_snapshots.sql",
+  import.meta.url,
+);
+const hourlySnapshotStatusMigrationUrl = new URL(
+  "../../../supabase/migrations/202608010023_hourly_snapshot_status.sql",
+  import.meta.url,
+);
 const sqlConfidenceEvidence = await readFile(
   sqlConfidenceEvidenceMigrationUrl,
   "utf8",
@@ -99,6 +107,8 @@ const migrationSql = [
   await readFile(marketObservationSourcesMigrationUrl, "utf8"),
   sqlConfidenceEvidence,
   await readFile(rankingIntegrityMigrationUrl, "utf8"),
+  await readFile(hourlySnapshotsMigrationUrl, "utf8"),
+  await readFile(hourlySnapshotStatusMigrationUrl, "utf8"),
 ].join("\n");
 const seedSql = await readFile(seedUrl, "utf8");
 const productionDataDirectory = fileURLToPath(
@@ -112,6 +122,11 @@ const expectedTables = [
   "founding_unit_scores",
   "founding_units",
   "funding_rounds",
+  "hourly_snapshot_inputs",
+  "hourly_snapshot_provider_health",
+  "hourly_snapshot_results",
+  "hourly_snapshot_sources",
+  "hourly_snapshots",
   "market_observations",
   "people",
   "project_confidence_evidence",
@@ -130,24 +145,31 @@ const expectedViews = [
   "current_founding_unit_scores",
   "current_leaderboard",
   "current_project_scores",
+  "current_published_snapshot",
   "current_scores",
+  "historical_snapshots",
+  "public_current_published_snapshot",
+  "public_current_snapshot_inputs",
+  "public_current_snapshot_provider_health",
+  "public_current_snapshot_results",
   "public_data_freshness",
+  "public_historical_snapshots",
+  "public_latest_snapshot_status",
   "public_leaderboard",
   "public_project_details",
   "public_provider_status",
+  "public_snapshot_sources",
   "public_source_claims",
   "public_wallet_evidence",
 ];
 
 const databases: PGlite[] = [];
 
-async function createDatabase(
-  seed = false,
-  withServiceRole = false,
-): Promise<PGlite> {
+async function createDatabase(seed = false): Promise<PGlite> {
   const database = new PGlite();
   databases.push(database);
-  if (withServiceRole) await database.exec("create role service_role");
+  await database.exec("create role service_role");
+  await database.exec("create role authenticated nologin");
   await database.exec(migrationSql);
   if (seed) await database.exec(seedSql);
   return database;
@@ -168,8 +190,130 @@ async function importProductionData(database: PGlite): Promise<void> {
   }
 }
 
+function createHourlySnapshotPayload(snapshotId: string) {
+  const source = {
+    source_id: "market-provider:2026-08-01T01:05:00Z",
+    source_url: "https://provider.example/hourly",
+    source_name: "Hourly market provider",
+    observed_at: "2026-08-01T01:05:00Z",
+    fetched_at: "2026-08-01T01:06:00Z",
+  };
+  const sourceIds = [source.source_id];
+
+  return {
+    snapshot_id: snapshotId,
+    utc_hour: "2026-08-01T01:00:00Z",
+    observation_at: "2026-08-01T01:05:00Z",
+    calculation_version: "unified-v1",
+    provider_health: { market: "healthy" },
+    provider_health_records: [
+      {
+        provider: "market-provider",
+        checked_at: "2026-08-01T01:06:00Z",
+        status: "healthy",
+        freshness: "current",
+      },
+    ],
+    sources: [source],
+    results: Array.from({ length: 20 }, (_, index) => ({
+      entry_id: `entry-${index + 1}`,
+      rank: index + 1,
+      value_type: index % 2 === 0 ? "Token/network" : "Public company",
+      gross_value_usd: 100 + index,
+      final_value_usd: 90 + index,
+      confidence_score: 80,
+      confidence_label: "medium",
+      calculation: { formula: "fixture" },
+      source_ids: sourceIds,
+    })),
+    inputs: Array.from({ length: 20 }, (_, index) => ({
+      entry_id: `entry-${index + 1}`,
+      value_type: index % 2 === 0 ? "Token/network" : "Public company",
+      token_price_usd: index % 2 === 0 ? 10 + index : null,
+      circulating_supply: index % 2 === 0 ? 1000 : null,
+      public_company_price_usd: index % 2 === 1 ? 20 + index : null,
+      share_count_inputs: index % 2 === 1 ? { shares: 1000 } : {},
+      founder_affiliate_deduction_usd: null,
+      outside_capital_deduction_usd: null,
+      gross_value_usd: 100 + index,
+      original_observation_at: source.observed_at,
+      data_age_seconds: 60,
+      max_staleness_seconds: 7200,
+      freshness_status: "current",
+      source_ids: sourceIds,
+      metadata: {},
+    })),
+  };
+}
+
 afterEach(async () => {
   await Promise.all(databases.splice(0).map((database) => database.close()));
+});
+
+describe("Hourly ranking snapshots", () => {
+  it("publishes idempotently, fails closed, and preserves immutable history", async () => {
+    const database = await createDatabase();
+    const payload = createHourlySnapshotPayload(
+      "10000000-0000-4000-8000-000000000001",
+    );
+
+    const first = await database.query<{ snapshot_id: string }>(
+      "select publish_hourly_snapshot($1::jsonb) as snapshot_id",
+      [JSON.stringify(payload)],
+    );
+    const duplicate = await database.query<{ snapshot_id: string }>(
+      "select publish_hourly_snapshot($1::jsonb) as snapshot_id",
+      [
+        JSON.stringify({
+          ...payload,
+          snapshot_id: "10000000-0000-4000-8000-000000000002",
+        }),
+      ],
+    );
+
+    expect(duplicate.rows[0]?.snapshot_id).toBe(first.rows[0]?.snapshot_id);
+
+    const published = await database.query<{ count: number }>(
+      `select count(*)::int as count from hourly_snapshots
+       where utc_hour = '2026-08-01T01:00:00Z' and status = 'published'`,
+    );
+    expect(published.rows[0]?.count).toBe(1);
+
+    await expect(
+      database.query("select publish_hourly_snapshot($1::jsonb)", [
+        JSON.stringify({ ...payload, results: payload.results.slice(0, 19) }),
+      ]),
+    ).rejects.toThrow("partial ranking cannot be published");
+
+    await database.query(
+      "select record_hourly_snapshot_failure($1::timestamptz, $2, $3)",
+      ["2026-08-01T01:00:00Z", "market-provider", "safe failure"],
+    );
+    const failedAttempt = await database.query<{
+      status: string;
+      failure_reason: string | null;
+    }>(
+      `select status, failure_reason from hourly_snapshots
+       where utc_hour = '2026-08-01T01:00:00Z'`,
+    );
+    expect(failedAttempt.rows[0]).toEqual({
+      status: "published",
+      failure_reason: null,
+    });
+
+    await expect(
+      database.exec(
+        `update hourly_snapshots set calculation_version = 'tampered'
+         where id = '00000000-0000-4000-8000-202607300000'`,
+      ),
+    ).rejects.toThrow("immutable hourly snapshot cannot be modified");
+    await expect(
+      database.exec(
+        `delete from hourly_snapshots
+         where id = '00000000-0000-4000-8000-202607300000'`,
+      ),
+    ).rejects.toThrow("immutable hourly snapshot cannot be modified");
+  });
 });
 
 describe("Phase 3 database", () => {
@@ -433,7 +577,7 @@ describe("Phase 3 database", () => {
   });
 
   it("enforces provider health read and write privileges", async () => {
-    const database = await createDatabase(true, true);
+    const database = await createDatabase(true);
     await database.exec(`
       insert into projects (
         id, slug, name, description, project_type, calculation_category,

@@ -6,6 +6,7 @@ import type {
 } from "@crypto-founders/curated-data/unified";
 
 import { ProviderStatus } from "../../components/provider-status";
+import { HourlySnapshotStatus } from "../../components/hourly-snapshot-status";
 import { SiteNav } from "../../components/site-nav";
 import { getUnifiedDataset } from "../../lib/research-data";
 
@@ -35,6 +36,13 @@ export default async function StatusPage() {
             diagnostic messages are restricted to operators.
           </p>
         </header>
+        <HourlySnapshotStatus
+          variant="status"
+          fallbackSnapshotDate={dataset.snapshotDate}
+          fallbackObservationDate={
+            dataset.entries[0]?.observationDate ?? dataset.snapshotDate
+          }
+        />
         <ProviderStatus />
         <section className="panel" aria-labelledby="dataset-status-heading">
           <div className="section-heading compact">
