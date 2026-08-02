@@ -74,6 +74,18 @@ const rankingIntegrityMigrationUrl = new URL(
   "../../../supabase/migrations/202607310020_ranking_integrity.sql",
   import.meta.url,
 );
+const hourlySnapshotsMigrationUrl = new URL(
+  "../../../supabase/migrations/202608010021_hourly_ranking_snapshots.sql",
+  import.meta.url,
+);
+const hourlySnapshotStatusMigrationUrl = new URL(
+  "../../../supabase/migrations/202608010023_hourly_snapshot_status.sql",
+  import.meta.url,
+);
+const providerQuotaProtectionMigrationUrl = new URL(
+  "../../../supabase/migrations/202608010024_provider_quota_protection.sql",
+  import.meta.url,
+);
 const sqlConfidenceEvidence = await readFile(
   sqlConfidenceEvidenceMigrationUrl,
   "utf8",
@@ -99,6 +111,9 @@ const migrationSql = [
   await readFile(marketObservationSourcesMigrationUrl, "utf8"),
   sqlConfidenceEvidence,
   await readFile(rankingIntegrityMigrationUrl, "utf8"),
+  await readFile(hourlySnapshotsMigrationUrl, "utf8"),
+  await readFile(hourlySnapshotStatusMigrationUrl, "utf8"),
+  await readFile(providerQuotaProtectionMigrationUrl, "utf8"),
 ].join("\n");
 const seedSql = await readFile(seedUrl, "utf8");
 const productionDataDirectory = fileURLToPath(
@@ -112,6 +127,12 @@ const expectedTables = [
   "founding_unit_scores",
   "founding_units",
   "funding_rounds",
+  "hourly_snapshot_inputs",
+  "hourly_snapshot_provider_health",
+  "hourly_snapshot_results",
+  "hourly_snapshot_sources",
+  "hourly_snapshots",
+  "hourly_update_control",
   "market_observations",
   "people",
   "project_confidence_evidence",
@@ -119,6 +140,9 @@ const expectedTables = [
   "project_scores",
   "projects",
   "provider_health",
+  "provider_quota_config",
+  "provider_usage_events",
+  "provider_usage_monthly",
   "record_sources",
   "source_records",
   "tracked_wallets",
@@ -130,24 +154,32 @@ const expectedViews = [
   "current_founding_unit_scores",
   "current_leaderboard",
   "current_project_scores",
+  "current_published_snapshot",
   "current_scores",
+  "historical_snapshots",
+  "public_current_published_snapshot",
+  "public_current_snapshot_inputs",
+  "public_current_snapshot_provider_health",
+  "public_current_snapshot_results",
   "public_data_freshness",
+  "public_historical_snapshots",
+  "public_latest_snapshot_status",
   "public_leaderboard",
   "public_project_details",
+  "public_provider_quota_status",
   "public_provider_status",
+  "public_snapshot_sources",
   "public_source_claims",
   "public_wallet_evidence",
 ];
 
 const databases: PGlite[] = [];
 
-async function createDatabase(
-  seed = false,
-  withServiceRole = false,
-): Promise<PGlite> {
+async function createDatabase(seed = false): Promise<PGlite> {
   const database = new PGlite();
   databases.push(database);
-  if (withServiceRole) await database.exec("create role service_role");
+  await database.exec("create role service_role");
+  await database.exec("create role authenticated nologin");
   await database.exec(migrationSql);
   if (seed) await database.exec(seedSql);
   return database;
@@ -168,8 +200,229 @@ async function importProductionData(database: PGlite): Promise<void> {
   }
 }
 
+function createHourlySnapshotPayload(snapshotId: string) {
+  const source = {
+    source_id: "market-provider:2026-08-01T01:05:00Z",
+    source_url: "https://provider.example/hourly",
+    source_name: "Hourly market provider",
+    observed_at: "2026-08-01T01:05:00Z",
+    fetched_at: "2026-08-01T01:06:00Z",
+  };
+  const sourceIds = [source.source_id];
+
+  return {
+    snapshot_id: snapshotId,
+    utc_hour: "2026-08-01T01:00:00Z",
+    observation_at: "2026-08-01T01:05:00Z",
+    calculation_version: "unified-v1",
+    provider_health: { market: "healthy" },
+    provider_health_records: [
+      {
+        provider: "market-provider",
+        checked_at: "2026-08-01T01:06:00Z",
+        status: "healthy",
+        freshness: "current",
+      },
+    ],
+    sources: [source],
+    results: Array.from({ length: 20 }, (_, index) => ({
+      entry_id: `entry-${index + 1}`,
+      rank: index + 1,
+      value_type: index % 2 === 0 ? "Token/network" : "Public company",
+      gross_value_usd: 100 + index,
+      final_value_usd: 90 + index,
+      confidence_score: 80,
+      confidence_label: "medium",
+      calculation: { formula: "fixture" },
+      source_ids: sourceIds,
+    })),
+    inputs: Array.from({ length: 20 }, (_, index) => ({
+      entry_id: `entry-${index + 1}`,
+      value_type: index % 2 === 0 ? "Token/network" : "Public company",
+      token_price_usd: index % 2 === 0 ? 10 + index : null,
+      circulating_supply: index % 2 === 0 ? 1000 : null,
+      public_company_price_usd: index % 2 === 1 ? 20 + index : null,
+      share_count_inputs: index % 2 === 1 ? { shares: 1000 } : {},
+      founder_affiliate_deduction_usd: null,
+      outside_capital_deduction_usd: null,
+      gross_value_usd: 100 + index,
+      original_observation_at: source.observed_at,
+      data_age_seconds: 60,
+      max_staleness_seconds: 7200,
+      freshness_status: "current",
+      source_ids: sourceIds,
+      metadata: {},
+    })),
+  };
+}
+
 afterEach(async () => {
   await Promise.all(databases.splice(0).map((database) => database.close()));
+});
+
+describe("Hourly ranking snapshots", () => {
+  it("publishes idempotently, fails closed, and preserves immutable history", async () => {
+    const database = await createDatabase();
+    const payload = createHourlySnapshotPayload(
+      "10000000-0000-4000-8000-000000000001",
+    );
+
+    const first = await database.query<{ snapshot_id: string }>(
+      "select publish_hourly_snapshot($1::jsonb) as snapshot_id",
+      [JSON.stringify(payload)],
+    );
+    const duplicate = await database.query<{ snapshot_id: string }>(
+      "select publish_hourly_snapshot($1::jsonb) as snapshot_id",
+      [
+        JSON.stringify({
+          ...payload,
+          snapshot_id: "10000000-0000-4000-8000-000000000002",
+        }),
+      ],
+    );
+
+    expect(duplicate.rows[0]?.snapshot_id).toBe(first.rows[0]?.snapshot_id);
+
+    const published = await database.query<{ count: number }>(
+      `select count(*)::int as count from hourly_snapshots
+       where utc_hour = '2026-08-01T01:00:00Z' and status = 'published'`,
+    );
+    expect(published.rows[0]?.count).toBe(1);
+
+    await expect(
+      database.query("select publish_hourly_snapshot($1::jsonb)", [
+        JSON.stringify({ ...payload, results: payload.results.slice(0, 19) }),
+      ]),
+    ).rejects.toThrow("partial ranking cannot be published");
+
+    await database.query(
+      "select record_hourly_snapshot_failure($1::timestamptz, $2, $3)",
+      ["2026-08-01T01:00:00Z", "market-provider", "safe failure"],
+    );
+    const failedAttempt = await database.query<{
+      status: string;
+      failure_reason: string | null;
+    }>(
+      `select status, failure_reason from hourly_snapshots
+       where utc_hour = '2026-08-01T01:00:00Z'`,
+    );
+    expect(failedAttempt.rows[0]).toEqual({
+      status: "published",
+      failure_reason: null,
+    });
+
+    await expect(
+      database.exec(
+        `update hourly_snapshots set calculation_version = 'tampered'
+         where id = '00000000-0000-4000-8000-202607300000'`,
+      ),
+    ).rejects.toThrow("immutable hourly snapshot cannot be modified");
+    await expect(
+      database.exec(
+        `delete from hourly_snapshots
+         where id = '00000000-0000-4000-8000-202607300000'`,
+      ),
+    ).rejects.toThrow("immutable hourly snapshot cannot be modified");
+  });
+});
+
+describe("Provider quota protection", () => {
+  it("reports a free-tier budget below the documented quota", async () => {
+    const database = await createDatabase();
+    const result = await database.query<{
+      documented_monthly_quota: number;
+      hard_monthly_request_limit: number;
+      estimated_monthly_requests: number;
+    }>(
+      `select documented_monthly_quota, hard_monthly_request_limit,
+              estimated_monthly_requests
+       from public_provider_quota_status where provider = 'coingecko'`,
+    );
+
+    expect(result.rows[0]).toEqual({
+      documented_monthly_quota: 10000,
+      hard_monthly_request_limit: 9000,
+      estimated_monthly_requests: 744,
+    });
+  });
+
+  it("stops and blocks duplicate requests after quota exhaustion", async () => {
+    const database = await createDatabase();
+    await database.exec(
+      `update provider_quota_config
+       set hard_monthly_request_limit = 1
+       where provider = 'coingecko'`,
+    );
+
+    const first = await database.query<Record<string, unknown>>(
+      "select reserve_provider_request($1, $2, $3, $4) as decision",
+      ["coingecko", 1, "/coins/markets", "2026-08-01T01:00:00Z"],
+    );
+    const second = await database.query<Record<string, unknown>>(
+      "select reserve_provider_request($1, $2, $3, $4) as decision",
+      ["coingecko", 1, "/coins/markets", "2026-08-01T01:30:00Z"],
+    );
+
+    expect(first.rows[0]?.decision).toMatchObject({
+      allowed: true,
+      remaining: 0,
+    });
+    expect(second.rows[0]?.decision).toMatchObject({
+      allowed: false,
+      code: "PROVIDER_QUOTA_EXHAUSTED",
+      status: "Paused — provider quota exhausted",
+    });
+
+    const state = await database.query<Record<string, unknown>>(
+      `select control.status, control.updates_enabled,
+              control.paused_provider, control.paused_condition,
+              usage.request_count, usage.status as usage_status,
+              (select count(*)::int from provider_usage_events
+               where provider = 'coingecko' and outcome = 'reserved') as reserved,
+              (select count(*)::int from provider_usage_events
+               where provider = 'coingecko' and outcome = 'blocked') as blocked
+       from hourly_update_control control
+       join provider_usage_monthly usage
+         on usage.provider = 'coingecko'
+        and usage.month_start = '2026-08-01T00:00:00Z'`,
+    );
+    expect(state.rows[0]).toMatchObject({
+      status: "Paused — provider quota exhausted",
+      updates_enabled: false,
+      paused_provider: "coingecko",
+      paused_condition: "MONTHLY_QUOTA_EXHAUSTED",
+      request_count: 1,
+      usage_status: "paused",
+      reserved: 1,
+      blocked: 1,
+    });
+  });
+
+  it("fails closed when the scheduler control row is unavailable", async () => {
+    const database = await createDatabase();
+    await database.exec("delete from hourly_update_control");
+
+    const result = await database.query<Record<string, unknown>>(
+      "select reserve_provider_request($1, $2, $3, $4) as decision",
+      ["coingecko", 1, "/coins/markets", "2026-08-01T02:00:00Z"],
+    );
+
+    expect(result.rows[0]?.decision).toMatchObject({
+      allowed: false,
+      code: "UPDATES_PAUSED",
+      status: "Paused — provider quota exhausted",
+    });
+  });
+
+  it("requires explicit manual confirmation before resuming", async () => {
+    const database = await createDatabase();
+    await expect(
+      database.query("select resume_provider_updates($1, $2)", [
+        "coingecko",
+        "automatic",
+      ]),
+    ).rejects.toThrow("explicit manual resume confirmation is required");
+  });
 });
 
 describe("Phase 3 database", () => {
@@ -433,7 +686,7 @@ describe("Phase 3 database", () => {
   });
 
   it("enforces provider health read and write privileges", async () => {
-    const database = await createDatabase(true, true);
+    const database = await createDatabase(true);
     await database.exec(`
       insert into projects (
         id, slug, name, description, project_type, calculation_category,

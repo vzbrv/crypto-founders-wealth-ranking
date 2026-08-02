@@ -9,6 +9,7 @@ import {
 
 export * from "./research.js";
 export * from "./unified.js";
+export * from "./hourly-snapshot.js";
 
 export const curatedDataFiles = {
   projects: "projects.json",

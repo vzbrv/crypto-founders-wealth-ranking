@@ -10,9 +10,31 @@ type ProviderStatusRow = {
   status: string;
 };
 
+type ProviderQuotaStatusRow = {
+  provider: string;
+  plan: string;
+  provider_docs_url: string;
+  documented_monthly_quota: number;
+  hard_monthly_request_limit: number;
+  estimated_monthly_requests: number;
+  monthly_request_count: number;
+  remaining_requests: number;
+  status: string;
+  pause_reason: string | null;
+  paused_at: string | null;
+  scheduled_updates_enabled: boolean;
+  paused_provider: string | null;
+  paused_condition: string | null;
+  scheduler_paused_at: string | null;
+};
+
 type LoadState =
   | { kind: "loading" }
-  | { kind: "ready"; rows: ProviderStatusRow[] }
+  | {
+      kind: "ready";
+      rows: ProviderStatusRow[];
+      quotaRows: ProviderQuotaStatusRow[];
+    }
   | { kind: "unavailable" };
 
 function parseProviderStatusRows(value: unknown): ProviderStatusRow[] | null {
@@ -49,6 +71,44 @@ function formatProvider(provider: string) {
     .replaceAll(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
+function parseProviderQuotaStatusRows(
+  value: unknown,
+): ProviderQuotaStatusRow[] | null {
+  if (!Array.isArray(value)) return null;
+
+  const rows: ProviderQuotaStatusRow[] = [];
+  for (const row of value) {
+    if (
+      typeof row !== "object" ||
+      row === null ||
+      typeof row.provider !== "string" ||
+      typeof row.plan !== "string" ||
+      typeof row.provider_docs_url !== "string" ||
+      typeof row.documented_monthly_quota !== "number" ||
+      typeof row.hard_monthly_request_limit !== "number" ||
+      typeof row.estimated_monthly_requests !== "number" ||
+      typeof row.monthly_request_count !== "number" ||
+      typeof row.remaining_requests !== "number" ||
+      typeof row.status !== "string" ||
+      (row.pause_reason !== null && typeof row.pause_reason !== "string") ||
+      (row.paused_at !== null && typeof row.paused_at !== "string") ||
+      typeof row.scheduled_updates_enabled !== "boolean" ||
+      (row.paused_provider !== null &&
+        typeof row.paused_provider !== "string") ||
+      (row.paused_condition !== null &&
+        typeof row.paused_condition !== "string") ||
+      (row.scheduler_paused_at !== null &&
+        typeof row.scheduler_paused_at !== "string")
+    ) {
+      return null;
+    }
+
+    rows.push(row as ProviderQuotaStatusRow);
+  }
+
+  return rows;
+}
+
 function formatTime(value: string) {
   const date = new Date(value);
   return Number.isNaN(date.getTime())
@@ -71,20 +131,30 @@ export function ProviderStatus() {
     if (!url || !key) return;
 
     const controller = new AbortController();
-    void fetch(
-      `${url}/rest/v1/public_provider_status?select=provider,checked_at,status,latency_ms,freshness&order=provider.asc`,
-      {
+    const request = (path: string) =>
+      fetch(url + path, {
         headers: { apikey: key },
         signal: controller.signal,
-      },
-    )
-      .then(async (response) => {
+      }).then(async (response) => {
         if (!response.ok) throw new Error("Provider status request failed");
-        const rows = parseProviderStatusRows(await response.json());
-        if (!rows) throw new Error("Provider status response is invalid");
-        return rows;
+        return response.json();
+      });
+
+    const providerStatusRequest = request(
+      "/rest/v1/public_provider_status?select=provider,checked_at,status,latency_ms,freshness&order=provider.asc",
+    ).then(parseProviderStatusRows);
+    const quotaStatusRequest = request(
+      "/rest/v1/public_provider_quota_status?select=provider,plan,provider_docs_url,documented_monthly_quota,hard_monthly_request_limit,estimated_monthly_requests,monthly_request_count,remaining_requests,status,pause_reason,paused_at,scheduled_updates_enabled,paused_provider,paused_condition,scheduler_paused_at&order=provider.asc",
+    )
+      .then(parseProviderQuotaStatusRows)
+      .catch(() => []);
+
+    void Promise.all([providerStatusRequest, quotaStatusRequest])
+      .then(([rows, quotaRows]) => {
+        if (!rows || !quotaRows)
+          throw new Error("Provider status response is invalid");
+        setState({ kind: "ready", rows, quotaRows });
       })
-      .then((rows) => setState({ kind: "ready", rows }))
       .catch((error: unknown) => {
         if (error instanceof DOMException && error.name === "AbortError")
           return;
@@ -170,6 +240,91 @@ export function ProviderStatus() {
             </tbody>
           </table>
         </div>
+      )}
+      <h2 id="provider-quota-heading">Free-tier quota protection</h2>
+      {state.quotaRows.length === 0 ? (
+        <div className="notice" role="status">
+          No provider quota records have been published. Quota status is
+          unknown.
+        </div>
+      ) : (
+        <>
+          {state.quotaRows.some(
+            (row) =>
+              !row.scheduled_updates_enabled ||
+              row.status === "Paused — provider quota exhausted",
+          ) && (
+            <div className="notice" role="status">
+              Paused — provider quota exhausted.{" "}
+              {state.quotaRows
+                .filter(
+                  (row) =>
+                    !row.scheduled_updates_enabled ||
+                    row.status === "Paused — provider quota exhausted",
+                )
+                .map(
+                  (row) =>
+                    formatProvider(row.provider) +
+                    ": " +
+                    (row.pause_reason ?? "quota condition unknown") +
+                    "; paused " +
+                    formatTime(row.paused_at ?? row.scheduler_paused_at ?? "") +
+                    ".",
+                )
+                .join(" ")}{" "}
+              Manual resume is required before updates can resume.
+            </div>
+          )}
+          <div className="table-scroll">
+            <table className="provider-table">
+              <caption className="visually-hidden">
+                Provider free-tier quota usage and pause status
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col">Provider</th>
+                  <th scope="col">Plan</th>
+                  <th scope="col">Estimated monthly requests</th>
+                  <th scope="col">Hard monthly limit</th>
+                  <th scope="col">Used / remaining</th>
+                  <th scope="col">Updates</th>
+                  <th scope="col">Pause condition</th>
+                </tr>
+              </thead>
+              <tbody>
+                {state.quotaRows.map((row) => (
+                  <tr key={row.provider}>
+                    <th scope="row">
+                      <a
+                        href={row.provider_docs_url}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        {formatProvider(row.provider)}
+                      </a>
+                    </th>
+                    <td>{row.plan}</td>
+                    <td>{row.estimated_monthly_requests.toLocaleString()}</td>
+                    <td>{row.hard_monthly_request_limit.toLocaleString()}</td>
+                    <td>
+                      {row.monthly_request_count.toLocaleString()} /{" "}
+                      {row.remaining_requests.toLocaleString()}
+                    </td>
+                    <td>
+                      {row.scheduled_updates_enabled ? "Active" : "Paused"}
+                    </td>
+                    <td>
+                      {row.pause_reason ?? "None"}
+                      {row.paused_at
+                        ? " (" + formatTime(row.paused_at) + ")"
+                        : ""}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
     </section>
   );

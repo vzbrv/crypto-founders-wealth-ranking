@@ -9,6 +9,8 @@ import type {
   UnifiedSource,
 } from "@crypto-founders/curated-data/unified";
 
+import { HourlySnapshotStatus } from "./hourly-snapshot-status";
+
 function money(value: string | null): string {
   if (value === null) return "Unknown";
   return new Intl.NumberFormat("en-US", {
@@ -60,6 +62,13 @@ export function UnifiedCalculationPage({
           founder-retained value, or an investment recommendation.
         </p>
       </header>
+
+      <HourlySnapshotStatus
+        variant="detail"
+        entryId={entry.entryId}
+        fallbackSnapshotDate={dataset.snapshotDate}
+        fallbackObservationDate={entry.observationDate}
+      />
 
       <section className="panel" aria-labelledby="unified-calculation-heading">
         <div className="section-heading compact">

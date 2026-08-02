@@ -6,7 +6,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./research": "./src/research.ts",
-    "./unified": "./src/unified.ts"
+    "./unified": "./src/unified.ts",
+    "./hourly-snapshot": "./src/hourly-snapshot.ts"
   },
   "dependencies": {
     "@crypto-founders/schemas": "workspace:*",

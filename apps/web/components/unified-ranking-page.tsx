@@ -1,21 +1,10 @@
-import Link from "next/link";
-
 import { SiteNav } from "./site-nav";
+import { HourlyRankingTable } from "./hourly-ranking-table";
 import {
   getPrivateCompanyCandidates,
   getUnifiedDataset,
   getUnifiedRanking,
 } from "../lib/research-data";
-
-function money(value: string | null): string {
-  if (value === null) return "Unknown";
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    notation: "compact",
-    maximumFractionDigits: 2,
-  }).format(Number(value));
-}
 
 export default async function UnifiedRankingPage() {
   const [dataset, ranking, candidates] = await Promise.all([
@@ -62,74 +51,13 @@ export default async function UnifiedRankingPage() {
               caps use reconstructed outstanding shares, not enterprise value.
             </p>
           </div>
-          <div className="table-shell evidence-shell">
-            <table className="evidence-table research-universe-table">
-              <thead>
-                <tr>
-                  <th>Rank</th>
-                  <th>Founder or joint founding team</th>
-                  <th>Project or company</th>
-                  <th>Value type</th>
-                  <th className="number">Gross market value</th>
-                  <th className="number">Affiliated ownership</th>
-                  <th className="number">Outside capital</th>
-                  <th className="number">Provisional value created</th>
-                  <th>Confidence</th>
-                  <th>Snapshot</th>
-                </tr>
-              </thead>
-              <tbody>
-                {ranking.map(
-                  ({
-                    entry,
-                    grossMarketValueUsd,
-                    acceptedAffiliatedOwnershipUsd,
-                    acceptedOutsideCapitalUsd,
-                    provisionalValueCreatedUsd,
-                    upperEstimate,
-                  }) => (
-                    <tr key={entry.entryId}>
-                      <td className="rank">{entry.rank}</td>
-                      <td>
-                        <Link href={`/ranking/${entry.entryId}/`}>
-                          <strong>{entry.founderTeam}</strong>
-                        </Link>
-                        <small>
-                          <Link href={`/ranking/${entry.entryId}/`}>
-                            Calculation &amp; sources
-                          </Link>
-                        </small>
-                      </td>
-                      <td>
-                        <strong>{entry.project}</strong>
-                        {entry.market.type === "public" && (
-                          <small>
-                            {entry.market.ticker} · {entry.market.exchange}
-                          </small>
-                        )}
-                      </td>
-                      <td>{entry.valueType}</td>
-                      <td className="number">{money(grossMarketValueUsd)}</td>
-                      <td className="number">
-                        {money(acceptedAffiliatedOwnershipUsd)}
-                      </td>
-                      <td className="number">
-                        {money(acceptedOutsideCapitalUsd)}
-                      </td>
-                      <td className="number">
-                        <strong>{money(provisionalValueCreatedUsd)}</strong>
-                        {upperEstimate && <small>Upper estimate</small>}
-                      </td>
-                      <td>
-                        {entry.confidence.score}/100 · {entry.confidence.label}
-                      </td>
-                      <td>{entry.snapshotDate}</td>
-                    </tr>
-                  ),
-                )}
-              </tbody>
-            </table>
-          </div>
+          <HourlyRankingTable
+            fallbackRanking={ranking}
+            fallbackSnapshotDate={dataset.snapshotDate}
+            fallbackObservationDate={
+              dataset.entries[0]?.observationDate ?? dataset.snapshotDate
+            }
+          />
         </section>
 
         <section className="panel" aria-labelledby="private-heading">

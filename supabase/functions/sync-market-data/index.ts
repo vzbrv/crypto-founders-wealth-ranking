@@ -1,4 +1,7 @@
-import { CoinGeckoAdapter } from "../../../packages/market-adapters/src/index.ts";
+import {
+  CoinGeckoAdapter,
+  ProviderQuotaStopError,
+} from "../../../packages/market-adapters/src/index.ts";
 
 interface AssetRow {
   id: string;
@@ -11,6 +14,7 @@ const safeFailureCodes = new Set([
   "MARKET_MAPPING_READ_FAILED",
   "MARKET_INGEST_FAILED",
 ]);
+const quotaPausedStatus = "Paused — provider quota exhausted";
 
 function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), { status, headers: jsonHeaders });
@@ -41,6 +45,58 @@ async function recordFailure(
         "Market refresh failed; prior successful scores retained",
     }),
   }).catch(() => undefined);
+}
+
+async function reserveProviderRequest(
+  supabaseUrl: string,
+  headers: Record<string, string>,
+  requestedAt: string,
+): Promise<void> {
+  const response = await fetch(
+    new URL("/rest/v1/rpc/reserve_provider_request", supabaseUrl),
+    {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        p_provider: "coingecko",
+        p_request_count: 1,
+        p_endpoint: "/coins/markets",
+        p_requested_at: requestedAt,
+      }),
+    },
+  );
+  if (!response.ok) throw new ProviderQuotaStopError("QUOTA_GUARD_UNAVAILABLE");
+  const payload = (await response.json().catch(() => null)) as
+    | { allowed?: boolean; condition?: string; code?: string }
+    | Array<{ allowed?: boolean; condition?: string; code?: string }>
+    | null;
+  const decision = Array.isArray(payload) ? payload[0] : payload;
+  if (!decision?.allowed) {
+    throw new ProviderQuotaStopError(
+      decision?.condition ?? decision?.code ?? "UPDATES_PAUSED",
+    );
+  }
+}
+
+async function recordQuotaStop(
+  supabaseUrl: string,
+  headers: Record<string, string>,
+  condition: string,
+  pausedAt: string,
+): Promise<void> {
+  const response = await fetch(
+    new URL("/rest/v1/rpc/record_provider_quota_stop", supabaseUrl),
+    {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        p_provider: "coingecko",
+        p_condition: condition,
+        p_paused_at: pausedAt,
+      }),
+    },
+  );
+  if (!response.ok) throw new Error("QUOTA_STOP_RECORD_FAILED");
 }
 
 Deno.serve(async (request) => {
@@ -79,6 +135,10 @@ Deno.serve(async (request) => {
     const assets = (await assetsResponse.json()) as AssetRow[];
     const adapter = new CoinGeckoAdapter({
       demoApiKey: Deno.env.get("COINGECKO_DEMO_API_KEY"),
+      beforeRequest: ({ requestedAt }) =>
+        reserveProviderRequest(supabaseUrl, headers, requestedAt),
+      onPermanentStop: ({ condition, stoppedAt }) =>
+        recordQuotaStop(supabaseUrl, headers, condition, stoppedAt),
     });
     const result = await adapter.sync(
       assets.map(({ id, coingecko_id }) => ({
@@ -116,6 +176,27 @@ Deno.serve(async (request) => {
     });
     return json(response, result.health.status === "failed" ? 502 : 200);
   } catch (error) {
+    if (error instanceof ProviderQuotaStopError) {
+      log("error", "quota_paused", {
+        provider: "coingecko",
+        condition: error.condition,
+        status: quotaPausedStatus,
+        staleDataRetained: true,
+        manualResumeRequired: true,
+        durationMs: Date.now() - startedAt,
+      });
+      return json(
+        {
+          error: "Provider quota exhausted",
+          status: quotaPausedStatus,
+          provider: "coingecko",
+          condition: error.condition,
+          staleDataRetained: true,
+          manualResumeRequired: true,
+        },
+        409,
+      );
+    }
     const code =
       error instanceof Error && safeFailureCodes.has(error.message)
         ? error.message
