@@ -53,13 +53,15 @@ export default async function StatusPage() {
               </h2>
             </div>
             <p>
-              The ranking is marked as an upper estimate where filings or
-              capital history are incomplete.
+              Live rank status is shown above. This table documents the bundled
+              fallback dataset used when no live snapshot is available; it is
+              marked as an upper estimate where filings or capital history are
+              incomplete.
             </p>
           </div>
           <dl className="status-grid">
             <div>
-              <dt>Snapshot</dt>
+              <dt>Bundled fallback</dt>
               <dd>{dataset.snapshotDate}</dd>
             </div>
             <div>

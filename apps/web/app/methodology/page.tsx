@@ -32,7 +32,7 @@ const sections = [
   ],
   [
     "Snapshot alignment",
-    "The ranking snapshot is July 30, 2026. Price, market-value, share-count, ownership, and capital observations retain their own dates. Pages disclose date differences and staleness so an apparently precise result is not mistaken for a same-day reconstruction.",
+    "Each published hourly snapshot recalculates the live rank from the latest eligible observations and compares it with the previous published hour. When no live snapshot is available, the site shows the historical bundled fallback dated July 30, 2026. Price, market-value, share-count, ownership, and capital observations retain their own dates, with date differences and staleness disclosed.",
   ],
   [
     "Confidence scoring",

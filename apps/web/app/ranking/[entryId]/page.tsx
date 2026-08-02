@@ -206,7 +206,10 @@ async function LegacyProvisionalCalculationPage({
                     </td>
                     <td>{marketSource.date}</td>
                     <td>{marketSource.quality}</td>
-                    <td>Reproducible July 30, 2026 market snapshot.</td>
+                    <td>
+                      Reproducible bundled baseline market snapshot dated July
+                      30, 2026.
+                    </td>
                   </tr>
                 )}
                 {calculation.deductions.map((deduction, index) => (

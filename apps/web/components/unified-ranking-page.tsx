@@ -17,10 +17,12 @@ export default async function UnifiedRankingPage() {
           <h1>Top Crypto Founders Ranked by Value Created for Others.</h1>
           <p>
             The top 20 token/network founding teams and qualifying
-            public-company founders, based on observations dated{" "}
-            {dataset.snapshotDate}. The index estimates value created for
-            outside holders and shareholders; it is not founder net worth,
-            personal wealth, or investment advice.
+            public-company founders. The table refreshes from each published
+            hourly snapshot and shows live rank changes versus the previous
+            published hour. If no live snapshot is available, it shows the
+            historical bundled fallback dated {dataset.snapshotDate}. The index
+            estimates value created for outside holders and shareholders; it is
+            not founder net worth, personal wealth, or investment advice.
           </p>
         </header>
 
