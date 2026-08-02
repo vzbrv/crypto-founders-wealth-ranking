@@ -7,7 +7,7 @@ import type {
 
 import { ProviderStatus } from "../../components/provider-status";
 import { HourlySnapshotStatus } from "../../components/hourly-snapshot-status";
-import { SiteNav } from "../../components/site-nav";
+import { SiteFooter, SiteNav } from "../../components/site-nav";
 import { getUnifiedDataset } from "../../lib/research-data";
 
 export const metadata: Metadata = {
@@ -109,6 +109,7 @@ export default async function StatusPage() {
           </div>
         </section>
       </main>
+      <SiteFooter />
     </>
   );
 }

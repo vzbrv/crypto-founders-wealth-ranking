@@ -120,9 +120,7 @@ test("fits the founder ranking on a mobile viewport", async ({ page }) => {
       name: "Founder or joint founding team",
     }),
   ).toBeVisible();
-  await expect(
-    page.locator("tbody tr td:nth-child(2) > a").first(),
-  ).toBeVisible();
+  await expect(page.locator("tbody tr td a").first()).toBeVisible();
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= window.innerWidth,
@@ -504,7 +502,7 @@ test("publishes unified founder calculations and sources separately", async ({
   await expect(page.getByText("Coinbase", { exact: true })).toHaveCount(1);
 
   const rankedProjects = await rankingTable
-    .locator("tbody tr td:nth-child(3)")
+    .locator("tbody tr td:nth-child(4)")
     .allTextContents();
   expect(rankedProjects.indexOf("Chainlink")).toBeLessThan(
     rankedProjects.indexOf("Cardano"),
@@ -567,4 +565,24 @@ test("supports keyboard navigation to main content", async ({ page }) => {
   await expect(skipLink).toBeFocused();
   await page.keyboard.press("Enter");
   await expect(page.locator("#main-content")).toBeFocused();
+});
+
+test("supports keyboard control of the mobile navigation", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/");
+
+  const openButton = page.getByRole("button", {
+    name: "Open navigation menu",
+  });
+  await openButton.focus();
+  await openButton.press("Enter");
+  await expect(
+    page.getByRole("button", { name: "Close navigation menu" }),
+  ).toHaveAttribute("aria-expanded", "true");
+  await expect(
+    page.locator("#nav-links").getByRole("link", { name: "Ranking" }),
+  ).toBeFocused();
+
+  await page.keyboard.press("Escape");
+  await expect(openButton).toBeFocused();
 });

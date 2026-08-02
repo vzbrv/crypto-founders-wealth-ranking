@@ -75,11 +75,39 @@ describe("ranking route contract", () => {
     const homepage = readAppFile("app/page.tsx");
     const rankingPage = readAppFile("components/unified-ranking-page.tsx");
     const siteNav = readAppFile("components/site-nav.tsx");
+    const styles = readAppFile("app/globals.css");
 
     expect(homepage).toContain("<UnifiedRankingPage />");
     expect(rankingPage).toContain("<table");
+    expect(siteNav).toContain("/brand/iq-logo-pink.svg");
+    expect(siteNav).toContain("/#ranking");
+    expect(siteNav).toContain('aria-controls="nav-links"');
+    expect(siteNav).toContain('id="nav-links"');
+    expect(siteNav).toContain("/brand/iq-logo-white.svg");
+    expect(siteNav).toContain("/brand/iqwiki-black-b.svg");
+    expect(siteNav).toContain("/brand/iqwiki-white-w.svg");
     expect(siteNav).not.toContain("/provisional");
+    expect(siteNav).not.toContain("/research");
     expect(rankingPage).not.toContain("/provisional/");
+    expect(styles).toContain("--brand-pink: #ff5caa");
+    expect(styles).toContain("--brand-pink-dark: #ff1a88");
+    expect(styles).toContain("--navy: #0f172a");
+    expect(styles).toContain("--muted-bg: #f3f4f6");
+    expect(styles).toContain("--background: #17202b");
+    expect(styles).toContain("--surface-raised: #272d38");
+    expect(styles).toContain("--text: #fafcf8");
+    expect(styles).toContain("background: rgba(255, 92, 170, 0.05);");
+    expect(styles).toContain("@media (prefers-reduced-motion: reduce)");
+    expect(readAppFile("app/manifest.ts")).toContain('short_name: "IQ.wiki"');
+    expect(readAppFile("app/layout.tsx")).toContain(
+      "IQ.wiki Value Created Index — Provisional Value Created for Others",
+    );
+    expect(readAppFile("app/opengraph-image.tsx")).toContain(
+      "IQ.wiki Value Created Index — Provisional Value Created for Others",
+    );
+    expect(homepage).toContain(
+      "IQ.wiki Value Created Index — Provisional Value Created for Others",
+    );
   });
 
   it("has a new statically generated detail route for every ranked entry", async () => {

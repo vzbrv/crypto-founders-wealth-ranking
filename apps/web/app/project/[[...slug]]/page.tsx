@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { ProjectDetail } from "../../../components/project-detail";
-import { SiteNav } from "../../../components/site-nav";
+import { SiteFooter, SiteNav } from "../../../components/site-nav";
 import {
   getProjectEvidence,
   getProjectSlugs,
@@ -81,6 +81,7 @@ export default async function ProjectPage({
             <p>No reviewed project profiles are currently published.</p>
           )}
         </main>
+        <SiteFooter />
       </>
     );
   }
@@ -92,6 +93,7 @@ export default async function ProjectPage({
     <>
       <SiteNav />
       <ProjectDetail evidence={evidence} />
+      <SiteFooter />
     </>
   );
 }

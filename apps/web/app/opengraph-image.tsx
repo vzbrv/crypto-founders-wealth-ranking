@@ -1,7 +1,8 @@
 import { ImageResponse } from "next/og";
 
 export const dynamic = "force-static";
-export const alt = "Top Crypto Founders Ranked by Value Created for Others.";
+export const alt =
+  "IQ.wiki Value Created Index — Provisional Value Created for Others";
 export const size = { height: 630, width: 1200 };
 export const contentType = "image/png";
 
@@ -10,8 +11,9 @@ export default function OpenGraphImage() {
     <div
       style={{
         alignItems: "flex-start",
-        background: "#07100e",
-        color: "#f4f2e9",
+        background: "#FFFFFF",
+        border: "24px solid #F3F4F6",
+        color: "#0F172A",
         display: "flex",
         flexDirection: "column",
         height: "100%",
@@ -20,17 +22,17 @@ export default function OpenGraphImage() {
         width: "100%",
       }}
     >
-      <div style={{ color: "#79e7ae", fontSize: 30, letterSpacing: 4 }}>
-        PROVISIONAL VALUE CREATED FOR OUTSIDE HOLDERS
+      <div style={{ color: "#FF5CAA", fontSize: 30, letterSpacing: 4 }}>
+        IQ.WIKI VALUE CREATED INDEX
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
         <div style={{ fontSize: 82, letterSpacing: -4 }}>Crypto Founders</div>
-        <div style={{ color: "#9eaaa4", fontSize: 40 }}>
-          Index · Transparent calculations and sources
+        <div style={{ color: "#526074", fontSize: 40 }}>
+          Provisional value created for others · Calculations and sources
         </div>
       </div>
-      <div style={{ color: "#f2b86b", fontSize: 26 }}>
-        Evidence-backed · Unknown is never zero
+      <div style={{ color: "#0F172A", fontSize: 26 }}>
+        Time-stamped · Evidence-backed · Unknown is never zero
       </div>
     </div>,
     size,
