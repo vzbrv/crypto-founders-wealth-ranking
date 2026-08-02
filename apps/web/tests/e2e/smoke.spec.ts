@@ -479,8 +479,29 @@ test("publishes unified founder calculations and sources separately", async ({
     page.getByRole("columnheader", { name: "Project or company" }),
   ).toBeVisible();
   await expect(
+    page.getByRole("columnheader", { name: "Rank change" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("columnheader", { name: "Value type" }),
+  ).toBeVisible();
+  await expect(
     page.getByRole("columnheader", { name: "Provisional value created" }),
   ).toBeVisible();
+  await expect(
+    page.getByRole("columnheader", { name: "Confidence" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("columnheader", { name: "Gross market value" }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("columnheader", { name: "Affiliated ownership" }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("columnheader", { name: "Outside capital" }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("columnheader", { name: "Snapshot" }),
+  ).toHaveCount(0);
   await expect(
     page.getByText("Unknown deductions remain Unknown"),
   ).toBeVisible();
@@ -491,9 +512,6 @@ test("publishes unified founder calculations and sources separately", async ({
   await expect(rankingTable.getByRole("row")).toHaveCount(21);
   await expect(
     rankingTable.getByRole("link", { name: "Calculation & sources" }),
-  ).toHaveCount(20);
-  await expect(
-    rankingTable.getByText("2026-07-30", { exact: true }),
   ).toHaveCount(20);
   await expect(
     page.getByRole("heading", { name: "Private-company candidates" }),

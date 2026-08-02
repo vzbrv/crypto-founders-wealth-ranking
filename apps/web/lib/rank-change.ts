@@ -11,16 +11,13 @@ export function formatRankChange(
 ): RankChangeDisplay {
   const normalizedValue = value ?? null;
 
-  if (source === "live") {
-    return {
-      text: "—",
-      label: "Rank movement is not published for this live snapshot",
-    };
-  }
   if (normalizedValue === null) {
     return {
       text: "—",
-      label: "No movement shown for the first baseline snapshot",
+      label:
+        source === "live"
+          ? "No prior published rank is available for this snapshot"
+          : "No movement shown for the first baseline snapshot",
     };
   }
   if (normalizedValue === 0) return { text: "—", label: "Position unchanged" };

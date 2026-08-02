@@ -128,16 +128,10 @@ button {
 .brand-lockup {
   display: inline-flex;
   align-items: center;
-  gap: 0.65rem;
   color: var(--text);
   text-decoration: none;
 }
 
-.brand-logo {
-  width: 2.2rem;
-  height: 2.2rem;
-}
-.brand-logo-dark,
 .brand-wordmark-dark {
   display: none;
 }
@@ -148,12 +142,10 @@ button {
 }
 
 @media (prefers-color-scheme: dark) {
-  .brand-logo-light,
   .brand-wordmark-light {
     display: none;
   }
 
-  .brand-logo-dark,
   .brand-wordmark-dark {
     display: block;
   }

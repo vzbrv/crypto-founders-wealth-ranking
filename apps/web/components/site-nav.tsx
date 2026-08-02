@@ -58,22 +58,6 @@ export function SiteNav() {
           onClick={() => setOpen(false)}
         >
           <Image
-            className="brand-logo brand-logo-light"
-            src="/brand/iq-logo-pink.svg"
-            alt=""
-            width={40}
-            height={40}
-            priority
-          />
-          <Image
-            className="brand-logo brand-logo-dark"
-            src="/brand/iq-logo-white.svg"
-            alt=""
-            width={40}
-            height={40}
-            priority
-          />
-          <Image
             className="brand-wordmark brand-wordmark-light"
             src="/brand/iqwiki-black-b.svg"
             alt=""
