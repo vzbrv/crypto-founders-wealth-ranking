@@ -1,9 +1,18 @@
 import { createReadStream } from "node:fs";
-import { stat } from "node:fs/promises";
+import { readFile, stat } from "node:fs/promises";
 import { createServer } from "node:http";
 import { URL } from "node:url";
 
 const root = new URL("../out/", import.meta.url);
+const redirectRules = (await readFile(new URL("_redirects", root), "utf8"))
+  .split(/\r?\n/)
+  .map((line) => line.trim().split(/\s+/))
+  .filter(([source, target, status]) => source && target && status)
+  .map(([source, target, status]) => ({
+    source,
+    target,
+    status: Number(status),
+  }));
 const contentTypes = {
   ".css": "text/css; charset=utf-8",
   ".html": "text/html; charset=utf-8",
@@ -12,10 +21,34 @@ const contentTypes = {
   ".svg": "image/svg+xml",
 };
 
+function findRedirect(pathname) {
+  for (const rule of redirectRules) {
+    if (rule.source === pathname) return rule;
+    if (
+      rule.source.endsWith("/*") &&
+      pathname.startsWith(rule.source.slice(0, -1))
+    ) {
+      return {
+        ...rule,
+        target: rule.target.replace(
+          ":splat",
+          pathname.slice(rule.source.length - 1),
+        ),
+      };
+    }
+  }
+  return null;
+}
+
 createServer(async (request, response) => {
   const pathname = decodeURIComponent(
     new URL(request.url, "http://localhost").pathname,
   );
+  const redirect = findRedirect(pathname);
+  if (redirect) {
+    response.writeHead(redirect.status, { Location: redirect.target }).end();
+    return;
+  }
   const relativePath = pathname.replace(/^\/+|\/+$/g, "");
   const candidates =
     pathname === "/"

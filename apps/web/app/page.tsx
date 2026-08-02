@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-import ProvisionalPage from "./provisional/page";
+import UnifiedRankingPage from "../components/unified-ranking-page";
 
 export const metadata: Metadata = {
   title: {
@@ -12,5 +12,5 @@ export const metadata: Metadata = {
 };
 
 export default function Home() {
-  return <ProvisionalPage />;
+  return <UnifiedRankingPage />;
 }

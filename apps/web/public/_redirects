@@ -1,0 +1,3 @@
+/provisional / 301
+/provisional/ / 301
+/provisional/* /ranking/:splat 301

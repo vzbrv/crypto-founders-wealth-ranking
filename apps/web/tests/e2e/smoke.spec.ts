@@ -471,7 +471,7 @@ test("publishes the dated research universe separately", async ({ page }) => {
   ).toBeVisible();
 });
 
-test("publishes provisional founder calculations and sources separately", async ({
+test("publishes unified founder calculations and sources separately", async ({
   page,
 }) => {
   await page.goto("/");
@@ -519,7 +519,7 @@ test("publishes provisional founder calculations and sources separately", async 
     rankedProjects.indexOf("Cardano"),
   );
 
-  await page.goto("/provisional/coinbase/");
+  await page.goto("/ranking/coinbase/");
   await expect(
     page.getByRole("heading", { name: "Brian Armstrong & Fred Ehrsam" }),
   ).toBeVisible();
@@ -534,6 +534,11 @@ test("publishes provisional founder calculations and sources separately", async 
   ).toBeVisible();
   await expect(
     page.getByText("$43,184,827,557", { exact: false }),
+  ).toBeVisible();
+
+  await page.reload();
+  await expect(
+    page.getByRole("heading", { name: "Brian Armstrong & Fred Ehrsam" }),
   ).toBeVisible();
 });
 

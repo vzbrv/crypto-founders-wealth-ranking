@@ -29,31 +29,31 @@ export async function generateStaticParams() {
     getUnifiedProjectIds(),
     getProvisionalProjectIds(),
   ]);
-  return [...new Set([...unifiedIds, ...legacyIds])].map((projectId) => ({
-    projectId,
+  return [...new Set([...unifiedIds, ...legacyIds])].map((entryId) => ({
+    entryId,
   }));
 }
 
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ projectId: string }>;
+  params: Promise<{ entryId: string }>;
 }): Promise<Metadata> {
-  const { projectId } = await params;
-  const unified = await getUnifiedCalculation(projectId);
+  const { entryId } = await params;
+  const unified = await getUnifiedCalculation(entryId);
   if (unified) {
     return {
       title: `${unified.entry.founderTeam} — ${unified.entry.project} calculation`,
       description: `Dated ${unified.entry.valueType.toLowerCase()} calculation and source trail for ${unified.entry.founderTeam}.`,
-      alternates: { canonical: `/provisional/${projectId}/` },
+      alternates: { canonical: `/ranking/${entryId}/` },
     };
   }
-  const calculation = await getProvisionalCalculation(projectId);
+  const calculation = await getProvisionalCalculation(entryId);
   return calculation
     ? {
         title: `${calculation.foundersTeam} — ${calculation.project} calculation`,
         description: `Dated provisional calculation and source trail for ${calculation.foundersTeam} and ${calculation.project}.`,
-        alternates: { canonical: `/provisional/${projectId}/` },
+        alternates: { canonical: `/ranking/${entryId}/` },
       }
     : { title: "Provisional calculation not found" };
 }
@@ -61,11 +61,11 @@ export async function generateMetadata({
 async function LegacyProvisionalCalculationPage({
   params,
 }: {
-  params: Promise<{ projectId: string }>;
+  params: Promise<{ entryId: string }>;
 }) {
-  const { projectId } = await params;
+  const { entryId } = await params;
   const [calculation, dataset] = await Promise.all([
-    getProvisionalCalculation(projectId),
+    getProvisionalCalculation(entryId),
     getResearchDataset(),
   ]);
   if (!calculation) notFound();
@@ -301,7 +301,7 @@ async function LegacyProvisionalCalculationPage({
         </section>
 
         <p>
-          <Link href="/provisional/">Back to provisional top 10</Link>
+          <Link href="/">Back to unified top 20</Link>
         </p>
       </main>
     </>
@@ -311,10 +311,10 @@ async function LegacyProvisionalCalculationPage({
 export default async function ProvisionalCalculationPage({
   params,
 }: {
-  params: Promise<{ projectId: string }>;
+  params: Promise<{ entryId: string }>;
 }) {
-  const { projectId } = await params;
-  const unified = await getUnifiedCalculation(projectId);
+  const { entryId } = await params;
+  const unified = await getUnifiedCalculation(entryId);
   if (unified) {
     return (
       <>
@@ -329,6 +329,6 @@ export default async function ProvisionalCalculationPage({
     );
   }
   return (
-    <LegacyProvisionalCalculationPage params={Promise.resolve({ projectId })} />
+    <LegacyProvisionalCalculationPage params={Promise.resolve({ entryId })} />
   );
 }
