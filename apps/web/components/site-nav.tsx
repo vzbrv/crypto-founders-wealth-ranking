@@ -3,10 +3,10 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const links = [
-  { href: "/", label: "Ranking", kind: "ranking" },
+  { href: "/#ranking", label: "Ranking", kind: "ranking" },
   { href: "/methodology/", label: "Methodology", kind: "methodology" },
   { href: "/sources/", label: "Sources", kind: "sources" },
   { href: "/status/", label: "Status", kind: "status" },
@@ -24,6 +24,29 @@ function isActive(
 export function SiteNav() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
+  const navLinksRef = useRef<HTMLDivElement>(null);
+  const wasOpen = useRef(false);
+
+  useEffect(() => {
+    if (open) {
+      navLinksRef.current?.querySelector<HTMLElement>("a, button")?.focus();
+    } else if (wasOpen.current) {
+      menuButtonRef.current?.focus();
+    }
+    wasOpen.current = open;
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [open]);
 
   return (
     <header className="site-header">
@@ -35,17 +58,33 @@ export function SiteNav() {
           onClick={() => setOpen(false)}
         >
           <Image
-            className="brand-logo"
+            className="brand-logo brand-logo-light"
             src="/brand/iq-logo-pink.svg"
-            alt="IQ.wiki"
+            alt=""
             width={40}
             height={40}
             priority
           />
           <Image
-            className="brand-wordmark"
+            className="brand-logo brand-logo-dark"
+            src="/brand/iq-logo-white.svg"
+            alt=""
+            width={40}
+            height={40}
+            priority
+          />
+          <Image
+            className="brand-wordmark brand-wordmark-light"
             src="/brand/iqwiki-black-b.svg"
-            alt="IQ.wiki"
+            alt=""
+            width={126}
+            height={32}
+            priority
+          />
+          <Image
+            className="brand-wordmark brand-wordmark-dark"
+            src="/brand/iqwiki-white-w.svg"
+            alt=""
             width={126}
             height={32}
             priority
@@ -54,15 +93,17 @@ export function SiteNav() {
         <button
           className="menu-button"
           type="button"
+          ref={menuButtonRef}
           aria-expanded={open}
-          aria-controls="primary-navigation-links"
+          aria-controls="nav-links"
           aria-label={open ? "Close navigation menu" : "Open navigation menu"}
           onClick={() => setOpen((value) => !value)}
         >
           <span aria-hidden="true">{open ? "×" : "☰"}</span>
         </button>
         <div
-          id="primary-navigation-links"
+          id="nav-links"
+          ref={navLinksRef}
           className={`nav-links${open ? " is-open" : ""}`}
         >
           {links.map((link) => {
@@ -89,9 +130,16 @@ export function SiteFooter() {
     <footer className="site-footer">
       <div>
         <Image
-          className="footer-wordmark"
+          className="footer-wordmark brand-wordmark-light"
           src="/brand/iqwiki-black-b.svg"
-          alt="IQ.wiki"
+          alt=""
+          width={126}
+          height={32}
+        />
+        <Image
+          className="footer-wordmark brand-wordmark-dark"
+          src="/brand/iqwiki-white-w.svg"
+          alt=""
           width={126}
           height={32}
         />

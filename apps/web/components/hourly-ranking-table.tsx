@@ -151,6 +151,9 @@ export function HourlyRankingTable({
   const snapshotDate = live?.header.utc_hour ?? fallbackSnapshotDate;
   const observationDate =
     live?.header.observation_at ?? fallbackObservationDate;
+  const showRankMovement = rows.some(
+    ({ rankChangeSource }) => rankChangeSource !== "live",
+  );
 
   return (
     <>
@@ -168,11 +171,11 @@ export function HourlyRankingTable({
           <thead>
             <tr>
               <th>Rank</th>
-              <th>Rank change</th>
-              <th>Founder or joint founding team</th>
-              <th>Project or company</th>
+              {showRankMovement && <th>Rank change</th>}
+              <th className="founder-column">Founder or joint founding team</th>
+              <th className="project-column">Project or company</th>
               <th>Value type</th>
-              <th className="number">Gross market value</th>
+              <th className="value-column number">Gross market value</th>
               <th className="number">Affiliated ownership</th>
               <th className="number">Outside capital</th>
               <th className="number">Provisional value created</th>
@@ -195,17 +198,21 @@ export function HourlyRankingTable({
               }) => (
                 <tr key={entry.entryId}>
                   <td className="rank">{entry.rank}</td>
-                  <td className="rank-move">
-                    {(() => {
-                      const movement = formatRankChange(
-                        rankChange,
-                        rankChangeSource,
-                      );
-                      return (
-                        <span aria-label={movement.label}>{movement.text}</span>
-                      );
-                    })()}
-                  </td>
+                  {showRankMovement && (
+                    <td className="rank-move">
+                      {(() => {
+                        const movement = formatRankChange(
+                          rankChange,
+                          rankChangeSource,
+                        );
+                        return (
+                          <span aria-label={movement.label}>
+                            {movement.text}
+                          </span>
+                        );
+                      })()}
+                    </td>
+                  )}
                   <td>
                     <Link href={`/ranking/${entry.entryId}/`}>
                       <strong>{entry.founderTeam}</strong>

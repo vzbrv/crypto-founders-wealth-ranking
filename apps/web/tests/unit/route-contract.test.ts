@@ -80,7 +80,12 @@ describe("ranking route contract", () => {
     expect(homepage).toContain("<UnifiedRankingPage />");
     expect(rankingPage).toContain("<table");
     expect(siteNav).toContain("/brand/iq-logo-pink.svg");
+    expect(siteNav).toContain("/#ranking");
+    expect(siteNav).toContain('aria-controls="nav-links"');
+    expect(siteNav).toContain('id="nav-links"');
+    expect(siteNav).toContain("/brand/iq-logo-white.svg");
     expect(siteNav).toContain("/brand/iqwiki-black-b.svg");
+    expect(siteNav).toContain("/brand/iqwiki-white-w.svg");
     expect(siteNav).not.toContain("/provisional");
     expect(siteNav).not.toContain("/research");
     expect(rankingPage).not.toContain("/provisional/");
@@ -91,6 +96,18 @@ describe("ranking route contract", () => {
     expect(styles).toContain("--background: #17202b");
     expect(styles).toContain("--surface-raised: #272d38");
     expect(styles).toContain("--text: #fafcf8");
+    expect(styles).toContain("background: rgba(255, 92, 170, 0.05);");
+    expect(styles).toContain("@media (prefers-reduced-motion: reduce)");
+    expect(readAppFile("app/manifest.ts")).toContain('short_name: "IQ.wiki"');
+    expect(readAppFile("app/layout.tsx")).toContain(
+      "IQ.wiki Value Created Index — Provisional Value Created for Others",
+    );
+    expect(readAppFile("app/opengraph-image.tsx")).toContain(
+      "IQ.wiki Value Created Index — Provisional Value Created for Others",
+    );
+    expect(homepage).toContain(
+      "IQ.wiki Value Created Index — Provisional Value Created for Others",
+    );
   });
 
   it("has a new statically generated detail route for every ranked entry", async () => {

@@ -7,7 +7,8 @@ import "./globals.css";
 export const metadata: Metadata = {
   metadataBase: getSiteUrl(),
   title: {
-    default: "Top Crypto Founders Ranked by Value Created for Others.",
+    default:
+      "IQ.wiki Value Created Index — Provisional Value Created for Others",
     template: "%s · IQ.wiki Value Created Index",
   },
   description:
@@ -20,12 +21,12 @@ export const metadata: Metadata = {
       "A transparent, time-stamped ranking of crypto founders and founding teams by provisional value created for outside holders and shareholders—not personal wealth.",
     images: [
       {
-        alt: "Top Crypto Founders Ranked by Value Created for Others.",
+        alt: "IQ.wiki Value Created Index — Provisional Value Created for Others",
         url: "/opengraph-image",
       },
     ],
     siteName: "IQ.wiki Value Created Index",
-    title: "Top Crypto Founders Ranked by Value Created for Others.",
+    title: "IQ.wiki Value Created Index — Provisional Value Created for Others",
     type: "website",
     url: "/",
   },
@@ -35,7 +36,7 @@ export const metadata: Metadata = {
     description:
       "A transparent, time-stamped ranking of crypto founders and founding teams by provisional value created for outside holders and shareholders—not personal wealth.",
     images: ["/opengraph-image"],
-    title: "Top Crypto Founders Ranked by Value Created for Others.",
+    title: "IQ.wiki Value Created Index — Provisional Value Created for Others",
   },
 };
 

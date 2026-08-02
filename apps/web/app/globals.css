@@ -49,6 +49,12 @@ html {
   scroll-behavior: smooth;
 }
 
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
 body {
   margin: 0;
   background: var(--background);
@@ -131,9 +137,26 @@ button {
   width: 2.2rem;
   height: 2.2rem;
 }
+.brand-logo-dark,
+.brand-wordmark-dark {
+  display: none;
+}
+
 .brand-wordmark {
   width: 7.9rem;
   height: auto;
+}
+
+@media (prefers-color-scheme: dark) {
+  .brand-logo-light,
+  .brand-wordmark-light {
+    display: none;
+  }
+
+  .brand-logo-dark,
+  .brand-wordmark-dark {
+    display: block;
+  }
 }
 
 .nav-links {
@@ -271,6 +294,7 @@ tbody tr:last-child td {
   border-bottom: 0;
 }
 tbody tr:hover {
+  background: rgba(255, 92, 170, 0.05);
   background: color-mix(in srgb, var(--brand-pink) 5%, var(--surface));
 }
 td strong {
@@ -306,13 +330,13 @@ td small {
 .research-universe-table {
   min-width: 1000px;
 }
-.research-universe-table th:nth-child(3) {
+.research-universe-table .founder-column {
   min-width: 13rem;
 }
-.research-universe-table th:nth-child(4) {
+.research-universe-table .project-column {
   min-width: 11rem;
 }
-.research-universe-table th:nth-child(9) {
+.research-universe-table .value-column {
   min-width: 11rem;
 }
 

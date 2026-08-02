@@ -31,4 +31,11 @@ describe("rank change display", () => {
       label: "Rank movement is not published for this live snapshot",
     });
   });
+
+  it("treats undefined movement as unavailable", () => {
+    expect(formatRankChange(undefined, "fallback")).toEqual({
+      text: "—",
+      label: "No movement shown for the first baseline snapshot",
+    });
+  });
 });
