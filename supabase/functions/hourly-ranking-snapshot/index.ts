@@ -36,6 +36,7 @@ const jsonHeaders = { "content-type": "application/json" };
 const calculationVersion = "unified-v1-hourly";
 const evidenceVersion = "reviewed-evidence-2026-07-30";
 const maxStalenessSeconds = 2 * 60 * 60;
+const quotaPausedStatus = "Paused — provider quota exhausted";
 
 function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), { status, headers: jsonHeaders });
@@ -120,7 +121,13 @@ async function recordFailure(
 async function refreshMarketData(
   supabaseUrl: string,
   cronSecret: string,
-): Promise<{ providerStatus: string; accepted: number }> {
+): Promise<{
+  providerStatus: string;
+  accepted: number;
+  quotaPaused?: boolean;
+  provider?: string;
+  condition?: string;
+}> {
   const response = await fetch(
     new URL("/functions/v1/sync-market-data", supabaseUrl),
     {
@@ -131,7 +138,20 @@ async function refreshMarketData(
   const body = (await response.json().catch(() => ({}))) as {
     providerStatus?: string;
     accepted?: number;
+    status?: string;
+    provider?: string;
+    condition?: string;
+    manualResumeRequired?: boolean;
   };
+  if (body.status === quotaPausedStatus || body.manualResumeRequired) {
+    return {
+      providerStatus: "paused",
+      accepted: 0,
+      quotaPaused: true,
+      provider: body.provider ?? "coingecko",
+      condition: body.condition ?? "UPDATES_PAUSED",
+    };
+  }
   if (!response.ok || body.providerStatus === "failed") {
     throw new Error("market provider failed");
   }
@@ -201,6 +221,26 @@ Deno.serve(async (request) => {
 
   try {
     const market = await refreshMarketData(supabaseUrl, cronSecret);
+    if (market.quotaPaused) {
+      log("error", "quota_paused", {
+        provider: market.provider,
+        condition: market.condition,
+        status: quotaPausedStatus,
+        staleDataRetained: true,
+        manualResumeRequired: true,
+      });
+      return json(
+        {
+          error: "Provider quota exhausted",
+          status: quotaPausedStatus,
+          provider: market.provider,
+          condition: market.condition,
+          staleDataRetained: true,
+          manualResumeRequired: true,
+        },
+        409,
+      );
+    }
     await rpc(supabaseUrl, headers, "recalculate_rankings", {
       p_trigger_type: "hourly_snapshot",
     });

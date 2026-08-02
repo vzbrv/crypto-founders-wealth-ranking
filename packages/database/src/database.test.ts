@@ -82,6 +82,10 @@ const hourlySnapshotStatusMigrationUrl = new URL(
   "../../../supabase/migrations/202608010023_hourly_snapshot_status.sql",
   import.meta.url,
 );
+const providerQuotaProtectionMigrationUrl = new URL(
+  "../../../supabase/migrations/202608010024_provider_quota_protection.sql",
+  import.meta.url,
+);
 const sqlConfidenceEvidence = await readFile(
   sqlConfidenceEvidenceMigrationUrl,
   "utf8",
@@ -109,6 +113,7 @@ const migrationSql = [
   await readFile(rankingIntegrityMigrationUrl, "utf8"),
   await readFile(hourlySnapshotsMigrationUrl, "utf8"),
   await readFile(hourlySnapshotStatusMigrationUrl, "utf8"),
+  await readFile(providerQuotaProtectionMigrationUrl, "utf8"),
 ].join("\n");
 const seedSql = await readFile(seedUrl, "utf8");
 const productionDataDirectory = fileURLToPath(
@@ -127,6 +132,7 @@ const expectedTables = [
   "hourly_snapshot_results",
   "hourly_snapshot_sources",
   "hourly_snapshots",
+  "hourly_update_control",
   "market_observations",
   "people",
   "project_confidence_evidence",
@@ -134,6 +140,9 @@ const expectedTables = [
   "project_scores",
   "projects",
   "provider_health",
+  "provider_quota_config",
+  "provider_usage_events",
+  "provider_usage_monthly",
   "record_sources",
   "source_records",
   "tracked_wallets",
@@ -157,6 +166,7 @@ const expectedViews = [
   "public_latest_snapshot_status",
   "public_leaderboard",
   "public_project_details",
+  "public_provider_quota_status",
   "public_provider_status",
   "public_snapshot_sources",
   "public_source_claims",
@@ -313,6 +323,105 @@ describe("Hourly ranking snapshots", () => {
          where id = '00000000-0000-4000-8000-202607300000'`,
       ),
     ).rejects.toThrow("immutable hourly snapshot cannot be modified");
+  });
+});
+
+describe("Provider quota protection", () => {
+  it("reports a free-tier budget below the documented quota", async () => {
+    const database = await createDatabase();
+    const result = await database.query<{
+      documented_monthly_quota: number;
+      hard_monthly_request_limit: number;
+      estimated_monthly_requests: number;
+    }>(
+      `select documented_monthly_quota, hard_monthly_request_limit,
+              estimated_monthly_requests
+       from public_provider_quota_status where provider = 'coingecko'`,
+    );
+
+    expect(result.rows[0]).toEqual({
+      documented_monthly_quota: 10000,
+      hard_monthly_request_limit: 9000,
+      estimated_monthly_requests: 744,
+    });
+  });
+
+  it("stops and blocks duplicate requests after quota exhaustion", async () => {
+    const database = await createDatabase();
+    await database.exec(
+      `update provider_quota_config
+       set hard_monthly_request_limit = 1
+       where provider = 'coingecko'`,
+    );
+
+    const first = await database.query<Record<string, unknown>>(
+      "select reserve_provider_request($1, $2, $3, $4) as decision",
+      ["coingecko", 1, "/coins/markets", "2026-08-01T01:00:00Z"],
+    );
+    const second = await database.query<Record<string, unknown>>(
+      "select reserve_provider_request($1, $2, $3, $4) as decision",
+      ["coingecko", 1, "/coins/markets", "2026-08-01T01:30:00Z"],
+    );
+
+    expect(first.rows[0]?.decision).toMatchObject({
+      allowed: true,
+      remaining: 0,
+    });
+    expect(second.rows[0]?.decision).toMatchObject({
+      allowed: false,
+      code: "PROVIDER_QUOTA_EXHAUSTED",
+      status: "Paused — provider quota exhausted",
+    });
+
+    const state = await database.query<Record<string, unknown>>(
+      `select control.status, control.updates_enabled,
+              control.paused_provider, control.paused_condition,
+              usage.request_count, usage.status as usage_status,
+              (select count(*)::int from provider_usage_events
+               where provider = 'coingecko' and outcome = 'reserved') as reserved,
+              (select count(*)::int from provider_usage_events
+               where provider = 'coingecko' and outcome = 'blocked') as blocked
+       from hourly_update_control control
+       join provider_usage_monthly usage
+         on usage.provider = 'coingecko'
+        and usage.month_start = '2026-08-01T00:00:00Z'`,
+    );
+    expect(state.rows[0]).toMatchObject({
+      status: "Paused — provider quota exhausted",
+      updates_enabled: false,
+      paused_provider: "coingecko",
+      paused_condition: "MONTHLY_QUOTA_EXHAUSTED",
+      request_count: 1,
+      usage_status: "paused",
+      reserved: 1,
+      blocked: 1,
+    });
+  });
+
+  it("fails closed when the scheduler control row is unavailable", async () => {
+    const database = await createDatabase();
+    await database.exec("delete from hourly_update_control");
+
+    const result = await database.query<Record<string, unknown>>(
+      "select reserve_provider_request($1, $2, $3, $4) as decision",
+      ["coingecko", 1, "/coins/markets", "2026-08-01T02:00:00Z"],
+    );
+
+    expect(result.rows[0]?.decision).toMatchObject({
+      allowed: false,
+      code: "UPDATES_PAUSED",
+      status: "Paused — provider quota exhausted",
+    });
+  });
+
+  it("requires explicit manual confirmation before resuming", async () => {
+    const database = await createDatabase();
+    await expect(
+      database.query("select resume_provider_updates($1, $2)", [
+        "coingecko",
+        "automatic",
+      ]),
+    ).rejects.toThrow("explicit manual resume confirmation is required");
   });
 });
 

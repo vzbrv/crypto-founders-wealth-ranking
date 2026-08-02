@@ -70,6 +70,28 @@ export interface CoinGeckoAdapterOptions {
   circuitFailureThreshold?: number;
   circuitCooldownMs?: number;
   demoApiKey?: string;
+  beforeRequest?: (details: {
+    provider: "coingecko";
+    endpoint: string;
+    requestedAt: string;
+  }) => void | Promise<void>;
+  onPermanentStop?: (details: {
+    provider: "coingecko";
+    endpoint: string;
+    status: number;
+    condition: string;
+    stoppedAt: string;
+  }) => void | Promise<void>;
+}
+
+export class ProviderQuotaStopError extends Error {
+  readonly condition: string;
+
+  constructor(condition: string) {
+    super(`Provider quota protection stopped requests: ${condition}`);
+    this.name = "ProviderQuotaStopError";
+    this.condition = condition;
+  }
 }
 
 interface CoinGeckoMarket {
@@ -105,6 +127,20 @@ function chunks<T>(values: T[], size: number): T[][] {
   );
 }
 
+function permanentStopCondition(status: number, body: string): string | null {
+  const normalized = body.toLowerCase();
+  if (status === 429) return "HTTP_429_RATE_OR_QUOTA_LIMIT";
+  if (status === 402) return "HTTP_402_PAYMENT_REQUIRED";
+  if (
+    /quota|billing[ -]?required|payment[ -]?required|usage[ -]?limit|overage/.test(
+      normalized,
+    )
+  ) {
+    return `HTTP_${status}_PROVIDER_LIMIT`;
+  }
+  return null;
+}
+
 export class CoinGeckoAdapter {
   readonly #fetch: typeof fetch;
   readonly #now: () => Date;
@@ -117,6 +153,8 @@ export class CoinGeckoAdapter {
   readonly #circuitFailureThreshold: number;
   readonly #circuitCooldownMs: number;
   readonly #demoApiKey: string | undefined;
+  readonly #beforeRequest: CoinGeckoAdapterOptions["beforeRequest"];
+  readonly #onPermanentStop: CoinGeckoAdapterOptions["onPermanentStop"];
   #lastRequestAt = 0;
   #consecutiveFailures = 0;
   #circuitOpenUntil = 0;
@@ -131,11 +169,13 @@ export class CoinGeckoAdapter {
     this.#random = options.random ?? Math.random;
     this.#batchSize = Math.min(200, Math.max(1, options.batchSize ?? 200));
     this.#timeoutMs = options.timeoutMs ?? 10_000;
-    this.#maxRetries = options.maxRetries ?? 2;
+    this.#maxRetries = Math.min(2, Math.max(0, options.maxRetries ?? 2));
     this.#minRequestIntervalMs = options.minRequestIntervalMs ?? 1_200;
     this.#circuitFailureThreshold = options.circuitFailureThreshold ?? 3;
     this.#circuitCooldownMs = options.circuitCooldownMs ?? 60_000;
     this.#demoApiKey = options.demoApiKey;
+    this.#beforeRequest = options.beforeRequest;
+    this.#onPermanentStop = options.onPermanentStop;
   }
 
   async sync(assets: MarketAsset[]): Promise<MarketSyncResult> {
@@ -234,6 +274,7 @@ export class CoinGeckoAdapter {
         }
         this.#consecutiveFailures = 0;
       } catch (error) {
+        if (error instanceof ProviderQuotaStopError) throw error;
         this.#consecutiveFailures += 1;
         if (this.#consecutiveFailures >= this.#circuitFailureThreshold) {
           this.#circuitOpenUntil = Date.now() + this.#circuitCooldownMs;
@@ -286,6 +327,12 @@ export class CoinGeckoAdapter {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), this.#timeoutMs);
       try {
+        const endpoint = "/coins/markets";
+        await this.#beforeRequest?.({
+          provider: "coingecko",
+          endpoint,
+          requestedAt: this.#now().toISOString(),
+        });
         const url = new URL(`${COINGECKO_BASE_URL}/coins/markets`);
         url.searchParams.set("vs_currency", "usd");
         url.searchParams.set("ids", ids.join(","));
@@ -297,13 +344,31 @@ export class CoinGeckoAdapter {
             ? { headers: { "x-cg-demo-api-key": this.#demoApiKey } }
             : {}),
         });
-        if (!response.ok)
+        if (!response.ok) {
+          const body = await response.text().catch(() => "");
+          const condition = permanentStopCondition(response.status, body);
+          if (condition) {
+            try {
+              await this.#onPermanentStop?.({
+                provider: "coingecko",
+                endpoint,
+                status: response.status,
+                condition,
+                stoppedAt: this.#now().toISOString(),
+              });
+            } catch {
+              throw new ProviderQuotaStopError("QUOTA_STOP_RECORD_FAILED");
+            }
+            throw new ProviderQuotaStopError(condition);
+          }
           throw new Error(`CoinGecko returned HTTP ${response.status}`);
+        }
         const payload: unknown = await response.json();
         if (!Array.isArray(payload))
           throw new Error("CoinGecko response must be an array");
         return payload as CoinGeckoMarket[];
       } catch (error) {
+        if (error instanceof ProviderQuotaStopError) throw error;
         lastError =
           error instanceof Error
             ? error

@@ -1,6 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { CoinGeckoAdapter } from "./index.js";
+import {
+  CoinGeckoAdapter,
+  type CoinGeckoAdapterOptions,
+  ProviderQuotaStopError,
+} from "./index.js";
 
 const assets = [
   { assetId: "asset-a", coingeckoId: "alpha" },
@@ -117,5 +121,65 @@ describe("CoinGeckoAdapter", () => {
       status: "failed",
       errorCode: "provider_failure",
     });
+  });
+
+  it("stops permanently on quota responses without retrying", async () => {
+    const fetch = vi
+      .fn<typeof globalThis.fetch>()
+      .mockResolvedValue(new Response("quota exceeded", { status: 429 }));
+    const onPermanentStop = vi.fn();
+    const guardedAdapter = new CoinGeckoAdapter({
+      fetch,
+      now: () => new Date("2026-07-28T12:00:00Z"),
+      sleep: async () => undefined,
+      minRequestIntervalMs: 0,
+      maxRetries: 2,
+      onPermanentStop,
+    });
+
+    await expect(guardedAdapter.sync(assets)).rejects.toBeInstanceOf(
+      ProviderQuotaStopError,
+    );
+    expect(fetch).toHaveBeenCalledOnce();
+    expect(onPermanentStop).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: 429,
+        condition: "HTTP_429_RATE_OR_QUOTA_LIMIT",
+      }),
+    );
+  });
+
+  it("checks quota before each batched provider request", async () => {
+    const fetch = vi.fn<typeof globalThis.fetch>().mockResolvedValue(
+      new Response(
+        JSON.stringify([
+          {
+            id: "alpha",
+            current_price: 1,
+            circulating_supply: 100,
+            market_cap: 100,
+            last_updated: "2026-07-28T11:59:00Z",
+          },
+        ]),
+      ),
+    );
+    const beforeRequest = vi
+      .fn<NonNullable<CoinGeckoAdapterOptions["beforeRequest"]>>()
+      .mockResolvedValue(undefined);
+    const guardedAdapter = new CoinGeckoAdapter({
+      fetch,
+      now: () => new Date("2026-07-28T12:00:00Z"),
+      sleep: async () => undefined,
+      minRequestIntervalMs: 0,
+      maxRetries: 0,
+      batchSize: 1,
+      beforeRequest,
+    });
+
+    const result = await guardedAdapter.sync([assets[0]!]);
+
+    expect(beforeRequest).toHaveBeenCalledOnce();
+    expect(fetch).toHaveBeenCalledOnce();
+    expect(result.observations).toHaveLength(1);
   });
 });
