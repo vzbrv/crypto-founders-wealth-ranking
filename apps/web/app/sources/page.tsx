@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 
-import { SiteNav } from "../../components/site-nav";
+import { SiteFooter, SiteNav } from "../../components/site-nav";
 import { SourceRegistry } from "../../components/source-registry";
 import { getResearchDataset, getUnifiedDataset } from "../../lib/research-data";
 import { getAllSourceClaims } from "../../lib/transparency-data";
@@ -128,6 +128,7 @@ export default async function SourcesPage() {
           </div>
         </section>
       </main>
+      <SiteFooter />
     </>
   );
 }

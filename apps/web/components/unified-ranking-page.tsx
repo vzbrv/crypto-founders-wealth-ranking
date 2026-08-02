@@ -1,4 +1,4 @@
-import { SiteNav } from "./site-nav";
+import { SiteFooter, SiteNav } from "./site-nav";
 import { HourlyRankingTable } from "./hourly-ranking-table";
 import {
   getPrivateCompanyCandidates,
@@ -99,6 +99,7 @@ export default async function UnifiedRankingPage() {
           </div>
         </section>
       </main>
+      <SiteFooter />
     </>
   );
 }

@@ -4,13 +4,13 @@ export const dynamic = "force-static";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    background_color: "#07100e",
+    background_color: "#0F172A",
     description:
-      "A transparent provisional ranking of crypto founders and joint founding teams by project circulating market value minus verified affiliated holdings and reviewed outside capital.",
+      "A transparent, time-stamped ranking of crypto founders and founding teams by provisional value created for outside holders and shareholders—not personal wealth.",
     display: "standalone",
-    name: "Crypto Founders Value Created Index",
+    name: "IQ.wiki Value Created Index",
     short_name: "Crypto Founders",
     start_url: "/",
-    theme_color: "#07100e",
+    theme_color: "#FF5CAA",
   };
 }

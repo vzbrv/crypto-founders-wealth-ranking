@@ -121,7 +121,7 @@ test("fits the founder ranking on a mobile viewport", async ({ page }) => {
     }),
   ).toBeVisible();
   await expect(
-    page.locator("tbody tr td:nth-child(2) > a").first(),
+    page.locator("tbody tr td:nth-child(3) > a").first(),
   ).toBeVisible();
   expect(
     await page.evaluate(
@@ -504,7 +504,7 @@ test("publishes unified founder calculations and sources separately", async ({
   await expect(page.getByText("Coinbase", { exact: true })).toHaveCount(1);
 
   const rankedProjects = await rankingTable
-    .locator("tbody tr td:nth-child(3)")
+    .locator("tbody tr td:nth-child(4)")
     .allTextContents();
   expect(rankedProjects.indexOf("Chainlink")).toBeLessThan(
     rankedProjects.indexOf("Cardano"),

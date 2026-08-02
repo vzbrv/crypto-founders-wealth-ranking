@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import type { UnifiedCalculation } from "@crypto-founders/curated-data/unified";
 
 import { HourlySnapshotStatus } from "./hourly-snapshot-status";
+import { formatRankChange } from "../lib/rank-change";
 
 type LiveHeader = {
   utc_hour: string;
@@ -137,11 +138,15 @@ export function HourlyRankingTable({
           },
           upperEstimate: fallback.upperEstimate,
           liveObservationAt: result.observation_at,
+          rankChange: null,
+          rankChangeSource: "live" as const,
         };
       })
     : fallbackRanking.map((calculation) => ({
         ...calculation,
         liveObservationAt: null,
+        rankChange: null,
+        rankChangeSource: "fallback" as const,
       }));
   const snapshotDate = live?.header.utc_hour ?? fallbackSnapshotDate;
   const observationDate =
@@ -163,6 +168,7 @@ export function HourlyRankingTable({
           <thead>
             <tr>
               <th>Rank</th>
+              <th>Rank change</th>
               <th>Founder or joint founding team</th>
               <th>Project or company</th>
               <th>Value type</th>
@@ -184,9 +190,22 @@ export function HourlyRankingTable({
                 provisionalValueCreatedUsd,
                 upperEstimate,
                 liveObservationAt,
+                rankChange,
+                rankChangeSource,
               }) => (
                 <tr key={entry.entryId}>
                   <td className="rank">{entry.rank}</td>
+                  <td className="rank-move">
+                    {(() => {
+                      const movement = formatRankChange(
+                        rankChange,
+                        rankChangeSource,
+                      );
+                      return (
+                        <span aria-label={movement.label}>{movement.text}</span>
+                      );
+                    })()}
+                  </td>
                   <td>
                     <Link href={`/ranking/${entry.entryId}/`}>
                       <strong>{entry.founderTeam}</strong>

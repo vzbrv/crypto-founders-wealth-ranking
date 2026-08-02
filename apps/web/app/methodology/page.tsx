@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-import { SiteNav } from "../../components/site-nav";
+import { SiteFooter, SiteNav } from "../../components/site-nav";
 
 export const metadata: Metadata = {
   title: "Methodology",
@@ -86,6 +86,7 @@ export default function MethodologyPage() {
           <a href="/sources/">Browse the source registry</a>
         </section>
       </main>
+      <SiteFooter />
     </>
   );
 }

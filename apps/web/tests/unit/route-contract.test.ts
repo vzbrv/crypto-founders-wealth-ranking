@@ -75,11 +75,22 @@ describe("ranking route contract", () => {
     const homepage = readAppFile("app/page.tsx");
     const rankingPage = readAppFile("components/unified-ranking-page.tsx");
     const siteNav = readAppFile("components/site-nav.tsx");
+    const styles = readAppFile("app/globals.css");
 
     expect(homepage).toContain("<UnifiedRankingPage />");
     expect(rankingPage).toContain("<table");
+    expect(siteNav).toContain("/brand/iq-logo-pink.svg");
+    expect(siteNav).toContain("/brand/iqwiki-black-b.svg");
     expect(siteNav).not.toContain("/provisional");
+    expect(siteNav).not.toContain("/research");
     expect(rankingPage).not.toContain("/provisional/");
+    expect(styles).toContain("--brand-pink: #ff5caa");
+    expect(styles).toContain("--brand-pink-dark: #ff1a88");
+    expect(styles).toContain("--navy: #0f172a");
+    expect(styles).toContain("--muted-bg: #f3f4f6");
+    expect(styles).toContain("--background: #17202b");
+    expect(styles).toContain("--surface-raised: #272d38");
+    expect(styles).toContain("--text: #fafcf8");
   });
 
   it("has a new statically generated detail route for every ranked entry", async () => {

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { SiteNav } from "../../../components/site-nav";
+import { SiteFooter, SiteNav } from "../../../components/site-nav";
 import { UnifiedCalculationPage } from "../../../components/unified-calculation";
 import {
   getUnifiedCalculation,
@@ -304,6 +304,7 @@ async function LegacyProvisionalCalculationPage({
           <Link href="/">Back to unified top 20</Link>
         </p>
       </main>
+      <SiteFooter />
     </>
   );
 }
@@ -325,6 +326,7 @@ export default async function ProvisionalCalculationPage({
             dataset={await getUnifiedDataset()}
           />
         </main>
+        <SiteFooter />
       </>
     );
   }
