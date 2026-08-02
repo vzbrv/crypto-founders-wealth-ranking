@@ -116,7 +116,9 @@ test("fits the founder ranking on a mobile viewport", async ({ page }) => {
     }),
   ).toBeVisible();
   await expect(
-    page.getByRole("columnheader", { name: "Founder or founding team" }),
+    page.getByRole("columnheader", {
+      name: "Founder or joint founding team",
+    }),
   ).toBeVisible();
   await expect(
     page.locator("tbody tr td:nth-child(2) > a").first(),
@@ -439,10 +441,13 @@ test("documents the public methodology", async ({ page }) => {
     page.getByRole("heading", { name: "Methodology" }),
   ).toBeVisible();
   await expect(
-    page.getByRole("heading", { name: "Circulation assumptions" }),
+    page.getByRole("heading", { name: "Token/network formula" }),
   ).toBeVisible();
   await expect(
-    page.getByRole("heading", { name: "Confidence system" }),
+    page.getByRole("heading", { name: "Public-company formula" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Confidence scoring" }),
   ).toBeVisible();
 });
 
@@ -477,66 +482,58 @@ test("publishes provisional founder calculations and sources separately", async 
     }),
   ).toBeVisible();
   await expect(
-    page.getByRole("columnheader", { name: "Founder or founding team" }),
-  ).toBeVisible();
-  await expect(
-    page.getByRole("columnheader", { name: "Project" }),
-  ).toBeVisible();
-  await expect(
     page.getByRole("columnheader", {
-      name: "Provisional value created for outside holders.",
+      name: "Founder or joint founding team",
     }),
   ).toBeVisible();
-  await expect(page.getByText("Unknown deductions are omitted")).toBeVisible();
+  await expect(
+    page.getByRole("columnheader", { name: "Project or company" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("columnheader", { name: "Provisional value created" }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("Unknown deductions remain Unknown"),
+  ).toBeVisible();
   await expect(
     page.getByRole("heading", { name: "Coverage warning" }),
   ).toBeVisible();
-  await expect(page.getByRole("row")).toHaveCount(11);
+  const rankingTable = page.getByRole("table").first();
+  await expect(rankingTable.getByRole("row")).toHaveCount(21);
   await expect(
-    page.getByRole("link", { name: "Calculation & sources" }),
-  ).toHaveCount(10);
+    rankingTable.getByRole("link", { name: "Calculation & sources" }),
+  ).toHaveCount(20);
   await expect(
-    page.getByText("Observed 2026-07-30T00:00:00Z", { exact: true }),
-  ).toHaveCount(10);
+    rankingTable.getByText("2026-07-30", { exact: true }),
+  ).toHaveCount(20);
+  await expect(
+    page.getByRole("heading", { name: "Private-company candidates" }),
+  ).toBeVisible();
+  await expect(page.getByText("Binance", { exact: true })).toBeVisible();
+  await expect(page.getByText("Coinbase", { exact: true })).toHaveCount(1);
 
-  const rankedProjects = await page
+  const rankedProjects = await rankingTable
     .locator("tbody tr td:nth-child(3)")
     .allTextContents();
   expect(rankedProjects.indexOf("Chainlink")).toBeLessThan(
     rankedProjects.indexOf("Cardano"),
   );
 
-  const founderLink = page.locator("tbody tr td:nth-child(2) > a").first();
-  const founderName = await founderLink.innerText();
-  await founderLink.click();
-  await expect(page).toHaveURL(/\/provisional\//);
-  await expect(page.getByRole("heading", { name: founderName })).toBeVisible();
-  await expect(page.getByText("Project:", { exact: false })).toBeVisible();
+  await page.goto("/provisional/coinbase/");
   await expect(
-    page.getByRole("heading", { name: "Calculation" }),
-  ).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Sources" })).toBeVisible();
-  await expect(
-    page.getByRole("link", { name: "CoinGecko — Bitcoin" }),
+    page.getByRole("heading", { name: "Brian Armstrong & Fred Ehrsam" }),
   ).toBeVisible();
   await expect(
-    page.getByText("Observation time", { exact: true }),
-  ).toBeVisible();
-  await expect(page.getByText("Fetch time", { exact: true })).toBeVisible();
-  await expect(
-    page.getByText("CoinGecko coin ID", { exact: true }),
+    page.getByRole("heading", { name: "Public-company reconstruction" }),
   ).toBeVisible();
   await expect(
-    page.getByText("Snapshot method", { exact: true }),
+    page.getByText("Gross market value", { exact: true }),
   ).toBeVisible();
   await expect(
-    page.getByRole("link", { name: "CoinGecko historical record" }),
-  ).toHaveAttribute(
-    "href",
-    "https://api.coingecko.com/api/v3/coins/bitcoin/history?date=30-07-2026&localization=false",
-  );
+    page.getByText("Founder/affiliate shares:", { exact: false }),
+  ).toBeVisible();
   await expect(
-    page.getByText("Unknown", { exact: true }).first(),
+    page.getByText("$43,184,827,557", { exact: false }),
   ).toBeVisible();
 });
 
