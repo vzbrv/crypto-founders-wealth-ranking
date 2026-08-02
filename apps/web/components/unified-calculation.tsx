@@ -260,7 +260,7 @@ export function UnifiedCalculationPage({
       </section>
 
       <p>
-        <Link href="/provisional/">Back to unified top 20</Link>
+        <Link href="/">Back to unified top 20</Link>
       </p>
     </>
   );

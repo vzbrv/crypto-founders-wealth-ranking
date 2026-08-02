@@ -1,19 +1,11 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 
-import { SiteNav } from "../../components/site-nav";
+import { SiteNav } from "./site-nav";
 import {
   getPrivateCompanyCandidates,
   getUnifiedDataset,
   getUnifiedRanking,
-} from "../../lib/research-data";
-
-export const metadata: Metadata = {
-  title: "Unified provisional founder ranking",
-  description:
-    "A dated, source-linked unified ranking of crypto founding teams by provisional value created for outside holders and shareholders.",
-  alternates: { canonical: "/provisional/" },
-};
+} from "../lib/research-data";
 
 function money(value: string | null): string {
   if (value === null) return "Unknown";
@@ -25,7 +17,7 @@ function money(value: string | null): string {
   }).format(Number(value));
 }
 
-export default async function ProvisionalPage() {
+export default async function UnifiedRankingPage() {
   const [dataset, ranking, candidates] = await Promise.all([
     getUnifiedDataset(),
     getUnifiedRanking(),
@@ -99,11 +91,11 @@ export default async function ProvisionalPage() {
                     <tr key={entry.entryId}>
                       <td className="rank">{entry.rank}</td>
                       <td>
-                        <Link href={`/provisional/${entry.entryId}/`}>
+                        <Link href={`/ranking/${entry.entryId}/`}>
                           <strong>{entry.founderTeam}</strong>
                         </Link>
                         <small>
-                          <Link href={`/provisional/${entry.entryId}/`}>
+                          <Link href={`/ranking/${entry.entryId}/`}>
                             Calculation &amp; sources
                           </Link>
                         </small>
