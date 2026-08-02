@@ -79,11 +79,11 @@ describe("ranking route contract", () => {
 
     expect(homepage).toContain("<UnifiedRankingPage />");
     expect(rankingPage).toContain("<table");
-    expect(siteNav).toContain("/brand/iq-logo-pink.svg");
+    expect(siteNav).not.toContain("/brand/iq-logo-pink.svg");
     expect(siteNav).toContain("/#ranking");
     expect(siteNav).toContain('aria-controls="nav-links"');
     expect(siteNav).toContain('id="nav-links"');
-    expect(siteNav).toContain("/brand/iq-logo-white.svg");
+    expect(siteNav).not.toContain("/brand/iq-logo-white.svg");
     expect(siteNav).toContain("/brand/iqwiki-black-b.svg");
     expect(siteNav).toContain("/brand/iqwiki-white-w.svg");
     expect(siteNav).not.toContain("/provisional");
