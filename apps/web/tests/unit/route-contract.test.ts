@@ -78,7 +78,7 @@ describe("ranking route contract", () => {
     const styles = readAppFile("app/globals.css");
 
     expect(homepage).toContain("<UnifiedRankingPage />");
-    expect(rankingPage).toContain("<table");
+    expect(rankingPage).toContain("<HourlyRankingTable");
     expect(siteNav).not.toContain("/brand/iq-logo-pink.svg");
     expect(siteNav).toContain("/#ranking");
     expect(siteNav).toContain('aria-controls="nav-links"');

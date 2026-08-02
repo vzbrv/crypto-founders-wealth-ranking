@@ -1,16 +1,11 @@
 import { SiteFooter, SiteNav } from "./site-nav";
 import { HourlyRankingTable } from "./hourly-ranking-table";
-import {
-  getPrivateCompanyCandidates,
-  getUnifiedDataset,
-  getUnifiedRanking,
-} from "../lib/research-data";
+import { getUnifiedDataset, getUnifiedRanking } from "../lib/research-data";
 
 export default async function UnifiedRankingPage() {
-  const [dataset, ranking, candidates] = await Promise.all([
+  const [dataset, ranking] = await Promise.all([
     getUnifiedDataset(),
     getUnifiedRanking(),
-    getPrivateCompanyCandidates(),
   ]);
 
   return (
@@ -59,46 +54,6 @@ export default async function UnifiedRankingPage() {
               dataset.entries[0]?.observationDate ?? dataset.snapshotDate
             }
           />
-        </section>
-
-        <section className="panel" aria-labelledby="private-heading">
-          <div className="section-heading compact">
-            <h2 id="private-heading">Private-company coverage</h2>
-            <p>
-              Shown for transparency only. These companies are not ranked
-              because the evidence required for a comparable estimate is not yet
-              available.
-            </p>
-          </div>
-          <div className="table-shell evidence-shell">
-            <table className="evidence-table">
-              <thead>
-                <tr>
-                  <th>Founder/team</th>
-                  <th>Company</th>
-                  <th>Why it might qualify</th>
-                  <th>Most recent valuation reference</th>
-                  <th>Missing evidence / exclusion</th>
-                </tr>
-              </thead>
-              <tbody>
-                {candidates.map((candidate) => (
-                  <tr key={candidate.candidateId}>
-                    <td>{candidate.founderTeam}</td>
-                    <td>
-                      <strong>{candidate.company}</strong>
-                    </td>
-                    <td>{candidate.whyQualifies}</td>
-                    <td>{candidate.mostRecentValuationReference}</td>
-                    <td>
-                      {candidate.missingEvidence.join(" ")}{" "}
-                      {candidate.exclusionReason}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
         </section>
       </main>
       <SiteFooter />

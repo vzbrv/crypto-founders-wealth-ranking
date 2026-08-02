@@ -42,10 +42,6 @@ const sections = [
     "Eligibility and upper estimates",
     "Only supported, validated entries can rank. Unknown values never become zero. An entry with an unknown accepted deduction may remain eligible but is labelled an upper estimate. Published ranking entries remain distinct from research candidates; validation failures remove an entry from the primary table.",
   ],
-  [
-    "Private-company exclusions",
-    "Unverifiable private-company valuations are not ranked. Binance, Kraken, and Tether are shown separately with non-ranking valuation references and the missing evidence that prevents inclusion.",
-  ],
 ];
 
 export default function MethodologyPage() {

@@ -109,24 +109,12 @@ export interface UnifiedEntry {
   comparability: string;
 }
 
-export interface PrivateCompanyCandidate {
-  candidateId: string;
-  founderTeam: string;
-  company: string;
-  whyQualifies: string;
-  mostRecentValuationReference: string;
-  valuationSourceId: string | null;
-  missingEvidence: string[];
-  exclusionReason: string;
-}
-
 export interface UnifiedDataset {
   metric: string;
   snapshotDate: string;
   methodologyVersion: string;
   sources: UnifiedSource[];
   entries: UnifiedEntry[];
-  privateCandidates: PrivateCompanyCandidate[];
 }
 
 export interface UnifiedCalculation {
@@ -314,10 +302,5 @@ export function validateUnifiedDataset(dataset: UnifiedDataset): string[] {
         `${entry.entryId} mixes stablecoin supply with company equity`,
       );
   }
-  for (const candidate of dataset.privateCandidates)
-    if (
-      dataset.entries.some((entry) => entry.entryId === candidate.candidateId)
-    )
-      errors.push(`${candidate.candidateId} private candidate has a rank`);
   return errors;
 }

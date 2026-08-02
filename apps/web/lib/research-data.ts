@@ -14,7 +14,6 @@ import {
 import {
   buildUnifiedRanking,
   loadUnifiedData,
-  type PrivateCompanyCandidate,
   type UnifiedCalculation,
   type UnifiedDataset,
 } from "@crypto-founders/curated-data/unified";
@@ -72,12 +71,6 @@ export async function getUnifiedCalculation(
   return (await getUnifiedRanking()).find(
     ({ entry }) => entry.entryId === projectId,
   );
-}
-
-export async function getPrivateCompanyCandidates(): Promise<
-  PrivateCompanyCandidate[]
-> {
-  return (await getUnifiedDataset()).privateCandidates;
 }
 
 export async function getResearchProjectIds(): Promise<string[]> {
