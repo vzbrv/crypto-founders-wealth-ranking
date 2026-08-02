@@ -7,26 +7,25 @@ import "./globals.css";
 export const metadata: Metadata = {
   metadataBase: getSiteUrl(),
   title: {
-    default:
-      "IQ.wiki Value Created Index — Provisional Value Created for Others",
+    default: "IQ.wiki Value Created Index — Value Created for Others",
     template: "%s · IQ.wiki Value Created Index",
   },
   description:
-    "A transparent, time-stamped ranking of crypto founders and founding teams by provisional value created for outside holders and shareholders—not personal wealth.",
+    "A transparent, time-stamped ranking of crypto founders and founding teams by estimated value created for outside holders and shareholders—not personal wealth.",
   applicationName: "IQ.wiki Value Created Index",
   alternates: { canonical: "/" },
   category: "finance",
   openGraph: {
     description:
-      "A transparent, time-stamped ranking of crypto founders and founding teams by provisional value created for outside holders and shareholders—not personal wealth.",
+      "A transparent, time-stamped ranking of crypto founders and founding teams by estimated value created for outside holders and shareholders—not personal wealth.",
     images: [
       {
-        alt: "IQ.wiki Value Created Index — Provisional Value Created for Others",
+        alt: "IQ.wiki Value Created Index — Value Created for Others",
         url: "/opengraph-image",
       },
     ],
     siteName: "IQ.wiki Value Created Index",
-    title: "IQ.wiki Value Created Index — Provisional Value Created for Others",
+    title: "IQ.wiki Value Created Index — Value Created for Others",
     type: "website",
     url: "/",
   },
@@ -34,9 +33,9 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     description:
-      "A transparent, time-stamped ranking of crypto founders and founding teams by provisional value created for outside holders and shareholders—not personal wealth.",
+      "A transparent, time-stamped ranking of crypto founders and founding teams by estimated value created for outside holders and shareholders—not personal wealth.",
     images: ["/opengraph-image"],
-    title: "IQ.wiki Value Created Index — Provisional Value Created for Others",
+    title: "IQ.wiki Value Created Index — Value Created for Others",
   },
 };
 

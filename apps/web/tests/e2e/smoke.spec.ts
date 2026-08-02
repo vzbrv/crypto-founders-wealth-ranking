@@ -514,7 +514,7 @@ test("publishes unified founder calculations and sources separately", async ({
     rankingTable.getByRole("link", { name: "Calculation & sources" }),
   ).toHaveCount(20);
   await expect(
-    page.getByRole("heading", { name: "Private-company candidates" }),
+    page.getByRole("heading", { name: "Private-company coverage" }),
   ).toBeVisible();
   await expect(page.getByText("Binance", { exact: true })).toBeVisible();
   await expect(page.getByText("Coinbase", { exact: true })).toHaveCount(1);

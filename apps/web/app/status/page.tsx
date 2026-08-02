@@ -47,14 +47,14 @@ export default async function StatusPage() {
         <section className="panel" aria-labelledby="dataset-status-heading">
           <div className="section-heading compact">
             <div>
-              <p className="eyebrow">Research freshness</p>
+              <p className="eyebrow">Data freshness</p>
               <h2 id="dataset-status-heading">
                 Unified public-company dataset
               </h2>
             </div>
             <p>
-              The ranking remains provisional where filings or capital history
-              are incomplete.
+              The ranking is marked as an upper estimate where filings or
+              capital history are incomplete.
             </p>
           </div>
           <dl className="status-grid">

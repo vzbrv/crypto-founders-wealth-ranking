@@ -18,13 +18,14 @@ export default async function UnifiedRankingPage() {
       <SiteNav />
       <main className="content-page" id="main-content" tabIndex={-1}>
         <header className="page-header">
-          <p className="eyebrow">Unified provisional screen</p>
+          <p className="eyebrow">Crypto Founders Value Index</p>
           <h1>Top Crypto Founders Ranked by Value Created for Others.</h1>
           <p>
-            One provisional top 20 across token/network founding teams and
-            qualifying public-company founders, using observations dated{" "}
-            {dataset.snapshotDate}. The metric is not founder net worth,
-            personal wealth, or an investment recommendation.
+            The top 20 token/network founding teams and qualifying
+            public-company founders, based on observations dated{" "}
+            {dataset.snapshotDate}. The index estimates value created for
+            outside holders and shareholders; it is not founder net worth,
+            personal wealth, or investment advice.
           </p>
         </header>
 
@@ -44,7 +45,7 @@ export default async function UnifiedRankingPage() {
         >
           <div className="section-heading compact">
             <h2 id="ranking-heading">
-              Provisional value created for outside holders and shareholders
+              Estimated value created for outside holders and shareholders
             </h2>
             <p>
               One joint founding unit per economic entity. Public-company market
@@ -62,10 +63,11 @@ export default async function UnifiedRankingPage() {
 
         <section className="panel" aria-labelledby="private-heading">
           <div className="section-heading compact">
-            <h2 id="private-heading">Private-company candidates</h2>
+            <h2 id="private-heading">Private-company coverage</h2>
             <p>
-              Shown for transparency only. These candidates receive no rank and
-              do not affect the top 20.
+              Shown for transparency only. These companies are not ranked
+              because the evidence required for a comparable estimate is not yet
+              available.
             </p>
           </div>
           <div className="table-shell evidence-shell">

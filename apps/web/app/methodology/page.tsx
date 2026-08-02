@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 const sections = [
   [
     "Purpose and metric",
-    "The primary metric is Provisional value created for outside holders and shareholders. It ranks founders and joint founding teams associated with liquid token networks and public crypto companies. It is not founder net worth, personal wealth, founder-retained value, a claim that one person created all entity value, or investment advice.",
+    "The primary metric is Estimated value created for outside holders and shareholders. It ranks founders and joint founding teams associated with liquid token networks and public crypto companies. It is not founder net worth, personal wealth, founder-retained value, a claim that one person created all entity value, or investment advice.",
   ],
   [
     "Token/network formula",
@@ -40,11 +40,11 @@ const sections = [
   ],
   [
     "Eligibility and upper estimates",
-    "Only supported, validated entries can rank. Unknown values never become zero. An entry with an unknown accepted deduction may remain eligible but is labelled an upper estimate. Canonical publication and provisional eligibility remain distinct; validation failures remove an entry from the primary table.",
+    "Only supported, validated entries can rank. Unknown values never become zero. An entry with an unknown accepted deduction may remain eligible but is labelled an upper estimate. Published ranking entries remain distinct from research candidates; validation failures remove an entry from the primary table.",
   ],
   [
     "Private-company exclusions",
-    "Unverifiable private-company valuations are not ranked. Binance, Kraken, and Tether are shown separately as candidates with non-ranking valuation references and the missing evidence that prevents inclusion.",
+    "Unverifiable private-company valuations are not ranked. Binance, Kraken, and Tether are shown separately with non-ranking valuation references and the missing evidence that prevents inclusion.",
   ],
 ];
 
@@ -58,7 +58,7 @@ export default function MethodologyPage() {
         tabIndex={-1}
       >
         <header className="page-header">
-          <p className="eyebrow">Unified v1 · Updated August 1, 2026</p>
+          <p className="eyebrow">Product methodology</p>
           <h1>Methodology</h1>
           <p>
             One transparent framework for comparing liquid value created for
@@ -77,7 +77,7 @@ export default function MethodologyPage() {
           ))}
         </div>
         <section className="warning-panel">
-          <h2>Research standard</h2>
+          <h2>Data standard</h2>
           <p>
             Every accepted numerical input has a source record. Calculations,
             included evidence, excluded evidence, disputed evidence, and

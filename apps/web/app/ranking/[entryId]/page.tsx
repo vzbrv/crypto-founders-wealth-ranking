@@ -52,10 +52,10 @@ export async function generateMetadata({
   return calculation
     ? {
         title: `${calculation.foundersTeam} — ${calculation.project} calculation`,
-        description: `Dated provisional calculation and source trail for ${calculation.foundersTeam} and ${calculation.project}.`,
+        description: `Dated value-created calculation and source trail for ${calculation.foundersTeam} and ${calculation.project}.`,
         alternates: { canonical: `/ranking/${entryId}/` },
       }
-    : { title: "Provisional calculation not found" };
+    : { title: "Calculation not found" };
 }
 
 async function LegacyProvisionalCalculationPage({
@@ -86,7 +86,7 @@ async function LegacyProvisionalCalculationPage({
       <main className="detail-page" id="main-content" tabIndex={-1}>
         <header className="detail-hero">
           <p className="eyebrow">
-            Provisional calculation · {calculation.marketDataTimestamp}
+            Value-created calculation · {calculation.marketDataTimestamp}
           </p>
           <h1>{calculation.foundersTeam}</h1>
           <p>
@@ -149,7 +149,7 @@ async function LegacyProvisionalCalculationPage({
               </strong>
             </div>
             <div>
-              <span>Provisional value created for outside holders.</span>
+              <span>Estimated value created for outside holders.</span>
               <strong>
                 {money(calculation.provisionalOutsideHolderValueUsd)}
               </strong>
@@ -159,7 +159,7 @@ async function LegacyProvisionalCalculationPage({
             {money(calculation.circulatingMarketValueUsd)} −{" "}
             {money(calculation.affiliatedCirculatingHoldingsUsd)} −{" "}
             {money(calculation.reviewedDisclosedOutsideCapitalUsd)} ={" "}
-            {money(calculation.provisionalOutsideHolderValueUsd)} provisional
+            {money(calculation.provisionalOutsideHolderValueUsd)} estimated
             value created for outside holders.
           </p>
           <p className="warning-text">{calculation.coverageWarning}</p>
@@ -276,7 +276,7 @@ async function LegacyProvisionalCalculationPage({
             <h2 id="excluded-heading">Excluded and unresolved evidence</h2>
             <p>
               These records are shown for transparency and do not affect the
-              primary provisional ranking.
+              primary published ranking.
             </p>
           </div>
           {calculation.excludedEvidence.length > 0 ? (

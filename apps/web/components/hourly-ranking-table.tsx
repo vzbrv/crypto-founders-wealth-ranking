@@ -138,8 +138,7 @@ export function HourlyRankingTable({
       <div className="table-shell evidence-shell">
         <table className="evidence-table research-universe-table">
           <caption className="sr-only">
-            Current unified top 20 with provisional value created and
-            confidence.
+            Current top 20 with estimated value created and confidence.
           </caption>
           <thead>
             <tr>

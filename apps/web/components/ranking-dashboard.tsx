@@ -18,7 +18,7 @@ import { useLivePrices } from "../lib/use-live-prices";
 import { SiteNav } from "./site-nav";
 
 const DISCLAIMER =
-  "Estimated outside-holder token value is not personal wealth. Scores are estimates based on public market data and reviewed public evidence about project-affiliated holdings and disclosed outside capital. Wallet attribution and circulating-supply classifications may be incomplete or disputed.";
+  "Value-created estimates are not personal wealth. Scores use public market data and reviewed evidence about project-affiliated holdings and disclosed outside capital. Wallet attribution and circulating-supply classifications may be incomplete or disputed.";
 
 function money(value: number | null): string {
   if (value === null) return "—";
