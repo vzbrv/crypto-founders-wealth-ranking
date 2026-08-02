@@ -3,6 +3,7 @@ import type { MetadataRoute } from "next";
 import {
   getProvisionalProjectIds,
   getResearchProjectIds,
+  getUnifiedProjectIds,
 } from "../lib/research-data";
 import { getSiteUrl } from "../lib/site-metadata";
 import { getProjectSlugs } from "../lib/transparency-data";
@@ -25,6 +26,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       (projectId) => `/research/${projectId}/`,
     ),
     ...(await getProvisionalProjectIds()).map(
+      (projectId) => `/provisional/${projectId}/`,
+    ),
+    ...(await getUnifiedProjectIds()).map(
       (projectId) => `/provisional/${projectId}/`,
     ),
   ].map((route) => ({

@@ -1,0 +1,2330 @@
+{
+  "metric": "Provisional value created for outside holders and shareholders",
+  "snapshotDate": "2026-07-30",
+  "methodologyVersion": "unified-v1",
+  "sources": [
+    {
+      "id": "CG-BTC",
+      "category": "Market",
+      "name": "CoinGecko Bitcoin historical market data",
+      "date": "2026-07-30",
+      "url": "https://api.coingecko.com/api/v3/coins/bitcoin/history?date=30-07-2026&localization=false",
+      "quality": "Market API",
+      "notes": "Circulating market value observation."
+    },
+    {
+      "id": "CG-ETH",
+      "category": "Market",
+      "name": "CoinGecko Ethereum historical market data",
+      "date": "2026-07-30",
+      "url": "https://api.coingecko.com/api/v3/coins/ethereum/history?date=30-07-2026&localization=false",
+      "quality": "Market API",
+      "notes": "Circulating market value observation."
+    },
+    {
+      "id": "CG-BNB",
+      "category": "Market",
+      "name": "CoinGecko BNB historical market data",
+      "date": "2026-07-30",
+      "url": "https://api.coingecko.com/api/v3/coins/binancecoin/history?date=30-07-2026&localization=false",
+      "quality": "Market API",
+      "notes": "Circulating market value observation."
+    },
+    {
+      "id": "CG-XRP",
+      "category": "Market",
+      "name": "CoinGecko XRP historical market data",
+      "date": "2026-07-30",
+      "url": "https://api.coingecko.com/api/v3/coins/ripple/history?date=30-07-2026&localization=false",
+      "quality": "Market API",
+      "notes": "Circulating market value observation."
+    },
+    {
+      "id": "CG-SOL",
+      "category": "Market",
+      "name": "CoinGecko Solana historical market data",
+      "date": "2026-07-30",
+      "url": "https://api.coingecko.com/api/v3/coins/solana/history?date=30-07-2026&localization=false",
+      "quality": "Market API",
+      "notes": "Circulating market value observation."
+    },
+    {
+      "id": "CG-TRX",
+      "category": "Market",
+      "name": "CoinGecko TRON historical market data",
+      "date": "2026-07-30",
+      "url": "https://api.coingecko.com/api/v3/coins/tron/history?date=30-07-2026&localization=false",
+      "quality": "Market API",
+      "notes": "Circulating market value observation."
+    },
+    {
+      "id": "CG-HYPE",
+      "category": "Market",
+      "name": "CoinGecko Hyperliquid historical market data",
+      "date": "2026-07-30",
+      "url": "https://api.coingecko.com/api/v3/coins/hyperliquid-hype/history?date=30-07-2026&localization=false",
+      "quality": "Market API",
+      "notes": "Circulating market value observation."
+    },
+    {
+      "id": "CG-DOGE",
+      "category": "Market",
+      "name": "CoinGecko Dogecoin historical market data",
+      "date": "2026-07-30",
+      "url": "https://api.coingecko.com/api/v3/coins/dogecoin/history?date=30-07-2026&localization=false",
+      "quality": "Market API",
+      "notes": "Circulating market value observation."
+    },
+    {
+      "id": "CG-LINK",
+      "category": "Market",
+      "name": "CoinGecko Chainlink historical market data",
+      "date": "2026-07-30",
+      "url": "https://api.coingecko.com/api/v3/coins/chainlink/history?date=30-07-2026&localization=false",
+      "quality": "Market API",
+      "notes": "Circulating market value observation."
+    },
+    {
+      "id": "CG-ADA",
+      "category": "Market",
+      "name": "CoinGecko Cardano historical market data",
+      "date": "2026-07-30",
+      "url": "https://api.coingecko.com/api/v3/coins/cardano/history?date=30-07-2026&localization=false",
+      "quality": "Market API",
+      "notes": "Circulating market value observation."
+    },
+    {
+      "id": "CG-XLM",
+      "category": "Market",
+      "name": "CoinGecko Stellar historical market data",
+      "date": "2026-07-30",
+      "url": "https://api.coingecko.com/api/v3/coins/stellar/history?date=30-07-2026&localization=false",
+      "quality": "Market API",
+      "notes": "Circulating market value observation."
+    },
+    {
+      "id": "CG-CANTON",
+      "category": "Market",
+      "name": "CoinGecko Canton historical market data",
+      "date": "2026-07-30",
+      "url": "https://api.coingecko.com/api/v3/coins/canton-network/history?date=30-07-2026&localization=false",
+      "quality": "Market API",
+      "notes": "Circulating market value observation."
+    },
+    {
+      "id": "CG-LTC",
+      "category": "Market",
+      "name": "CoinGecko Litecoin historical market data",
+      "date": "2026-07-30",
+      "url": "https://api.coingecko.com/api/v3/coins/litecoin/history?date=30-07-2026&localization=false",
+      "quality": "Market API",
+      "notes": "Circulating market value observation."
+    },
+    {
+      "id": "CG-HBAR",
+      "category": "Market",
+      "name": "CoinGecko Hedera historical market data",
+      "date": "2026-07-30",
+      "url": "https://api.coingecko.com/api/v3/coins/hedera-hashgraph/history?date=30-07-2026&localization=false",
+      "quality": "Market API",
+      "notes": "Circulating market value observation."
+    },
+    {
+      "id": "CG-AVAX",
+      "category": "Market",
+      "name": "CoinGecko Avalanche historical market data",
+      "date": "2026-07-30",
+      "url": "https://api.coingecko.com/api/v3/coins/avalanche-2/history?date=30-07-2026&localization=false",
+      "quality": "Market API",
+      "notes": "Circulating market value observation."
+    },
+    {
+      "id": "CG-SUI",
+      "category": "Market",
+      "name": "CoinGecko Sui historical market data",
+      "date": "2026-07-30",
+      "url": "https://api.coingecko.com/api/v3/coins/sui/history?date=30-07-2026&localization=false",
+      "quality": "Market API",
+      "notes": "Circulating market value observation."
+    },
+    {
+      "id": "PX-COINBASE",
+      "category": "Market price",
+      "name": "Nasdaq COIN historical close",
+      "date": "2026-07-30",
+      "url": "https://www.nasdaq.com/market-activity/stocks/coin/historical",
+      "quality": "Exchange market record",
+      "notes": "Closing price: $163.68."
+    },
+    {
+      "id": "PX-CIRCLE",
+      "category": "Market price",
+      "name": "NYSE CRCL historical close",
+      "date": "2026-07-30",
+      "url": "https://www.nyse.com/quote/XNYS:CRCL/historical",
+      "quality": "Exchange market record",
+      "notes": "Closing price: $64.28."
+    },
+    {
+      "id": "PX-FIGURE",
+      "category": "Market price",
+      "name": "Nasdaq FIGR historical close",
+      "date": "2026-07-30",
+      "url": "https://www.nasdaq.com/market-activity/stocks/figr/historical",
+      "quality": "Exchange market record",
+      "notes": "Closing price: $25.85."
+    },
+    {
+      "id": "PX-GALAXY",
+      "category": "Market price",
+      "name": "Nasdaq GLXY historical close",
+      "date": "2026-07-30",
+      "url": "https://www.nasdaq.com/market-activity/stocks/glxy/historical",
+      "quality": "Exchange market record",
+      "notes": "Closing price: $21.525."
+    },
+    {
+      "id": "SC-COINBASE",
+      "category": "SEC filing",
+      "name": "Coinbase outstanding shares",
+      "date": "2026-07-23",
+      "url": "https://www.sec.gov/Archives/edgar/data/1679788/000167978826000088/coin-20260630.htm",
+      "quality": "SEC filing",
+      "notes": "Class A 222,803,032 and Class B/other 41,033,891."
+    },
+    {
+      "id": "SC-CIRCLE",
+      "category": "SEC filing",
+      "name": "Circle outstanding shares",
+      "date": "2026-05-06",
+      "url": "https://www.sec.gov/Archives/edgar/data/1876042/000187604226000150/crcl-20260331.htm",
+      "quality": "SEC filing",
+      "notes": "Class A 229,857,799 and Class B/other 18,718,231."
+    },
+    {
+      "id": "SC-FIGURE",
+      "category": "SEC filing",
+      "name": "Figure outstanding shares",
+      "date": "2026-05-11",
+      "url": "https://www.sec.gov/Archives/edgar/data/2064124/000162828026000029/figr-20260331.htm",
+      "quality": "SEC filing",
+      "notes": "Class A 182,622,749 and Class B/other 38,478,100, including Blockchain common stock treatment."
+    },
+    {
+      "id": "SC-GALAXY",
+      "category": "SEC filing",
+      "name": "Galaxy outstanding shares and exchangeability",
+      "date": "2026-05-05",
+      "url": "https://www.sec.gov/Archives/edgar/data/1859392/000162828026032992/a424b3-juneresalesx1q12026.htm",
+      "quality": "SEC filing",
+      "notes": "Class A 191,491,823 and Class B/LP equivalent 198,408,277; exchangeability limitation disclosed."
+    },
+    {
+      "id": "OWN-COINBASE",
+      "category": "SEC ownership",
+      "name": "Coinbase founder ownership",
+      "date": "2026-03-31",
+      "url": "https://www.sec.gov/Archives/edgar/data/1679788/000167978826000045/coin-20260424.htm",
+      "quality": "SEC filing",
+      "notes": "Armstrong and Ehrsam shares summed once: 39,331,319."
+    },
+    {
+      "id": "OWN-CIRCLE",
+      "category": "SEC ownership",
+      "name": "Circle founder ownership",
+      "date": "2026-03-16",
+      "url": "https://www.sec.gov/Archives/edgar/data/1876042/000187604226000112/crcl-20260401.htm",
+      "quality": "SEC filing",
+      "notes": "Allaire and Neville shares summed once: 22,253,321; later changes are unknown."
+    },
+    {
+      "id": "OWN-FIGURE",
+      "category": "SEC ownership",
+      "name": "Figure founder ownership",
+      "date": "2026-04-24",
+      "url": "https://www.sec.gov/Archives/edgar/data/2064124/000162828026000020/figr-20260424.htm",
+      "quality": "SEC filing",
+      "notes": "Cagney and Ou shares summed once, spouse overlap removed: 49,266,468."
+    },
+    {
+      "id": "OWN-GALAXY",
+      "category": "SEC ownership",
+      "name": "Galaxy founder and controlled affiliate ownership",
+      "date": "2026-06-01",
+      "url": "https://www.sec.gov/Archives/edgar/data/1859392/000162828026032968/galaxy-resalesx3.htm",
+      "quality": "SEC filing",
+      "notes": "Novogratz and Galaxy Group Investments counted once: 202,346,000 exchangeable shares."
+    },
+    {
+      "id": "CAP-COINBASE",
+      "category": "SEC filing",
+      "name": "Coinbase pre-listing preferred proceeds",
+      "date": "2021-02-25",
+      "url": "https://www.sec.gov/Archives/edgar/data/1679788/000167978821003168/coinbaseglobalincs-1.htm",
+      "quality": "SEC filing",
+      "notes": "Aggregate pre-direct-listing preferred proceeds: $578,750,000; listing itself had no primary proceeds."
+    },
+    {
+      "id": "CAP-CIRCLE",
+      "category": "SEC filings",
+      "name": "Circle documented outside capital",
+      "date": "2026-04-30",
+      "url": "https://www.sec.gov/Archives/edgar/data/1876042/000119312525126208/d737521ds1a.htm",
+      "quality": "SEC filing",
+      "notes": "Aggregate documented pre/post-listing funding and net proceeds: $2,165,300,000; reconciled with 2025 10-K."
+    },
+    {
+      "id": "CAP-SOLANA",
+      "category": "Official project release",
+      "name": "Solana Labs private token sale",
+      "date": "2021-06-09",
+      "url": "https://solana.com/news/solana-labs-completes-a-314-15m-private-token-sale-led-by-andreessen-horowitz-and-polychain-capital",
+      "quality": "Official project source",
+      "notes": "Accepted outside capital: $314,159,265."
+    },
+    {
+      "id": "CAP-SUI",
+      "category": "Company press release",
+      "name": "Mysten Labs Series B",
+      "date": "2022-09-08",
+      "url": "https://www.businesswire.com/news/home/20220908005607/en/Mysten-Labs-Raises-%24300-Million-to-Onboard-Next-Billion-Users-to-Web3",
+      "quality": "Company release",
+      "notes": "Accepted outside capital: $300,000,000 initial close."
+    },
+    {
+      "id": "EVID-FIGURE-IPO",
+      "category": "SEC filing",
+      "name": "Figure IPO registration",
+      "date": "2025-09-10",
+      "url": "https://www.sec.gov/Archives/edgar/data/2064124/000162828025041443/figuretechnologysolutionsi.htm",
+      "quality": "SEC filing",
+      "notes": "Used to document the capital-completeness limitation; IPO proceeds are not a pre-listing founder deduction."
+    },
+    {
+      "id": "EVID-GALAXY-AR",
+      "category": "SEC filing",
+      "name": "Galaxy annual report",
+      "date": "2026-03-31",
+      "url": "https://www.sec.gov/Archives/edgar/data/1859392/000185939226000041/glxy2025arsfinal.pdf",
+      "quality": "SEC filing",
+      "notes": "Used to document the missing complete historical capital reconstruction."
+    },
+    {
+      "id": "VAL-BINANCE",
+      "category": "Private valuation",
+      "name": "Binance private-company candidate evidence",
+      "date": null,
+      "url": "https://www.binance.com/en/blog/ecosystem",
+      "quality": "Company source",
+      "notes": "Candidate only; no accepted public-equity valuation input."
+    },
+    {
+      "id": "VAL-KRAKEN",
+      "category": "Private valuation",
+      "name": "Kraken private-company candidate evidence",
+      "date": null,
+      "url": "https://blog.kraken.com/",
+      "quality": "Company source",
+      "notes": "Candidate only; no accepted public-equity valuation input."
+    },
+    {
+      "id": "VAL-TETHER",
+      "category": "Private valuation",
+      "name": "Tether private-company candidate evidence",
+      "date": null,
+      "url": "https://tether.to/en/transparency/",
+      "quality": "Company source",
+      "notes": "Candidate only; no accepted public-equity valuation input."
+    }
+  ],
+  "entries": [
+    {
+      "entryId": "bitcoin",
+      "founderTeamId": "bitcoin-founding-team",
+      "founderTeam": "Satoshi Nakamoto",
+      "project": "Bitcoin",
+      "valueType": "Token/network",
+      "rank": 1,
+      "snapshotDate": "2026-07-30",
+      "observationDate": "2026-07-30",
+      "grossMarketValueUsd": "1282708329624.6782",
+      "market": {
+        "type": "token",
+        "sourceId": "CG-BTC",
+        "observationDate": "2026-07-30",
+        "coinGeckoCoinId": "bitcoin"
+      },
+      "affiliatedOwnership": {
+        "status": "Unknown",
+        "notes": "No verified founder holdings can be deducted from circulating supply."
+      },
+      "outsideCapital": {
+        "status": "Unknown",
+        "events": [],
+        "notes": "No reviewed capital amount accepted."
+      },
+      "confidence": {
+        "score": 65,
+        "label": "Medium",
+        "components": [
+          {
+            "key": "founderAttribution",
+            "label": "Founder attribution",
+            "score": 20,
+            "maxScore": 20,
+            "detail": "Pseudonymous founding attribution."
+          },
+          {
+            "key": "grossMarketValue",
+            "label": "Gross market value reconstruction",
+            "score": 30,
+            "maxScore": 30,
+            "detail": "Historical market observation."
+          },
+          {
+            "key": "ownershipCompleteness",
+            "label": "Founder/affiliate ownership completeness",
+            "score": 0,
+            "maxScore": 25,
+            "detail": "Unknown."
+          },
+          {
+            "key": "outsideCapitalCompleteness",
+            "label": "Outside-capital completeness",
+            "score": 15,
+            "maxScore": 15,
+            "detail": "Fair-launch evidence does not establish a deductible amount."
+          },
+          {
+            "key": "sourceQuality",
+            "label": "Source quality",
+            "score": 0,
+            "maxScore": 5,
+            "detail": "Market source only."
+          },
+          {
+            "key": "snapshotAlignment",
+            "label": "Snapshot alignment",
+            "score": 0,
+            "maxScore": 3,
+            "detail": "No independent ownership observation."
+          },
+          {
+            "key": "doubleCountingRisk",
+            "label": "Double-counting risk",
+            "score": 0,
+            "maxScore": 2,
+            "detail": "Token-only entry."
+          }
+        ]
+      },
+      "includedEvidence": ["2026-07-30 circulating market value observation."],
+      "excludedEvidence": [
+        "Founder holdings and unquantified launch evidence."
+      ],
+      "disputedEvidence": [],
+      "unknowns": ["Founder holdings", "Outside capital"],
+      "upperEstimate": true,
+      "comparability": "Uses circulating token market value and deducts only reviewed amounts, parallel to public-equity market capitalization."
+    },
+    {
+      "entryId": "ethereum",
+      "founderTeamId": "ethereum-founding-team",
+      "founderTeam": "Ethereum co-founding team",
+      "project": "Ethereum",
+      "valueType": "Token/network",
+      "rank": 2,
+      "snapshotDate": "2026-07-30",
+      "observationDate": "2026-07-30",
+      "grossMarketValueUsd": "230235889488.93994",
+      "market": {
+        "type": "token",
+        "sourceId": "CG-ETH",
+        "observationDate": "2026-07-30",
+        "coinGeckoCoinId": "ethereum"
+      },
+      "affiliatedOwnership": {
+        "status": "Unknown",
+        "notes": "No complete verified founder holdings register."
+      },
+      "outsideCapital": {
+        "status": "Unknown",
+        "events": [],
+        "notes": "Historical sale evidence is not used as a complete deductible capital total."
+      },
+      "confidence": {
+        "score": 60,
+        "label": "Low",
+        "components": [
+          {
+            "key": "founderAttribution",
+            "label": "Founder attribution",
+            "score": 20,
+            "maxScore": 20,
+            "detail": "Named co-founding team."
+          },
+          {
+            "key": "grossMarketValue",
+            "label": "Gross market value reconstruction",
+            "score": 30,
+            "maxScore": 30,
+            "detail": "Historical market observation."
+          },
+          {
+            "key": "ownershipCompleteness",
+            "label": "Founder/affiliate ownership completeness",
+            "score": 0,
+            "maxScore": 25,
+            "detail": "Unknown."
+          },
+          {
+            "key": "outsideCapitalCompleteness",
+            "label": "Outside-capital completeness",
+            "score": 10,
+            "maxScore": 15,
+            "detail": "Historical sale information is incomplete."
+          },
+          {
+            "key": "sourceQuality",
+            "label": "Source quality",
+            "score": 0,
+            "maxScore": 5,
+            "detail": "Market source only."
+          },
+          {
+            "key": "snapshotAlignment",
+            "label": "Snapshot alignment",
+            "score": 0,
+            "maxScore": 3,
+            "detail": "No independent ownership observation."
+          },
+          {
+            "key": "doubleCountingRisk",
+            "label": "Double-counting risk",
+            "score": 0,
+            "maxScore": 2,
+            "detail": "Token-only entry."
+          }
+        ]
+      },
+      "includedEvidence": ["2026-07-30 circulating market value observation."],
+      "excludedEvidence": [
+        "Approximate early sale amounts without a complete reconciliation."
+      ],
+      "disputedEvidence": [],
+      "unknowns": ["Founder holdings", "Outside capital"],
+      "upperEstimate": true,
+      "comparability": "Uses the token track; unknown deductions do not reduce the result."
+    },
+    {
+      "entryId": "bnb",
+      "founderTeamId": "bnb-founding-team",
+      "founderTeam": "Changpeng Zhao, Yi He & founding team",
+      "project": "BNB",
+      "valueType": "Token/network",
+      "rank": 3,
+      "snapshotDate": "2026-07-30",
+      "observationDate": "2026-07-30",
+      "grossMarketValueUsd": "76083530882.99107",
+      "market": {
+        "type": "token",
+        "sourceId": "CG-BNB",
+        "observationDate": "2026-07-30",
+        "coinGeckoCoinId": "binancecoin"
+      },
+      "affiliatedOwnership": {
+        "status": "Unknown",
+        "notes": "No complete verified founder holdings register."
+      },
+      "outsideCapital": {
+        "status": "Unknown",
+        "events": [],
+        "notes": "Conflicting rough founder-capital estimates are not accepted."
+      },
+      "confidence": {
+        "score": 55,
+        "label": "Low",
+        "components": [
+          {
+            "key": "founderAttribution",
+            "label": "Founder attribution",
+            "score": 20,
+            "maxScore": 20,
+            "detail": "Named founding team."
+          },
+          {
+            "key": "grossMarketValue",
+            "label": "Gross market value reconstruction",
+            "score": 30,
+            "maxScore": 30,
+            "detail": "Historical market observation."
+          },
+          {
+            "key": "ownershipCompleteness",
+            "label": "Founder/affiliate ownership completeness",
+            "score": 0,
+            "maxScore": 25,
+            "detail": "Unknown."
+          },
+          {
+            "key": "outsideCapitalCompleteness",
+            "label": "Outside-capital completeness",
+            "score": 5,
+            "maxScore": 15,
+            "detail": "Conflicting estimates excluded."
+          },
+          {
+            "key": "sourceQuality",
+            "label": "Source quality",
+            "score": 0,
+            "maxScore": 5,
+            "detail": "Market source only."
+          },
+          {
+            "key": "snapshotAlignment",
+            "label": "Snapshot alignment",
+            "score": 0,
+            "maxScore": 3,
+            "detail": "No independent ownership observation."
+          },
+          {
+            "key": "doubleCountingRisk",
+            "label": "Double-counting risk",
+            "score": 0,
+            "maxScore": 2,
+            "detail": "Token-only entry."
+          }
+        ]
+      },
+      "includedEvidence": ["2026-07-30 circulating market value observation."],
+      "excludedEvidence": ["Rough founder-capital estimate."],
+      "disputedEvidence": ["Conflicting public estimates of launch capital."],
+      "unknowns": ["Founder holdings", "Outside capital"],
+      "upperEstimate": true,
+      "comparability": "BNB is ranked on token market value only where deductions remain unknown."
+    },
+    {
+      "entryId": "xrp",
+      "founderTeamId": "xrp-founding-team",
+      "founderTeam": "Chris Larsen, Jed McCaleb, Arthur Britto & team",
+      "project": "XRP",
+      "valueType": "Token/network",
+      "rank": 4,
+      "snapshotDate": "2026-07-30",
+      "observationDate": "2026-07-30",
+      "grossMarketValueUsd": "67059007915.3009",
+      "market": {
+        "type": "token",
+        "sourceId": "CG-XRP",
+        "observationDate": "2026-07-30",
+        "coinGeckoCoinId": "ripple"
+      },
+      "affiliatedOwnership": {
+        "status": "Unknown",
+        "notes": "Founder and affiliate escrow/directed holdings are not fully reconciled to circulating supply."
+      },
+      "outsideCapital": {
+        "status": "Unknown",
+        "events": [],
+        "notes": "No complete reviewed capital deduction."
+      },
+      "confidence": {
+        "score": 65,
+        "label": "Medium",
+        "components": [
+          {
+            "key": "founderAttribution",
+            "label": "Founder attribution",
+            "score": 20,
+            "maxScore": 20,
+            "detail": "Named founding team."
+          },
+          {
+            "key": "grossMarketValue",
+            "label": "Gross market value reconstruction",
+            "score": 30,
+            "maxScore": 30,
+            "detail": "Historical market observation."
+          },
+          {
+            "key": "ownershipCompleteness",
+            "label": "Founder/affiliate ownership completeness",
+            "score": 0,
+            "maxScore": 25,
+            "detail": "Unknown."
+          },
+          {
+            "key": "outsideCapitalCompleteness",
+            "label": "Outside-capital completeness",
+            "score": 15,
+            "maxScore": 15,
+            "detail": "No accepted amount."
+          },
+          {
+            "key": "sourceQuality",
+            "label": "Source quality",
+            "score": 0,
+            "maxScore": 5,
+            "detail": "Market source only."
+          },
+          {
+            "key": "snapshotAlignment",
+            "label": "Snapshot alignment",
+            "score": 0,
+            "maxScore": 3,
+            "detail": "No independent ownership observation."
+          },
+          {
+            "key": "doubleCountingRisk",
+            "label": "Double-counting risk",
+            "score": 0,
+            "maxScore": 2,
+            "detail": "Token-only entry."
+          }
+        ]
+      },
+      "includedEvidence": ["2026-07-30 circulating market value observation."],
+      "excludedEvidence": ["Unreconciled escrow and founder estimates."],
+      "disputedEvidence": [],
+      "unknowns": ["Founder holdings", "Outside capital"],
+      "upperEstimate": true,
+      "comparability": "Uses circulating XRP market value and excludes non-circulating or unreconciled holdings."
+    },
+    {
+      "entryId": "solana",
+      "founderTeamId": "solana-founding-team",
+      "founderTeam": "Anatoly Yakovenko, Raj Gokal & team",
+      "project": "Solana",
+      "valueType": "Token/network",
+      "rank": 5,
+      "snapshotDate": "2026-07-30",
+      "observationDate": "2026-07-30",
+      "grossMarketValueUsd": "42660813581.7154",
+      "market": {
+        "type": "token",
+        "sourceId": "CG-SOL",
+        "observationDate": "2026-07-30",
+        "coinGeckoCoinId": "solana"
+      },
+      "affiliatedOwnership": {
+        "status": "Unknown",
+        "notes": "No verified founder holdings can be deducted."
+      },
+      "outsideCapital": {
+        "status": "Accepted",
+        "events": [
+          {
+            "eventId": "solana-private-token-sale",
+            "label": "Solana Labs private token sale",
+            "amountUsd": "314159265",
+            "date": "2021-06-09",
+            "sourceId": "CAP-SOLANA",
+            "disposition": "Accepted",
+            "notes": "Official Solana Labs release."
+          }
+        ],
+        "notes": "Accepted disclosed private token sale; other capital unknown."
+      },
+      "confidence": {
+        "score": 65,
+        "label": "Medium",
+        "components": [
+          {
+            "key": "founderAttribution",
+            "label": "Founder attribution",
+            "score": 20,
+            "maxScore": 20,
+            "detail": "Named founding team."
+          },
+          {
+            "key": "grossMarketValue",
+            "label": "Gross market value reconstruction",
+            "score": 30,
+            "maxScore": 30,
+            "detail": "Historical market observation."
+          },
+          {
+            "key": "ownershipCompleteness",
+            "label": "Founder/affiliate ownership completeness",
+            "score": 0,
+            "maxScore": 25,
+            "detail": "Unknown."
+          },
+          {
+            "key": "outsideCapitalCompleteness",
+            "label": "Outside-capital completeness",
+            "score": 15,
+            "maxScore": 15,
+            "detail": "Reviewed sale, but broader capital history unknown."
+          },
+          {
+            "key": "sourceQuality",
+            "label": "Source quality",
+            "score": 0,
+            "maxScore": 5,
+            "detail": "Market and official sale sources."
+          },
+          {
+            "key": "snapshotAlignment",
+            "label": "Snapshot alignment",
+            "score": 0,
+            "maxScore": 3,
+            "detail": "Founder holdings not aligned."
+          },
+          {
+            "key": "doubleCountingRisk",
+            "label": "Double-counting risk",
+            "score": 0,
+            "maxScore": 2,
+            "detail": "Token-only entry."
+          }
+        ]
+      },
+      "includedEvidence": [
+        "2026-07-30 circulating market value observation.",
+        "314,159,265 USD Solana Labs private token sale."
+      ],
+      "excludedEvidence": ["Unknown founder and affiliate holdings."],
+      "disputedEvidence": [],
+      "unknowns": ["Founder holdings", "Other outside capital"],
+      "upperEstimate": true,
+      "comparability": "Deducts the reviewed private token sale from circulating token market value; unknown holdings remain unknown."
+    },
+    {
+      "entryId": "coinbase",
+      "founderTeamId": "coinbase-founding-team",
+      "founderTeam": "Brian Armstrong & Fred Ehrsam",
+      "project": "Coinbase",
+      "valueType": "Public company",
+      "rank": 6,
+      "snapshotDate": "2026-07-30",
+      "observationDate": "2026-07-30",
+      "grossMarketValueUsd": "43184827556.64",
+      "market": {
+        "type": "public",
+        "ticker": "COIN",
+        "exchange": "Nasdaq",
+        "priceUsd": "163.68",
+        "priceDate": "2026-07-30",
+        "priceSourceId": "PX-COINBASE",
+        "shareClasses": [
+          {
+            "className": "Class A",
+            "sharesOutstanding": "222803032",
+            "asOfDate": "2026-07-23",
+            "sourceId": "SC-COINBASE"
+          },
+          {
+            "className": "Class B / other",
+            "sharesOutstanding": "41033891",
+            "asOfDate": "2026-07-23",
+            "sourceId": "SC-COINBASE"
+          }
+        ]
+      },
+      "affiliatedOwnership": {
+        "status": "Accepted",
+        "totalShares": "39331319",
+        "ownershipDate": "2026-03-31",
+        "sourceId": "OWN-COINBASE",
+        "holders": [
+          {
+            "name": "Brian Armstrong",
+            "shares": "37424750",
+            "sourceId": "OWN-COINBASE"
+          },
+          {
+            "name": "Fred Ehrsam",
+            "shares": "1906569",
+            "sourceId": "OWN-COINBASE"
+          }
+        ],
+        "notes": "Founders counted once; independent trust shares excluded."
+      },
+      "outsideCapital": {
+        "status": "Accepted",
+        "events": [
+          {
+            "eventId": "coinbase-prelisting-preferred",
+            "label": "Aggregate pre-direct-listing preferred proceeds",
+            "amountUsd": "578750000",
+            "date": "2021-02-25",
+            "sourceId": "CAP-COINBASE",
+            "disposition": "Accepted",
+            "notes": "Direct listing was not a primary capital raise."
+          }
+        ],
+        "notes": "Reviewed aggregate pre-listing preferred proceeds."
+      },
+      "confidence": {
+        "score": 95,
+        "label": "High",
+        "components": [
+          {
+            "key": "founderAttribution",
+            "label": "Founder attribution",
+            "score": 20,
+            "maxScore": 20,
+            "detail": "SEC and company history identify the joint founding unit."
+          },
+          {
+            "key": "grossMarketValue",
+            "label": "Gross market value reconstruction",
+            "score": 30,
+            "maxScore": 30,
+            "detail": "Two share classes times July 30 close."
+          },
+          {
+            "key": "ownershipCompleteness",
+            "label": "Founder/affiliate ownership completeness",
+            "score": 22,
+            "maxScore": 25,
+            "detail": "Founder ownership reconstructed; filing dates precede snapshot."
+          },
+          {
+            "key": "outsideCapitalCompleteness",
+            "label": "Outside-capital completeness",
+            "score": 13,
+            "maxScore": 15,
+            "detail": "Aggregate pre-listing preferred proceeds disclosed."
+          },
+          {
+            "key": "sourceQuality",
+            "label": "Source quality",
+            "score": 5,
+            "maxScore": 5,
+            "detail": "SEC and exchange records."
+          },
+          {
+            "key": "snapshotAlignment",
+            "label": "Snapshot alignment",
+            "score": 3,
+            "maxScore": 3,
+            "detail": "Price July 30; shares July 23; ownership March 31."
+          },
+          {
+            "key": "doubleCountingRisk",
+            "label": "Double-counting risk",
+            "score": 2,
+            "maxScore": 2,
+            "detail": "Coinbase is one joint entry and does not separately rank USDC."
+          }
+        ]
+      },
+      "includedEvidence": [
+        "Class A and Class B/other outstanding shares.",
+        "Armstrong and Ehrsam ownership.",
+        "Aggregate pre-listing preferred proceeds."
+      ],
+      "excludedEvidence": [
+        "Post-listing financing and secondary transactions from pre-listing capital deduction."
+      ],
+      "disputedEvidence": [],
+      "unknowns": [
+        "Changes in founder ownership after the latest ownership filing."
+      ],
+      "upperEstimate": false,
+      "comparability": "Uses reconstructed public equity market capitalization, then deducts founder equity and reviewed pre-listing outside capital."
+    },
+    {
+      "entryId": "tron",
+      "founderTeamId": "tron-founding-team",
+      "founderTeam": "Justin Sun & founding team",
+      "project": "TRON",
+      "valueType": "Token/network",
+      "rank": 7,
+      "snapshotDate": "2026-07-30",
+      "observationDate": "2026-07-30",
+      "grossMarketValueUsd": "30883085142.158672",
+      "market": {
+        "type": "token",
+        "sourceId": "CG-TRX",
+        "observationDate": "2026-07-30",
+        "coinGeckoCoinId": "tron"
+      },
+      "affiliatedOwnership": {
+        "status": "Unknown",
+        "notes": "No complete verified founder holdings register."
+      },
+      "outsideCapital": {
+        "status": "Unknown",
+        "events": [],
+        "notes": "No reviewed capital amount accepted."
+      },
+      "confidence": {
+        "score": 60,
+        "label": "Low",
+        "components": [
+          {
+            "key": "founderAttribution",
+            "label": "Founder attribution",
+            "score": 20,
+            "maxScore": 20,
+            "detail": "Named founding team."
+          },
+          {
+            "key": "grossMarketValue",
+            "label": "Gross market value reconstruction",
+            "score": 30,
+            "maxScore": 30,
+            "detail": "Historical market observation."
+          },
+          {
+            "key": "ownershipCompleteness",
+            "label": "Founder/affiliate ownership completeness",
+            "score": 0,
+            "maxScore": 25,
+            "detail": "Unknown."
+          },
+          {
+            "key": "outsideCapitalCompleteness",
+            "label": "Outside-capital completeness",
+            "score": 10,
+            "maxScore": 15,
+            "detail": "No accepted amount."
+          },
+          {
+            "key": "sourceQuality",
+            "label": "Source quality",
+            "score": 0,
+            "maxScore": 5,
+            "detail": "Market source only."
+          },
+          {
+            "key": "snapshotAlignment",
+            "label": "Snapshot alignment",
+            "score": 0,
+            "maxScore": 3,
+            "detail": "No independent ownership observation."
+          },
+          {
+            "key": "doubleCountingRisk",
+            "label": "Double-counting risk",
+            "score": 0,
+            "maxScore": 2,
+            "detail": "Token-only entry."
+          }
+        ]
+      },
+      "includedEvidence": ["2026-07-30 circulating market value observation."],
+      "excludedEvidence": [],
+      "disputedEvidence": [],
+      "unknowns": ["Founder holdings", "Outside capital"],
+      "upperEstimate": true,
+      "comparability": "Uses the token track with unknown deductions preserved as Unknown."
+    },
+    {
+      "entryId": "circle",
+      "founderTeamId": "circle-founding-team",
+      "founderTeam": "Jeremy Allaire, Sean Neville & verified founding unit",
+      "project": "Circle",
+      "valueType": "Public company",
+      "rank": 8,
+      "snapshotDate": "2026-07-30",
+      "observationDate": "2026-07-30",
+      "grossMarketValueUsd": "15978467208.40",
+      "market": {
+        "type": "public",
+        "ticker": "CRCL",
+        "exchange": "NYSE",
+        "priceUsd": "64.28",
+        "priceDate": "2026-07-30",
+        "priceSourceId": "PX-CIRCLE",
+        "shareClasses": [
+          {
+            "className": "Class A",
+            "sharesOutstanding": "229857799",
+            "asOfDate": "2026-05-06",
+            "sourceId": "SC-CIRCLE"
+          },
+          {
+            "className": "Class B / other",
+            "sharesOutstanding": "18718231",
+            "asOfDate": "2026-05-06",
+            "sourceId": "SC-CIRCLE"
+          }
+        ]
+      },
+      "affiliatedOwnership": {
+        "status": "Accepted",
+        "totalShares": "22253321",
+        "ownershipDate": "2026-03-16",
+        "sourceId": "OWN-CIRCLE",
+        "holders": [
+          {
+            "name": "Jeremy Allaire",
+            "shares": "21114321",
+            "sourceId": "OWN-CIRCLE"
+          },
+          {
+            "name": "Sean Neville",
+            "shares": "1139000",
+            "sourceId": "OWN-CIRCLE"
+          }
+        ],
+        "notes": "Verified founding unit; later changes remain unknown."
+      },
+      "outsideCapital": {
+        "status": "Accepted",
+        "events": [
+          {
+            "eventId": "circle-documented-capital",
+            "label": "Aggregate documented pre-listing outside capital",
+            "amountUsd": "2165300000",
+            "date": "2026-04-30",
+            "sourceId": "CAP-CIRCLE",
+            "disposition": "Accepted",
+            "notes": "Series A-F, notes, and disclosed net IPO/follow-on proceeds; post-listing financing explicitly excluded."
+          }
+        ],
+        "notes": "Aggregate accepted amount from SEC disclosures."
+      },
+      "confidence": {
+        "score": 91,
+        "label": "High",
+        "components": [
+          {
+            "key": "founderAttribution",
+            "label": "Founder attribution",
+            "score": 20,
+            "maxScore": 20,
+            "detail": "SEC/company founding attribution."
+          },
+          {
+            "key": "grossMarketValue",
+            "label": "Gross market value reconstruction",
+            "score": 30,
+            "maxScore": 30,
+            "detail": "Two share classes times July 30 close."
+          },
+          {
+            "key": "ownershipCompleteness",
+            "label": "Founder/affiliate ownership completeness",
+            "score": 18,
+            "maxScore": 25,
+            "detail": "Founder ownership is from an earlier filing."
+          },
+          {
+            "key": "outsideCapitalCompleteness",
+            "label": "Outside-capital completeness",
+            "score": 13,
+            "maxScore": 15,
+            "detail": "Disclosed aggregate capital reconciled."
+          },
+          {
+            "key": "sourceQuality",
+            "label": "Source quality",
+            "score": 5,
+            "maxScore": 5,
+            "detail": "SEC and exchange records."
+          },
+          {
+            "key": "snapshotAlignment",
+            "label": "Snapshot alignment",
+            "score": 3,
+            "maxScore": 3,
+            "detail": "Share and ownership observations are earlier than price."
+          },
+          {
+            "key": "doubleCountingRisk",
+            "label": "Double-counting risk",
+            "score": 2,
+            "maxScore": 2,
+            "detail": "Circle equity is separate from USDC supply."
+          }
+        ]
+      },
+      "includedEvidence": [
+        "Two share classes, founder ownership and documented capital."
+      ],
+      "excludedEvidence": [
+        "USDC supply as company equity; post-listing financing as pre-listing capital."
+      ],
+      "disputedEvidence": [],
+      "unknowns": ["Ownership changes after March 16, 2026."],
+      "upperEstimate": true,
+      "comparability": "Uses company equity value and explicitly excludes USDC market capitalization from the shareholder calculation."
+    },
+    {
+      "entryId": "hyperliquid",
+      "founderTeamId": "hyperliquid-founding-team",
+      "founderTeam": "Jeff Yan & founding team",
+      "project": "Hyperliquid",
+      "valueType": "Token/network",
+      "rank": 9,
+      "snapshotDate": "2026-07-30",
+      "observationDate": "2026-07-30",
+      "grossMarketValueUsd": "11989302027.508911",
+      "market": {
+        "type": "token",
+        "sourceId": "CG-HYPE",
+        "observationDate": "2026-07-30",
+        "coinGeckoCoinId": "hyperliquid-hype"
+      },
+      "affiliatedOwnership": {
+        "status": "Unknown",
+        "notes": "Founder and affiliate holdings are not independently complete."
+      },
+      "outsideCapital": {
+        "status": "Unknown",
+        "events": [],
+        "notes": "No reviewed capital deduction."
+      },
+      "confidence": {
+        "score": 60,
+        "label": "Low",
+        "components": [
+          {
+            "key": "founderAttribution",
+            "label": "Founder attribution",
+            "score": 18,
+            "maxScore": 20,
+            "detail": "Founder attribution is not fully disclosed."
+          },
+          {
+            "key": "grossMarketValue",
+            "label": "Gross market value reconstruction",
+            "score": 30,
+            "maxScore": 30,
+            "detail": "Historical market observation."
+          },
+          {
+            "key": "ownershipCompleteness",
+            "label": "Founder/affiliate ownership completeness",
+            "score": 0,
+            "maxScore": 25,
+            "detail": "Unknown."
+          },
+          {
+            "key": "outsideCapitalCompleteness",
+            "label": "Outside-capital completeness",
+            "score": 12,
+            "maxScore": 15,
+            "detail": "No accepted amount."
+          },
+          {
+            "key": "sourceQuality",
+            "label": "Source quality",
+            "score": 0,
+            "maxScore": 5,
+            "detail": "Market source only."
+          },
+          {
+            "key": "snapshotAlignment",
+            "label": "Snapshot alignment",
+            "score": 0,
+            "maxScore": 3,
+            "detail": "No independent ownership observation."
+          },
+          {
+            "key": "doubleCountingRisk",
+            "label": "Double-counting risk",
+            "score": 0,
+            "maxScore": 2,
+            "detail": "Token-only entry."
+          }
+        ]
+      },
+      "includedEvidence": ["2026-07-30 circulating market value observation."],
+      "excludedEvidence": [],
+      "disputedEvidence": [],
+      "unknowns": ["Founder holdings", "Outside capital"],
+      "upperEstimate": true,
+      "comparability": "Uses the token track; it does not treat protocol fees or treasury balances as shareholder value."
+    },
+    {
+      "entryId": "dogecoin",
+      "founderTeamId": "dogecoin-founding-team",
+      "founderTeam": "Billy Markus & Jackson Palmer",
+      "project": "Dogecoin",
+      "valueType": "Token/network",
+      "rank": 10,
+      "snapshotDate": "2026-07-30",
+      "observationDate": "2026-07-30",
+      "grossMarketValueUsd": "10883153035.809668",
+      "market": {
+        "type": "token",
+        "sourceId": "CG-DOGE",
+        "observationDate": "2026-07-30",
+        "coinGeckoCoinId": "dogecoin"
+      },
+      "affiliatedOwnership": {
+        "status": "Unknown",
+        "notes": "No verified founder holdings register."
+      },
+      "outsideCapital": {
+        "status": "Unknown",
+        "events": [],
+        "notes": "Fair launch does not establish a deductible amount."
+      },
+      "confidence": {
+        "score": 65,
+        "label": "Medium",
+        "components": [
+          {
+            "key": "founderAttribution",
+            "label": "Founder attribution",
+            "score": 20,
+            "maxScore": 20,
+            "detail": "Named founding team."
+          },
+          {
+            "key": "grossMarketValue",
+            "label": "Gross market value reconstruction",
+            "score": 30,
+            "maxScore": 30,
+            "detail": "Historical market observation."
+          },
+          {
+            "key": "ownershipCompleteness",
+            "label": "Founder/affiliate ownership completeness",
+            "score": 0,
+            "maxScore": 25,
+            "detail": "Unknown."
+          },
+          {
+            "key": "outsideCapitalCompleteness",
+            "label": "Outside-capital completeness",
+            "score": 15,
+            "maxScore": 15,
+            "detail": "No accepted amount."
+          },
+          {
+            "key": "sourceQuality",
+            "label": "Source quality",
+            "score": 0,
+            "maxScore": 5,
+            "detail": "Market source only."
+          },
+          {
+            "key": "snapshotAlignment",
+            "label": "Snapshot alignment",
+            "score": 0,
+            "maxScore": 3,
+            "detail": "No independent ownership observation."
+          },
+          {
+            "key": "doubleCountingRisk",
+            "label": "Double-counting risk",
+            "score": 0,
+            "maxScore": 2,
+            "detail": "Token-only entry."
+          }
+        ]
+      },
+      "includedEvidence": ["2026-07-30 circulating market value observation."],
+      "excludedEvidence": ["Fair-launch narrative as a numerical deduction."],
+      "disputedEvidence": [],
+      "unknowns": ["Founder holdings", "Outside capital"],
+      "upperEstimate": true,
+      "comparability": "Uses circulating token market value and preserves unknown deductions."
+    },
+    {
+      "entryId": "chainlink",
+      "founderTeamId": "chainlink-founding-team",
+      "founderTeam": "Sergey Nazarov & Steve Ellis",
+      "project": "Chainlink",
+      "valueType": "Token/network",
+      "rank": 11,
+      "snapshotDate": "2026-07-30",
+      "observationDate": "2026-07-30",
+      "grossMarketValueUsd": "6226092965.441944",
+      "market": {
+        "type": "token",
+        "sourceId": "CG-LINK",
+        "observationDate": "2026-07-30",
+        "coinGeckoCoinId": "chainlink"
+      },
+      "affiliatedOwnership": {
+        "status": "Unknown",
+        "notes": "No complete verified founder holdings register."
+      },
+      "outsideCapital": {
+        "status": "Unknown",
+        "events": [],
+        "notes": "No reviewed capital deduction."
+      },
+      "confidence": {
+        "score": 65,
+        "label": "Medium",
+        "components": [
+          {
+            "key": "founderAttribution",
+            "label": "Founder attribution",
+            "score": 20,
+            "maxScore": 20,
+            "detail": "Named founding team."
+          },
+          {
+            "key": "grossMarketValue",
+            "label": "Gross market value reconstruction",
+            "score": 30,
+            "maxScore": 30,
+            "detail": "Historical market observation."
+          },
+          {
+            "key": "ownershipCompleteness",
+            "label": "Founder/affiliate ownership completeness",
+            "score": 0,
+            "maxScore": 25,
+            "detail": "Unknown."
+          },
+          {
+            "key": "outsideCapitalCompleteness",
+            "label": "Outside-capital completeness",
+            "score": 15,
+            "maxScore": 15,
+            "detail": "No accepted amount."
+          },
+          {
+            "key": "sourceQuality",
+            "label": "Source quality",
+            "score": 0,
+            "maxScore": 5,
+            "detail": "Market source only."
+          },
+          {
+            "key": "snapshotAlignment",
+            "label": "Snapshot alignment",
+            "score": 0,
+            "maxScore": 3,
+            "detail": "No independent ownership observation."
+          },
+          {
+            "key": "doubleCountingRisk",
+            "label": "Double-counting risk",
+            "score": 0,
+            "maxScore": 2,
+            "detail": "Token-only entry."
+          }
+        ]
+      },
+      "includedEvidence": ["2026-07-30 circulating market value observation."],
+      "excludedEvidence": [],
+      "disputedEvidence": [],
+      "unknowns": ["Founder holdings", "Outside capital"],
+      "upperEstimate": true,
+      "comparability": "Uses the token track with no shareholder-equity substitution."
+    },
+    {
+      "entryId": "cardano",
+      "founderTeamId": "cardano-founding-team",
+      "founderTeam": "Charles Hoskinson, Jeremy Wood & team",
+      "project": "Cardano",
+      "valueType": "Token/network",
+      "rank": 12,
+      "snapshotDate": "2026-07-30",
+      "observationDate": "2026-07-30",
+      "grossMarketValueUsd": "6045751225.895448",
+      "market": {
+        "type": "token",
+        "sourceId": "CG-ADA",
+        "observationDate": "2026-07-30",
+        "coinGeckoCoinId": "cardano"
+      },
+      "affiliatedOwnership": {
+        "status": "Unknown",
+        "notes": "No complete verified founder holdings register."
+      },
+      "outsideCapital": {
+        "status": "Unknown",
+        "events": [],
+        "notes": "No reviewed capital deduction."
+      },
+      "confidence": {
+        "score": 60,
+        "label": "Low",
+        "components": [
+          {
+            "key": "founderAttribution",
+            "label": "Founder attribution",
+            "score": 20,
+            "maxScore": 20,
+            "detail": "Named founding team."
+          },
+          {
+            "key": "grossMarketValue",
+            "label": "Gross market value reconstruction",
+            "score": 30,
+            "maxScore": 30,
+            "detail": "Historical market observation."
+          },
+          {
+            "key": "ownershipCompleteness",
+            "label": "Founder/affiliate ownership completeness",
+            "score": 0,
+            "maxScore": 25,
+            "detail": "Unknown."
+          },
+          {
+            "key": "outsideCapitalCompleteness",
+            "label": "Outside-capital completeness",
+            "score": 10,
+            "maxScore": 15,
+            "detail": "No accepted amount."
+          },
+          {
+            "key": "sourceQuality",
+            "label": "Source quality",
+            "score": 0,
+            "maxScore": 5,
+            "detail": "Market source only."
+          },
+          {
+            "key": "snapshotAlignment",
+            "label": "Snapshot alignment",
+            "score": 0,
+            "maxScore": 3,
+            "detail": "No independent ownership observation."
+          },
+          {
+            "key": "doubleCountingRisk",
+            "label": "Double-counting risk",
+            "score": 0,
+            "maxScore": 2,
+            "detail": "Token-only entry."
+          }
+        ]
+      },
+      "includedEvidence": ["2026-07-30 circulating market value observation."],
+      "excludedEvidence": [],
+      "disputedEvidence": [],
+      "unknowns": ["Founder holdings", "Outside capital"],
+      "upperEstimate": true,
+      "comparability": "Uses the token track and keeps unknown deductions visible."
+    },
+    {
+      "entryId": "stellar",
+      "founderTeamId": "stellar-founding-team",
+      "founderTeam": "Jed McCaleb & Joyce Kim",
+      "project": "Stellar",
+      "valueType": "Token/network",
+      "rank": 13,
+      "snapshotDate": "2026-07-30",
+      "observationDate": "2026-07-30",
+      "grossMarketValueUsd": "5879737372.798154",
+      "market": {
+        "type": "token",
+        "sourceId": "CG-XLM",
+        "observationDate": "2026-07-30",
+        "coinGeckoCoinId": "stellar"
+      },
+      "affiliatedOwnership": {
+        "status": "Unknown",
+        "notes": "No complete verified founder holdings register."
+      },
+      "outsideCapital": {
+        "status": "Unknown",
+        "events": [],
+        "notes": "No reviewed capital deduction."
+      },
+      "confidence": {
+        "score": 58,
+        "label": "Low",
+        "components": [
+          {
+            "key": "founderAttribution",
+            "label": "Founder attribution",
+            "score": 20,
+            "maxScore": 20,
+            "detail": "Named founding team."
+          },
+          {
+            "key": "grossMarketValue",
+            "label": "Gross market value reconstruction",
+            "score": 30,
+            "maxScore": 30,
+            "detail": "Historical market observation."
+          },
+          {
+            "key": "ownershipCompleteness",
+            "label": "Founder/affiliate ownership completeness",
+            "score": 0,
+            "maxScore": 25,
+            "detail": "Unknown."
+          },
+          {
+            "key": "outsideCapitalCompleteness",
+            "label": "Outside-capital completeness",
+            "score": 8,
+            "maxScore": 15,
+            "detail": "No accepted amount."
+          },
+          {
+            "key": "sourceQuality",
+            "label": "Source quality",
+            "score": 0,
+            "maxScore": 5,
+            "detail": "Market source only."
+          },
+          {
+            "key": "snapshotAlignment",
+            "label": "Snapshot alignment",
+            "score": 0,
+            "maxScore": 3,
+            "detail": "No independent ownership observation."
+          },
+          {
+            "key": "doubleCountingRisk",
+            "label": "Double-counting risk",
+            "score": 0,
+            "maxScore": 2,
+            "detail": "Token-only entry."
+          }
+        ]
+      },
+      "includedEvidence": ["2026-07-30 circulating market value observation."],
+      "excludedEvidence": [],
+      "disputedEvidence": [],
+      "unknowns": ["Founder holdings", "Outside capital"],
+      "upperEstimate": true,
+      "comparability": "Uses the token track; no non-circulating amount is deducted."
+    },
+    {
+      "entryId": "canton",
+      "founderTeamId": "canton-founding-team",
+      "founderTeam": "Digital Asset / Canton founding team",
+      "project": "Canton",
+      "valueType": "Token/network",
+      "rank": 14,
+      "snapshotDate": "2026-07-30",
+      "observationDate": "2026-07-30",
+      "grossMarketValueUsd": "4789732583.579004",
+      "market": {
+        "type": "token",
+        "sourceId": "CG-CANTON",
+        "observationDate": "2026-07-30",
+        "coinGeckoCoinId": "canton-network"
+      },
+      "affiliatedOwnership": {
+        "status": "Unknown",
+        "notes": "Founder and affiliate holdings are not verified."
+      },
+      "outsideCapital": {
+        "status": "Unknown",
+        "events": [],
+        "notes": "No reviewed capital deduction."
+      },
+      "confidence": {
+        "score": 42,
+        "label": "Low",
+        "components": [
+          {
+            "key": "founderAttribution",
+            "label": "Founder attribution",
+            "score": 12,
+            "maxScore": 20,
+            "detail": "Founding unit is a company/team rather than a complete named-person attribution."
+          },
+          {
+            "key": "grossMarketValue",
+            "label": "Gross market value reconstruction",
+            "score": 30,
+            "maxScore": 30,
+            "detail": "Historical market observation."
+          },
+          {
+            "key": "ownershipCompleteness",
+            "label": "Founder/affiliate ownership completeness",
+            "score": 0,
+            "maxScore": 25,
+            "detail": "Unknown."
+          },
+          {
+            "key": "outsideCapitalCompleteness",
+            "label": "Outside-capital completeness",
+            "score": 0,
+            "maxScore": 15,
+            "detail": "Unknown."
+          },
+          {
+            "key": "sourceQuality",
+            "label": "Source quality",
+            "score": 0,
+            "maxScore": 5,
+            "detail": "Market source only."
+          },
+          {
+            "key": "snapshotAlignment",
+            "label": "Snapshot alignment",
+            "score": 0,
+            "maxScore": 3,
+            "detail": "No independent ownership observation."
+          },
+          {
+            "key": "doubleCountingRisk",
+            "label": "Double-counting risk",
+            "score": 0,
+            "maxScore": 2,
+            "detail": "Token-only entry."
+          }
+        ]
+      },
+      "includedEvidence": ["2026-07-30 circulating market value observation."],
+      "excludedEvidence": [],
+      "disputedEvidence": [],
+      "unknowns": [
+        "Founder attribution detail",
+        "Founder holdings",
+        "Outside capital"
+      ],
+      "upperEstimate": true,
+      "comparability": "Included as a token/network founding unit with a low-confidence upper estimate."
+    },
+    {
+      "entryId": "figure",
+      "founderTeamId": "figure-founding-team",
+      "founderTeam": "Mike Cagney, June Ou & verified founding unit",
+      "project": "Figure",
+      "valueType": "Public company",
+      "rank": 15,
+      "snapshotDate": "2026-07-30",
+      "observationDate": "2026-07-30",
+      "grossMarketValueUsd": "5715456946.65",
+      "market": {
+        "type": "public",
+        "ticker": "FIGR",
+        "exchange": "Nasdaq",
+        "priceUsd": "25.85",
+        "priceDate": "2026-07-30",
+        "priceSourceId": "PX-FIGURE",
+        "shareClasses": [
+          {
+            "className": "Class A",
+            "sharesOutstanding": "182622749",
+            "asOfDate": "2026-05-11",
+            "sourceId": "SC-FIGURE"
+          },
+          {
+            "className": "Class B / other",
+            "sharesOutstanding": "38478100",
+            "asOfDate": "2026-05-11",
+            "sourceId": "SC-FIGURE"
+          }
+        ]
+      },
+      "affiliatedOwnership": {
+        "status": "Accepted",
+        "totalShares": "49266468",
+        "ownershipDate": "2026-04-24",
+        "sourceId": "OWN-FIGURE",
+        "holders": [
+          {
+            "name": "Mike Cagney",
+            "shares": "46679517",
+            "sourceId": "OWN-FIGURE"
+          },
+          { "name": "June Ou", "shares": "2586951", "sourceId": "OWN-FIGURE" }
+        ],
+        "notes": "Spouse overlap removed and counted once."
+      },
+      "outsideCapital": {
+        "status": "Unknown",
+        "events": [],
+        "notes": "Lifetime pre-listing outside capital is not fully reconstructible."
+      },
+      "confidence": {
+        "score": 70,
+        "label": "Medium",
+        "components": [
+          {
+            "key": "founderAttribution",
+            "label": "Founder attribution",
+            "score": 20,
+            "maxScore": 20,
+            "detail": "Public-company filings identify the founding unit."
+          },
+          {
+            "key": "grossMarketValue",
+            "label": "Gross market value reconstruction",
+            "score": 30,
+            "maxScore": 30,
+            "detail": "Two share classes times July 30 close."
+          },
+          {
+            "key": "ownershipCompleteness",
+            "label": "Founder/affiliate ownership completeness",
+            "score": 20,
+            "maxScore": 25,
+            "detail": "Founder holdings reconstructed from SEC filing."
+          },
+          {
+            "key": "outsideCapitalCompleteness",
+            "label": "Outside-capital completeness",
+            "score": 0,
+            "maxScore": 15,
+            "detail": "Unknown."
+          },
+          {
+            "key": "sourceQuality",
+            "label": "Source quality",
+            "score": 0,
+            "maxScore": 5,
+            "detail": "SEC and exchange records, capital incomplete."
+          },
+          {
+            "key": "snapshotAlignment",
+            "label": "Snapshot alignment",
+            "score": 0,
+            "maxScore": 3,
+            "detail": "Shares and ownership precede price by multiple weeks."
+          },
+          {
+            "key": "doubleCountingRisk",
+            "label": "Double-counting risk",
+            "score": 0,
+            "maxScore": 2,
+            "detail": "Company equity is not combined with token supply."
+          }
+        ]
+      },
+      "includedEvidence": [
+        "Two share classes, founder holdings and July 30 close."
+      ],
+      "excludedEvidence": [
+        "IPO filing proceeds as a substitute for complete lifetime pre-listing capital."
+      ],
+      "disputedEvidence": [],
+      "unknowns": [
+        "Complete pre-listing outside capital",
+        "Post-May share-count changes"
+      ],
+      "upperEstimate": true,
+      "comparability": "Uses public-company market capitalization and founder equity deduction; unknown capital remains unknown, so result is an upper estimate."
+    },
+    {
+      "entryId": "galaxy-digital",
+      "founderTeamId": "galaxy-founding-team",
+      "founderTeam": "Michael Novogratz & verified founding unit",
+      "project": "Galaxy Digital",
+      "valueType": "Public company",
+      "rank": 16,
+      "snapshotDate": "2026-07-30",
+      "observationDate": "2026-07-30",
+      "grossMarketValueUsd": "8392599652.50",
+      "market": {
+        "type": "public",
+        "ticker": "GLXY",
+        "exchange": "Nasdaq",
+        "priceUsd": "21.525",
+        "priceDate": "2026-07-30",
+        "priceSourceId": "PX-GALAXY",
+        "shareClasses": [
+          {
+            "className": "Class A",
+            "sharesOutstanding": "191491823",
+            "asOfDate": "2026-05-05",
+            "sourceId": "SC-GALAXY"
+          },
+          {
+            "className": "Class B / LP equivalent",
+            "sharesOutstanding": "198408277",
+            "asOfDate": "2026-05-05",
+            "sourceId": "SC-GALAXY"
+          }
+        ]
+      },
+      "affiliatedOwnership": {
+        "status": "Accepted",
+        "totalShares": "202346000",
+        "ownershipDate": "2026-06-01",
+        "sourceId": "OWN-GALAXY",
+        "holders": [
+          {
+            "name": "Michael Novogratz",
+            "shares": "112346000",
+            "sourceId": "OWN-GALAXY"
+          },
+          {
+            "name": "Galaxy Group Investments",
+            "shares": "90000000",
+            "sourceId": "OWN-GALAXY"
+          }
+        ],
+        "notes": "Controlled affiliate counted once; exchangeable LP units included consistently with share reconstruction."
+      },
+      "outsideCapital": {
+        "status": "Unknown",
+        "events": [],
+        "notes": "Complete historical outside-capital reconstruction and FX normalization are not available."
+      },
+      "confidence": {
+        "score": 65,
+        "label": "Medium",
+        "components": [
+          {
+            "key": "founderAttribution",
+            "label": "Founder attribution",
+            "score": 20,
+            "maxScore": 20,
+            "detail": "Public-company filings identify the founding unit."
+          },
+          {
+            "key": "grossMarketValue",
+            "label": "Gross market value reconstruction",
+            "score": 30,
+            "maxScore": 30,
+            "detail": "Class A and exchangeable equivalent units times July 30 close."
+          },
+          {
+            "key": "ownershipCompleteness",
+            "label": "Founder/affiliate ownership completeness",
+            "score": 15,
+            "maxScore": 25,
+            "detail": "Founder and controlled affiliate holdings reconstructed."
+          },
+          {
+            "key": "outsideCapitalCompleteness",
+            "label": "Outside-capital completeness",
+            "score": 0,
+            "maxScore": 15,
+            "detail": "Unknown."
+          },
+          {
+            "key": "sourceQuality",
+            "label": "Source quality",
+            "score": 0,
+            "maxScore": 5,
+            "detail": "SEC and exchange records, capital incomplete."
+          },
+          {
+            "key": "snapshotAlignment",
+            "label": "Snapshot alignment",
+            "score": 0,
+            "maxScore": 3,
+            "detail": "Share count precedes price by 86 days."
+          },
+          {
+            "key": "doubleCountingRisk",
+            "label": "Double-counting risk",
+            "score": 0,
+            "maxScore": 2,
+            "detail": "Exchangeable units counted once."
+          }
+        ]
+      },
+      "includedEvidence": [
+        "Class A and exchangeable equivalent units, founder/affiliate ownership, July 30 close."
+      ],
+      "excludedEvidence": [
+        "Unreconciled historical financing and FX estimates."
+      ],
+      "disputedEvidence": [
+        "Class B/LP equivalence requires ongoing filing review."
+      ],
+      "unknowns": [
+        "Complete pre-listing outside capital",
+        "Share-count changes after May 5"
+      ],
+      "upperEstimate": true,
+      "comparability": "Uses the public-company formula with an explicitly stated exchangeable-unit treatment; unknown capital makes the result an upper estimate."
+    },
+    {
+      "entryId": "litecoin",
+      "founderTeamId": "litecoin-founding-team",
+      "founderTeam": "Charlie Lee",
+      "project": "Litecoin",
+      "valueType": "Token/network",
+      "rank": 17,
+      "snapshotDate": "2026-07-30",
+      "observationDate": "2026-07-30",
+      "grossMarketValueUsd": "3516983155.666661",
+      "market": {
+        "type": "token",
+        "sourceId": "CG-LTC",
+        "observationDate": "2026-07-30",
+        "coinGeckoCoinId": "litecoin"
+      },
+      "affiliatedOwnership": {
+        "status": "Unknown",
+        "notes": "No complete verified founder holdings register."
+      },
+      "outsideCapital": {
+        "status": "Unknown",
+        "events": [],
+        "notes": "No reviewed capital deduction."
+      },
+      "confidence": {
+        "score": 65,
+        "label": "Medium",
+        "components": [
+          {
+            "key": "founderAttribution",
+            "label": "Founder attribution",
+            "score": 20,
+            "maxScore": 20,
+            "detail": "Named founder."
+          },
+          {
+            "key": "grossMarketValue",
+            "label": "Gross market value reconstruction",
+            "score": 30,
+            "maxScore": 30,
+            "detail": "Historical market observation."
+          },
+          {
+            "key": "ownershipCompleteness",
+            "label": "Founder/affiliate ownership completeness",
+            "score": 0,
+            "maxScore": 25,
+            "detail": "Unknown."
+          },
+          {
+            "key": "outsideCapitalCompleteness",
+            "label": "Outside-capital completeness",
+            "score": 15,
+            "maxScore": 15,
+            "detail": "No accepted amount."
+          },
+          {
+            "key": "sourceQuality",
+            "label": "Source quality",
+            "score": 0,
+            "maxScore": 5,
+            "detail": "Market source only."
+          },
+          {
+            "key": "snapshotAlignment",
+            "label": "Snapshot alignment",
+            "score": 0,
+            "maxScore": 3,
+            "detail": "No independent ownership observation."
+          },
+          {
+            "key": "doubleCountingRisk",
+            "label": "Double-counting risk",
+            "score": 0,
+            "maxScore": 2,
+            "detail": "Token-only entry."
+          }
+        ]
+      },
+      "includedEvidence": ["2026-07-30 circulating market value observation."],
+      "excludedEvidence": [],
+      "disputedEvidence": [],
+      "unknowns": ["Founder holdings", "Outside capital"],
+      "upperEstimate": true,
+      "comparability": "Uses the token track with unknown deductions preserved."
+    },
+    {
+      "entryId": "hedera",
+      "founderTeamId": "hedera-founding-team",
+      "founderTeam": "Leemon Baird & Mance Harmon",
+      "project": "Hedera",
+      "valueType": "Token/network",
+      "rank": 18,
+      "snapshotDate": "2026-07-30",
+      "observationDate": "2026-07-30",
+      "grossMarketValueUsd": "2969356270.051462",
+      "market": {
+        "type": "token",
+        "sourceId": "CG-HBAR",
+        "observationDate": "2026-07-30",
+        "coinGeckoCoinId": "hedera-hashgraph"
+      },
+      "affiliatedOwnership": {
+        "status": "Unknown",
+        "notes": "No complete verified founder holdings register."
+      },
+      "outsideCapital": {
+        "status": "Unknown",
+        "events": [],
+        "notes": "No reviewed capital deduction."
+      },
+      "confidence": {
+        "score": 58,
+        "label": "Low",
+        "components": [
+          {
+            "key": "founderAttribution",
+            "label": "Founder attribution",
+            "score": 20,
+            "maxScore": 20,
+            "detail": "Named founding team."
+          },
+          {
+            "key": "grossMarketValue",
+            "label": "Gross market value reconstruction",
+            "score": 30,
+            "maxScore": 30,
+            "detail": "Historical market observation."
+          },
+          {
+            "key": "ownershipCompleteness",
+            "label": "Founder/affiliate ownership completeness",
+            "score": 0,
+            "maxScore": 25,
+            "detail": "Unknown."
+          },
+          {
+            "key": "outsideCapitalCompleteness",
+            "label": "Outside-capital completeness",
+            "score": 8,
+            "maxScore": 15,
+            "detail": "No accepted amount."
+          },
+          {
+            "key": "sourceQuality",
+            "label": "Source quality",
+            "score": 0,
+            "maxScore": 5,
+            "detail": "Market source only."
+          },
+          {
+            "key": "snapshotAlignment",
+            "label": "Snapshot alignment",
+            "score": 0,
+            "maxScore": 3,
+            "detail": "No independent ownership observation."
+          },
+          {
+            "key": "doubleCountingRisk",
+            "label": "Double-counting risk",
+            "score": 0,
+            "maxScore": 2,
+            "detail": "Token-only entry."
+          }
+        ]
+      },
+      "includedEvidence": ["2026-07-30 circulating market value observation."],
+      "excludedEvidence": [],
+      "disputedEvidence": [],
+      "unknowns": ["Founder holdings", "Outside capital"],
+      "upperEstimate": true,
+      "comparability": "Uses circulating token market value; no non-circulating amount is deducted."
+    },
+    {
+      "entryId": "avalanche",
+      "founderTeamId": "avalanche-founding-team",
+      "founderTeam": "Emin Gün Sirer, Kevin Sekniqi & Ted Yin",
+      "project": "Avalanche",
+      "valueType": "Token/network",
+      "rank": 19,
+      "snapshotDate": "2026-07-30",
+      "observationDate": "2026-07-30",
+      "grossMarketValueUsd": "2771136545.8156023",
+      "market": {
+        "type": "token",
+        "sourceId": "CG-AVAX",
+        "observationDate": "2026-07-30",
+        "coinGeckoCoinId": "avalanche-2"
+      },
+      "affiliatedOwnership": {
+        "status": "Unknown",
+        "notes": "No complete verified founder holdings register."
+      },
+      "outsideCapital": {
+        "status": "Unknown",
+        "events": [],
+        "notes": "No reviewed capital deduction."
+      },
+      "confidence": {
+        "score": 60,
+        "label": "Low",
+        "components": [
+          {
+            "key": "founderAttribution",
+            "label": "Founder attribution",
+            "score": 20,
+            "maxScore": 20,
+            "detail": "Named founding team."
+          },
+          {
+            "key": "grossMarketValue",
+            "label": "Gross market value reconstruction",
+            "score": 30,
+            "maxScore": 30,
+            "detail": "Historical market observation."
+          },
+          {
+            "key": "ownershipCompleteness",
+            "label": "Founder/affiliate ownership completeness",
+            "score": 0,
+            "maxScore": 25,
+            "detail": "Unknown."
+          },
+          {
+            "key": "outsideCapitalCompleteness",
+            "label": "Outside-capital completeness",
+            "score": 10,
+            "maxScore": 15,
+            "detail": "No accepted amount."
+          },
+          {
+            "key": "sourceQuality",
+            "label": "Source quality",
+            "score": 0,
+            "maxScore": 5,
+            "detail": "Market source only."
+          },
+          {
+            "key": "snapshotAlignment",
+            "label": "Snapshot alignment",
+            "score": 0,
+            "maxScore": 3,
+            "detail": "No independent ownership observation."
+          },
+          {
+            "key": "doubleCountingRisk",
+            "label": "Double-counting risk",
+            "score": 0,
+            "maxScore": 2,
+            "detail": "Token-only entry."
+          }
+        ]
+      },
+      "includedEvidence": ["2026-07-30 circulating market value observation."],
+      "excludedEvidence": [],
+      "disputedEvidence": [],
+      "unknowns": ["Founder holdings", "Outside capital"],
+      "upperEstimate": true,
+      "comparability": "Uses the token track with unknown deductions preserved."
+    },
+    {
+      "entryId": "sui",
+      "founderTeamId": "sui-founding-team",
+      "founderTeam": "Evan Cheng, Sam Blackshear, Adeniyi Abiodun, Kostas Chalkias & George Danezis",
+      "project": "Sui",
+      "valueType": "Token/network",
+      "rank": 20,
+      "snapshotDate": "2026-07-30",
+      "observationDate": "2026-07-30",
+      "grossMarketValueUsd": "2780223052.6327486",
+      "market": {
+        "type": "token",
+        "sourceId": "CG-SUI",
+        "observationDate": "2026-07-30",
+        "coinGeckoCoinId": "sui"
+      },
+      "affiliatedOwnership": {
+        "status": "Unknown",
+        "notes": "No verified founder holdings can be deducted."
+      },
+      "outsideCapital": {
+        "status": "Accepted",
+        "events": [
+          {
+            "eventId": "sui-series-b",
+            "label": "Mysten Labs Series B initial close",
+            "amountUsd": "300000000",
+            "date": "2022-09-08",
+            "sourceId": "CAP-SUI",
+            "disposition": "Accepted",
+            "notes": "Company release reports initial close."
+          }
+        ],
+        "notes": "Accepted disclosed Series B initial close; other capital unknown."
+      },
+      "confidence": {
+        "score": 65,
+        "label": "Medium",
+        "components": [
+          {
+            "key": "founderAttribution",
+            "label": "Founder attribution",
+            "score": 20,
+            "maxScore": 20,
+            "detail": "Named founding team."
+          },
+          {
+            "key": "grossMarketValue",
+            "label": "Gross market value reconstruction",
+            "score": 30,
+            "maxScore": 30,
+            "detail": "Historical market observation."
+          },
+          {
+            "key": "ownershipCompleteness",
+            "label": "Founder/affiliate ownership completeness",
+            "score": 0,
+            "maxScore": 25,
+            "detail": "Unknown."
+          },
+          {
+            "key": "outsideCapitalCompleteness",
+            "label": "Outside-capital completeness",
+            "score": 15,
+            "maxScore": 15,
+            "detail": "Reviewed Series B, broader history unknown."
+          },
+          {
+            "key": "sourceQuality",
+            "label": "Source quality",
+            "score": 0,
+            "maxScore": 5,
+            "detail": "Market and company release sources."
+          },
+          {
+            "key": "snapshotAlignment",
+            "label": "Snapshot alignment",
+            "score": 0,
+            "maxScore": 3,
+            "detail": "Founder holdings not aligned."
+          },
+          {
+            "key": "doubleCountingRisk",
+            "label": "Double-counting risk",
+            "score": 0,
+            "maxScore": 2,
+            "detail": "Token-only entry."
+          }
+        ]
+      },
+      "includedEvidence": [
+        "2026-07-30 circulating market value observation.",
+        "300,000,000 USD Mysten Labs Series B initial close."
+      ],
+      "excludedEvidence": [
+        "FTX stake repurchase treated as a capital/equity transaction rather than additional original outside capital."
+      ],
+      "disputedEvidence": [],
+      "unknowns": ["Founder holdings", "Other outside capital"],
+      "upperEstimate": true,
+      "comparability": "Deducts reviewed Mysten financing from token market value; unknown founder holdings and other capital remain unknown."
+    }
+  ],
+  "privateCandidates": [
+    {
+      "candidateId": "binance-private",
+      "founderTeam": "Changpeng Zhao, Yi He & founding team",
+      "company": "Binance",
+      "whyQualifies": "Major private crypto company with a qualifying founding team and substantial ecosystem exposure.",
+      "mostRecentValuationReference": "Private-company valuation references are non-ranking context only; no reproducible July 30 public-equity market value.",
+      "valuationSourceId": "VAL-BINANCE",
+      "missingEvidence": [
+        "Authoritative current capitalization table",
+        "Reproducible public-equity market capitalization",
+        "Complete founder/affiliate ownership"
+      ],
+      "exclusionReason": "Private-company valuation and ownership cannot be independently reconstructed for the primary formula; BNB is separately ranked as a token/network entry."
+    },
+    {
+      "candidateId": "kraken-private",
+      "founderTeam": "Jesse Powell & Thanh Luu",
+      "company": "Kraken",
+      "whyQualifies": "Major private crypto exchange with a documented founding unit.",
+      "mostRecentValuationReference": "Private funding/valuation references are non-ranking context only.",
+      "valuationSourceId": "VAL-KRAKEN",
+      "missingEvidence": [
+        "Authoritative current capitalization table",
+        "Reproducible public-equity market capitalization",
+        "Complete founder/affiliate ownership and pre-listing capital"
+      ],
+      "exclusionReason": "No independently reproducible public-company market capitalization and ownership evidence."
+    },
+    {
+      "candidateId": "tether-private",
+      "founderTeam": "Tether founding and controlling group",
+      "company": "Tether",
+      "whyQualifies": "Systemically important private stablecoin issuer and company candidate.",
+      "mostRecentValuationReference": "Transparency disclosures are not a public-equity valuation.",
+      "valuationSourceId": "VAL-TETHER",
+      "missingEvidence": [
+        "Public-equity market capitalization",
+        "Complete founder/affiliate ownership",
+        "Comparable pre-listing capital record"
+      ],
+      "exclusionReason": "Private-company evidence is incomplete; USDT supply is not shareholder equity and cannot substitute for company market capitalization."
+    }
+  ]
+}

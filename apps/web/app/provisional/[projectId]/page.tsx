@@ -3,7 +3,11 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { SiteNav } from "../../../components/site-nav";
+import { UnifiedCalculationPage } from "../../../components/unified-calculation";
 import {
+  getUnifiedCalculation,
+  getUnifiedDataset,
+  getUnifiedProjectIds,
   getProvisionalCalculation,
   getProvisionalProjectIds,
   getResearchDataset,
@@ -21,7 +25,13 @@ function money(value: string | null): string {
 }
 
 export async function generateStaticParams() {
-  return (await getProvisionalProjectIds()).map((projectId) => ({ projectId }));
+  const [unifiedIds, legacyIds] = await Promise.all([
+    getUnifiedProjectIds(),
+    getProvisionalProjectIds(),
+  ]);
+  return [...new Set([...unifiedIds, ...legacyIds])].map((projectId) => ({
+    projectId,
+  }));
 }
 
 export async function generateMetadata({
@@ -30,6 +40,14 @@ export async function generateMetadata({
   params: Promise<{ projectId: string }>;
 }): Promise<Metadata> {
   const { projectId } = await params;
+  const unified = await getUnifiedCalculation(projectId);
+  if (unified) {
+    return {
+      title: `${unified.entry.founderTeam} — ${unified.entry.project} calculation`,
+      description: `Dated ${unified.entry.valueType.toLowerCase()} calculation and source trail for ${unified.entry.founderTeam}.`,
+      alternates: { canonical: `/provisional/${projectId}/` },
+    };
+  }
   const calculation = await getProvisionalCalculation(projectId);
   return calculation
     ? {
@@ -40,7 +58,7 @@ export async function generateMetadata({
     : { title: "Provisional calculation not found" };
 }
 
-export default async function ProvisionalCalculationPage({
+async function LegacyProvisionalCalculationPage({
   params,
 }: {
   params: Promise<{ projectId: string }>;
@@ -287,5 +305,30 @@ export default async function ProvisionalCalculationPage({
         </p>
       </main>
     </>
+  );
+}
+
+export default async function ProvisionalCalculationPage({
+  params,
+}: {
+  params: Promise<{ projectId: string }>;
+}) {
+  const { projectId } = await params;
+  const unified = await getUnifiedCalculation(projectId);
+  if (unified) {
+    return (
+      <>
+        <SiteNav />
+        <main className="detail-page" id="main-content" tabIndex={-1}>
+          <UnifiedCalculationPage
+            calculation={unified}
+            dataset={await getUnifiedDataset()}
+          />
+        </main>
+      </>
+    );
+  }
+  return (
+    <LegacyProvisionalCalculationPage params={Promise.resolve({ projectId })} />
   );
 }

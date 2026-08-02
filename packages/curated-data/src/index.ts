@@ -8,6 +8,7 @@ import {
 } from "@crypto-founders/schemas";
 
 export * from "./research.js";
+export * from "./unified.js";
 
 export const curatedDataFiles = {
   projects: "projects.json",

@@ -708,6 +708,30 @@ section {
   color: var(--muted);
   line-height: 1.6;
 }
+.status-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  margin-block: 1.5rem 2rem;
+}
+.status-grid > div {
+  padding: 1rem;
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+.status-grid dt {
+  margin-bottom: 0.45rem;
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.status-grid dd {
+  margin: 0;
+  font-family: Georgia, serif;
+  font-size: 1.15rem;
+}
 .status-label {
   font-family: Georgia, serif;
   font-size: 2rem;
@@ -807,6 +831,9 @@ footer p:first-child {
 
 @media (max-width: 700px) {
   .status-summary {
+    grid-template-columns: 1fr;
+  }
+  .status-grid {
     grid-template-columns: 1fr;
   }
   nav,
