@@ -25,10 +25,17 @@ describe("rank change display", () => {
     });
   });
 
-  it("does not invent movement for live hourly snapshots", () => {
+  it("formats canonical movement for live hourly snapshots", () => {
     expect(formatRankChange(2, "live")).toEqual({
+      text: "↑ 2",
+      label: "Moved up 2 positions",
+    });
+  });
+
+  it("explains when a live snapshot has no prior rank", () => {
+    expect(formatRankChange(null, "live")).toEqual({
       text: "—",
-      label: "Rank movement is not published for this live snapshot",
+      label: "No prior published rank is available for this snapshot",
     });
   });
 

@@ -16,6 +16,7 @@ type LiveHeader = {
 type LiveResult = {
   entry_id: string;
   rank: number;
+  rank_change: number | null;
   final_value_usd: string | null;
   confidence_score: number;
   confidence_label: string;
@@ -115,7 +116,7 @@ export function HourlyRankingTable({
             },
           },
           upperEstimate: fallback.upperEstimate,
-          rankChange: null,
+          rankChange: result.rank_change,
           rankChangeSource: "live" as const,
         };
       })

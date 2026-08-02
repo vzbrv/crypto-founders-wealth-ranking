@@ -1,5 +1,6 @@
 interface LeaderboardRow {
   rank: number | null;
+  rank_change: number | null;
   score_usd: string | null;
   confidence_label: string | null;
   slug: string;
@@ -248,7 +249,7 @@ Deno.serve(async (request) => {
     const leaderboardUrl = new URL("/rest/v1/public_leaderboard", supabaseUrl);
     leaderboardUrl.searchParams.set(
       "select",
-      "rank,score_usd,confidence_label,slug,project_breakdown",
+      "rank,rank_change,score_usd,confidence_label,slug,project_breakdown",
     );
     leaderboardUrl.searchParams.set("order", "rank.asc.nullslast");
     const leaderboard = await restJson<LeaderboardRow[]>(
@@ -342,6 +343,7 @@ Deno.serve(async (request) => {
       results.push({
         entry_id: row.slug,
         rank: row.rank,
+        rank_change: row.rank_change,
         value_type: valueType,
         gross_value_usd: detail.market_cap_usd,
         final_value_usd: row.score_usd,
