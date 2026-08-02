@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -47,6 +47,30 @@ function redirectFor(pathname: string) {
 }
 
 describe("ranking route contract", () => {
+  it("redirects removed research routes to sources and removes public links", () => {
+    for (const path of ["/research", "/research/", "/research/dogecoin/"]) {
+      const redirect = redirectFor(path);
+      expect(redirect).toMatchObject({ target: "/sources/", status: 301 });
+      expect(redirectFor(redirect?.target ?? "")).toBeNull();
+    }
+
+    expect(
+      existsSync(resolve(webRoot, "app/research/[[...projectId]]/page.tsx")),
+    ).toBe(false);
+    expect(readAppFile("app/sitemap.ts")).not.toMatch(
+      /["'`]\/research(?:["'`]|\/)/,
+    );
+    expect(readAppFile("app/sitemap.ts")).not.toContain(
+      "getResearchProjectIds",
+    );
+    expect(readAppFile("components/site-nav.tsx")).not.toMatch(
+      /["'`]\/research(?:["'`]|\/)/,
+    );
+    expect(readAppFile("components/ranking-dashboard.tsx")).not.toMatch(
+      /["'`]\/research(?:["'`]|\/)/,
+    );
+  });
+
   it("keeps the homepage as the only primary leaderboard", () => {
     const homepage = readAppFile("app/page.tsx");
     const rankingPage = readAppFile("components/unified-ranking-page.tsx");
