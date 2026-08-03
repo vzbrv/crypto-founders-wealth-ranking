@@ -217,12 +217,13 @@ select id, utc_hour, observation_at, publication_at, status, calculation_version
 from current_published_snapshot;
 
 create or replace view public.public_current_snapshot_results as
-select results.snapshot_id, results.entry_id, results.rank, results.value_type,
+select results.snapshot_id, results.entry_id, results.rank, results.rank_change,
+  results.value_type,
   results.gross_value_usd, results.final_value_usd, results.confidence_score,
   results.confidence_label, results.calculation, results.source_ids,
   snapshot.utc_hour, snapshot.observation_at, snapshot.publication_at,
   case when snapshot.observation_at < now() - interval '90 minutes' then 'stale' else 'current' end as freshness_status,
-  results.previous_rank, results.rank_change, results.rank_change_status
+  results.previous_rank, results.rank_change_status
 from hourly_snapshot_results results
 join current_published_snapshot snapshot on snapshot.id = results.snapshot_id
 order by results.rank;
