@@ -25,24 +25,18 @@ describe("rank change display", () => {
     });
   });
 
-  it("formats canonical movement for live hourly snapshots", () => {
-    expect(formatRankChange(2, "live")).toEqual({
+  it("formats movement from the previous complete live snapshot", () => {
+    expect(formatRankChange(2, "live", "continued")).toEqual({
       text: "↑ 2",
       label: "Moved up 2 positions",
     });
-  });
-
-  it("explains when a live snapshot has no prior rank", () => {
-    expect(formatRankChange(null, "live")).toEqual({
-      text: "—",
-      label: "No prior published rank is available for this snapshot",
-    });
-  });
-
-  it("treats undefined movement as unavailable", () => {
-    expect(formatRankChange(undefined, "fallback")).toEqual({
+    expect(formatRankChange(null, "live", "baseline")).toEqual({
       text: "—",
       label: "No movement shown for the first baseline snapshot",
+    });
+    expect(formatRankChange(null, "live", "new")).toEqual({
+      text: "New",
+      label: "Newly entered the top 20",
     });
   });
 });

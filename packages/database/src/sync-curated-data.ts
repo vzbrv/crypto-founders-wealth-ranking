@@ -1,8 +1,12 @@
-import { loadProductionCuratedData } from "@crypto-founders/curated-data";
+import {
+  loadProductionCuratedData,
+  loadProductionUnifiedData,
+} from "@crypto-founders/curated-data";
 import postgres from "postgres";
 
 import {
   createCuratedImportStatements,
+  createUnifiedRankingImportStatements,
   summarizeCuratedImport,
 } from "./curated-import.js";
 
@@ -11,8 +15,14 @@ if (!databaseUrl) {
   throw new Error("DATABASE_URL is required");
 }
 
-const bundle = await loadProductionCuratedData(process.env.CURATED_DATA_DIR);
-const statements = createCuratedImportStatements(bundle);
+const curatedDataDirectory = process.env.CURATED_DATA_DIR;
+if (!curatedDataDirectory) throw new Error("CURATED_DATA_DIR is required");
+const bundle = await loadProductionCuratedData(curatedDataDirectory);
+const unifiedDataset = await loadProductionUnifiedData(curatedDataDirectory);
+const statements = [
+  ...createCuratedImportStatements(bundle),
+  ...createUnifiedRankingImportStatements(unifiedDataset),
+];
 const sql = postgres(databaseUrl, { max: 1, prepare: false });
 
 try {
@@ -22,7 +32,10 @@ try {
     }
   });
   console.log(
-    `Curated data synchronized: ${JSON.stringify(summarizeCuratedImport(bundle))}`,
+    `Curated and unified data synchronized: ${JSON.stringify({
+      ...summarizeCuratedImport(bundle),
+      unifiedRankingEntries: unifiedDataset.entries.length,
+    })}`,
   );
 } finally {
   await sql.end();

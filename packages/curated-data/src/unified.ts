@@ -129,6 +129,8 @@ export interface UnifiedCalculation {
 
 const defaultDirectory = path.resolve(process.cwd(), "data/research");
 
+const productionMarker = ".curated-data-production.json";
+
 export async function loadUnifiedData(
   directory = defaultDirectory,
 ): Promise<UnifiedDataset> {
@@ -137,6 +139,33 @@ export async function loadUnifiedData(
     "utf8",
   );
   return JSON.parse(contents) as UnifiedDataset;
+}
+
+export async function loadProductionUnifiedData(
+  directory: string,
+): Promise<UnifiedDataset> {
+  const resolvedDirectory = path.resolve(
+    process.env.INIT_CWD ?? process.cwd(),
+    directory,
+  );
+  const marker = JSON.parse(
+    await readFile(path.join(resolvedDirectory, productionMarker), "utf8"),
+  ) as { environment?: string; synthetic?: boolean };
+  if (marker.environment !== "production" || marker.synthetic !== false) {
+    throw new Error(
+      `${productionMarker} must identify non-synthetic production data`,
+    );
+  }
+  const dataset = await loadUnifiedData(resolvedDirectory);
+  const problems = validateUnifiedDataset(dataset);
+  if (problems.length > 0) {
+    throw new Error(
+      `Unified production data validation failed:\n${problems
+        .map((problem) => `- ${problem}`)
+        .join("\n")}`,
+    );
+  }
+  return dataset;
 }
 
 function acceptedCapital(entry: UnifiedEntry): Decimal | null {

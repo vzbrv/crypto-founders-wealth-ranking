@@ -1,4 +1,5 @@
 import type { CuratedDataBundle } from "@crypto-founders/schemas";
+import type { UnifiedDataset } from "@crypto-founders/curated-data/unified";
 import type postgres from "postgres";
 
 export type SqlStatement = {
@@ -17,6 +18,25 @@ export type CuratedImportSummary = {
   fundingRounds: number;
   recordSources: number;
 };
+
+export function createUnifiedRankingImportStatements(
+  dataset: UnifiedDataset,
+): SqlStatement[] {
+  return [
+    statement(
+      `insert into unified_ranking_documents (id, snapshot_date, methodology_version, dataset)
+       values ('current', $1, $2, $3::jsonb)
+       on conflict (id) do update set
+         snapshot_date = excluded.snapshot_date,
+         methodology_version = excluded.methodology_version,
+         dataset = excluded.dataset,
+         updated_at = now()`,
+      dataset.snapshotDate,
+      dataset.methodologyVersion,
+      JSON.stringify(dataset),
+    ),
+  ];
+}
 
 const statement = (
   text: string,
