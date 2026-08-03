@@ -30,7 +30,7 @@ jobs:
       - name: Check sanitized provider status
         id: providers
         run: |
-          curl --fail --silent --show-error \
+          curl --fail-with-body --silent --show-error \
             --header "apikey: $SUPABASE_PUBLISHABLE_KEY" \
             "$SUPABASE_URL/rest/v1/public_provider_status?select=provider,status,freshness,checked_at" \
             --output provider-status.json
