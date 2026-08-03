@@ -42,7 +42,7 @@ jobs:
       - name: Check latest immutable snapshot
         id: snapshot
         run: |
-          curl --fail --silent --show-error \
+          curl --fail-with-body --silent --show-error \
             --header "apikey: $SUPABASE_PUBLISHABLE_KEY" \
             "$SUPABASE_URL/rest/v1/public_latest_snapshot_status?select=utc_hour,observation_at,publication_at,status,is_immutable,failure_reason&limit=1" \
             --output latest-snapshot-status.json
