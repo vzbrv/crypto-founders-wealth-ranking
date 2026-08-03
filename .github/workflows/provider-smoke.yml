@@ -15,6 +15,7 @@ permissions:
 jobs:
   monitor:
     runs-on: ubuntu-latest
+    environment: production
     timeout-minutes: 3
     env:
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
