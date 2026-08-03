@@ -18,9 +18,11 @@ jobs:
     runs-on: ubuntu-latest
     environment: production
     timeout-minutes: 3
+
     env:
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
       SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+
     steps:
       - name: Validate monitor configuration
         run: |
@@ -30,16 +32,22 @@ jobs:
       - name: Check sanitized provider status
         id: providers
         run: |
-          curl --fail-with-body --silent --show-error \
+          if ! curl --fail-with-body --silent --show-error \
             --header "apikey: $SUPABASE_PUBLISHABLE_KEY" \
-            "$SUPABASE_URL/rest/v1/public_provider_status?select=provider,status,freshness,checked_at" \
+            "${SUPABASE_URL%/}/rest/v1/public_provider_status?select=provider,status,freshness,checked_at" \
             --output provider-status.json
+          then
+            echo "::error::Supabase provider-status request failed:"
+            cat provider-status.json || true
+            exit 1
+          fi
+
           jq --exit-status '
             length > 0 and
             all(.[]; .status == "healthy" and .freshness == "current")
           ' provider-status.json
 
-            - name: Check latest immutable snapshot
+      - name: Check latest immutable snapshot
         id: snapshot
         run: |
           if ! curl --fail-with-body --silent --show-error \
@@ -47,7 +55,7 @@ jobs:
             "${SUPABASE_URL%/}/rest/v1/public_latest_snapshot_status?select=utc_hour,observation_at,publication_at,status,is_immutable,failure_reason&limit=1" \
             --output latest-snapshot-status.json
           then
-            echo "::error::Supabase returned an error:"
+            echo "::error::Supabase snapshot-status request failed:"
             cat latest-snapshot-status.json || true
             exit 1
           fi
@@ -62,18 +70,6 @@ jobs:
           publication_at="$(jq --raw-output '.[0].publication_at' latest-snapshot-status.json)"
           publication_epoch="$(date --date="$publication_at" +%s)"
           test "$publication_epoch" -ge "$(( $(date +%s) - 7200 ))"
-
-      - name: Publish monitor evidence
-        if: always()
-        run: |
-          {
-            echo "## Provider status monitor"
-            echo ""
-            echo "- Trigger: \`${{ github.event_name }}\`"
-            echo "- Provider check: \`${{ steps.providers.outcome }}\`"
-            echo "- Snapshot check: \`${{ steps.snapshot.outcome }}\`"
-            echo "- Run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Publish monitor evidence
         if: always()
