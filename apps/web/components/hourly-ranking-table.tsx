@@ -28,12 +28,6 @@ type LiveResult = {
   rank_change: number | null;
   rank_change_status: RankChangeStatus;
 };
-type LiveInput = {
-  entry_id: string;
-  founder_affiliate_deduction_usd: string | null;
-  outside_capital_deduction_usd: string | null;
-};
-
 const apiBase = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const apiKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
@@ -70,7 +64,6 @@ export function HourlyRankingTable({
   const [live, setLive] = useState<{
     header: LiveHeader;
     results: LiveResult[];
-    inputs: LiveInput[];
   } | null>(null);
 
   useEffect(() => {
@@ -84,12 +77,8 @@ export function HourlyRankingTable({
         "public_current_snapshot_results",
         "select=*&order=rank.asc",
       ),
-      readView<LiveInput>(
-        "public_current_snapshot_inputs",
-        "select=entry_id,founder_affiliate_deduction_usd,outside_capital_deduction_usd",
-      ),
     ])
-      .then(([headers, results, inputs]) => {
+      .then(([headers, results]) => {
         const ranks = results
           .map((result) => result.rank)
           .sort((a, b) => a - b);
@@ -105,7 +94,7 @@ export function HourlyRankingTable({
                 ({ entry }) => entry.entryId === result.entry_id,
               ) && result.final_value_usd !== null,
           );
-        if (active && valid && header) setLive({ header, results, inputs });
+        if (active && valid && header) setLive({ header, results });
       })
       .catch(() => {
         // The bundled July 30 data remains the safe static-export fallback.
@@ -120,16 +109,8 @@ export function HourlyRankingTable({
         const fallback = fallbackRanking.find(
           ({ entry }) => entry.entryId === result.entry_id,
         )!;
-        const input = live.inputs.find(
-          (candidate) => candidate.entry_id === result.entry_id,
-        );
         return {
           ...fallback,
-          grossMarketValueUsd: result.gross_value_usd,
-          acceptedAffiliatedOwnershipUsd:
-            input?.founder_affiliate_deduction_usd ?? null,
-          acceptedOutsideCapitalUsd:
-            input?.outside_capital_deduction_usd ?? null,
           provisionalValueCreatedUsd: result.final_value_usd!,
           entry: {
             ...fallback.entry,
@@ -142,7 +123,6 @@ export function HourlyRankingTable({
             },
           },
           upperEstimate: fallback.upperEstimate,
-          liveObservationAt: result.observation_at,
           rankChange: result.rank_change,
           rankChangeSource: "live" as const,
           rankChangeStatus: result.rank_change_status,
@@ -150,7 +130,6 @@ export function HourlyRankingTable({
       })
     : fallbackRanking.map((calculation) => ({
         ...calculation,
-        liveObservationAt: null,
         rankChange: null,
         rankChangeSource: "fallback" as const,
         rankChangeStatus: "baseline" as const,
@@ -167,14 +146,12 @@ export function HourlyRankingTable({
         fallbackObservationDate={observationDate}
       />
       <p className="table-scroll-note">
-        Scroll horizontally to view gross value, confidence, and snapshot
-        details.
+        Scroll horizontally to view the complete ranking on smaller screens.
       </p>
       <div className="table-shell evidence-shell">
         <table className="evidence-table research-universe-table">
           <caption className="sr-only">
-            Current unified top 20; all market values include the source
-            observation timestamp.
+            Current unified top 20 ranked by provisional value created.
           </caption>
           <thead>
             <tr>
@@ -183,26 +160,18 @@ export function HourlyRankingTable({
               <th>Founder or joint founding team</th>
               <th>Project or company</th>
               <th>Value type</th>
-              <th className="number">Gross market value</th>
-              <th className="number">Affiliated ownership</th>
-              <th className="number">Outside capital</th>
               <th className="number primary-value">
                 Provisional value created
               </th>
               <th>Confidence</th>
-              <th>Snapshot</th>
             </tr>
           </thead>
           <tbody>
             {rows.map(
               ({
                 entry,
-                grossMarketValueUsd,
-                acceptedAffiliatedOwnershipUsd,
-                acceptedOutsideCapitalUsd,
                 provisionalValueCreatedUsd,
                 upperEstimate,
-                liveObservationAt,
                 rankChange,
                 rankChangeSource,
                 rankChangeStatus,
@@ -240,25 +209,12 @@ export function HourlyRankingTable({
                     )}
                   </td>
                   <td>{entry.valueType}</td>
-                  <td className="number">{money(grossMarketValueUsd)}</td>
-                  <td className="number">
-                    {money(acceptedAffiliatedOwnershipUsd)}
-                  </td>
-                  <td className="number">{money(acceptedOutsideCapitalUsd)}</td>
                   <td className="number primary-value">
                     <strong>{money(provisionalValueCreatedUsd)}</strong>
                     {upperEstimate && <small>Upper estimate</small>}
                   </td>
                   <td>
                     {entry.confidence.score}/100 · {entry.confidence.label}
-                  </td>
-                  <td>
-                    <time dateTime={liveObservationAt ?? snapshotDate}>
-                      {snapshotDate}
-                    </time>
-                    <small>
-                      Observed {liveObservationAt ?? observationDate}
-                    </small>
                   </td>
                 </tr>
               ),
