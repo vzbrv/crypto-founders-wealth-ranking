@@ -6,25 +6,36 @@ import { useEffect, useState } from "react";
 import type { UnifiedCalculation } from "@crypto-founders/curated-data/unified";
 
 import { HourlySnapshotStatus } from "./hourly-snapshot-status";
-import { formatRankChange } from "../lib/rank-change";
+import { formatRankChange, type RankChangeStatus } from "../lib/rank-change";
 
 type LiveHeader = {
   utc_hour: string;
   observation_at: string;
   publication_at: string | null;
+  is_immutable?: boolean;
 };
 type LiveResult = {
   entry_id: string;
   rank: number;
-  rank_change: number | null;
+  gross_value_usd: string | null;
   final_value_usd: string | null;
   confidence_score: number;
   confidence_label: string;
+  source_ids: string[];
+  observation_at: string;
+  freshness_status: "current" | "stale" | "historical";
+  previous_rank: number | null;
+  rank_change: number | null;
+  rank_change_status: RankChangeStatus;
+};
+type LiveInput = {
+  entry_id: string;
+  founder_affiliate_deduction_usd: string | null;
+  outside_capital_deduction_usd: string | null;
 };
 
 const apiBase = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const apiKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
-const LIVE_REFRESH_INTERVAL_MS = 60_000;
 
 async function readView<T>(view: string, query: string): Promise<T[]> {
   if (!apiBase || !apiKey) throw new Error("public data endpoint unavailable");
@@ -59,28 +70,33 @@ export function HourlyRankingTable({
   const [live, setLive] = useState<{
     header: LiveHeader;
     results: LiveResult[];
+    inputs: LiveInput[];
   } | null>(null);
 
   useEffect(() => {
     let active = true;
-    const loadLive = async () => {
-      try {
-        const [headers, results] = await Promise.all([
-          readView<LiveHeader>(
-            "public_current_published_snapshot",
-            "select=utc_hour,observation_at,publication_at&limit=1",
-          ),
-          readView<LiveResult>(
-            "public_current_snapshot_results",
-            "select=*&order=rank.asc",
-          ),
-        ]);
+    void Promise.all([
+      readView<LiveHeader>(
+        "public_current_published_snapshot",
+        "select=utc_hour,observation_at,publication_at,is_immutable&limit=1",
+      ),
+      readView<LiveResult>(
+        "public_current_snapshot_results",
+        "select=*&order=rank.asc",
+      ),
+      readView<LiveInput>(
+        "public_current_snapshot_inputs",
+        "select=entry_id,founder_affiliate_deduction_usd,outside_capital_deduction_usd",
+      ),
+    ])
+      .then(([headers, results, inputs]) => {
         const ranks = results
           .map((result) => result.rank)
           .sort((a, b) => a - b);
         const header = headers[0];
         const valid =
           Boolean(header) &&
+          !header?.is_immutable &&
           results.length === 20 &&
           ranks.every((rank, index) => rank === index + 1) &&
           results.every(
@@ -89,18 +105,13 @@ export function HourlyRankingTable({
                 ({ entry }) => entry.entryId === result.entry_id,
               ) && result.final_value_usd !== null,
           );
-        if (active && valid && header) setLive({ header, results });
-      } catch {
+        if (active && valid && header) setLive({ header, results, inputs });
+      })
+      .catch(() => {
         // The bundled July 30 data remains the safe static-export fallback.
-      }
-    };
-    void loadLive();
-    const interval = window.setInterval(() => {
-      void loadLive();
-    }, LIVE_REFRESH_INTERVAL_MS);
+      });
     return () => {
       active = false;
-      window.clearInterval(interval);
     };
   }, [fallbackRanking]);
 
@@ -109,8 +120,16 @@ export function HourlyRankingTable({
         const fallback = fallbackRanking.find(
           ({ entry }) => entry.entryId === result.entry_id,
         )!;
+        const input = live.inputs.find(
+          (candidate) => candidate.entry_id === result.entry_id,
+        );
         return {
           ...fallback,
+          grossMarketValueUsd: result.gross_value_usd,
+          acceptedAffiliatedOwnershipUsd:
+            input?.founder_affiliate_deduction_usd ?? null,
+          acceptedOutsideCapitalUsd:
+            input?.outside_capital_deduction_usd ?? null,
           provisionalValueCreatedUsd: result.final_value_usd!,
           entry: {
             ...fallback.entry,
@@ -123,46 +142,70 @@ export function HourlyRankingTable({
             },
           },
           upperEstimate: fallback.upperEstimate,
+          liveObservationAt: result.observation_at,
           rankChange: result.rank_change,
           rankChangeSource: "live" as const,
+          rankChangeStatus: result.rank_change_status,
         };
       })
     : fallbackRanking.map((calculation) => ({
         ...calculation,
+        liveObservationAt: null,
         rankChange: null,
         rankChangeSource: "fallback" as const,
+        rankChangeStatus: "baseline" as const,
       }));
+  const snapshotDate = live?.header.utc_hour ?? fallbackSnapshotDate;
+  const observationDate =
+    live?.header.observation_at ?? fallbackObservationDate;
+
   return (
     <>
       <HourlySnapshotStatus
         variant="summary"
-        fallbackSnapshotDate={fallbackSnapshotDate}
-        fallbackObservationDate={fallbackObservationDate}
+        fallbackSnapshotDate={snapshotDate}
+        fallbackObservationDate={observationDate}
       />
+      <p className="table-scroll-note">
+        Scroll horizontally to view gross value, confidence, and snapshot
+        details.
+      </p>
       <div className="table-shell evidence-shell">
         <table className="evidence-table research-universe-table">
           <caption className="sr-only">
-            Current top 20 with estimated value created and confidence.
+            Current unified top 20; all market values include the source
+            observation timestamp.
           </caption>
           <thead>
             <tr>
               <th>Rank</th>
               <th>Rank change</th>
-              <th className="founder-column">Founder or joint founding team</th>
-              <th className="project-column">Project or company</th>
+              <th>Founder or joint founding team</th>
+              <th>Project or company</th>
               <th>Value type</th>
-              <th className="number">Provisional value created</th>
+              <th className="number">Gross market value</th>
+              <th className="number">Affiliated ownership</th>
+              <th className="number">Outside capital</th>
+              <th className="number primary-value">
+                Provisional value created
+              </th>
               <th>Confidence</th>
+              <th>Snapshot</th>
             </tr>
           </thead>
           <tbody>
             {rows.map(
               ({
                 entry,
+                grossMarketValueUsd,
+                acceptedAffiliatedOwnershipUsd,
+                acceptedOutsideCapitalUsd,
                 provisionalValueCreatedUsd,
                 upperEstimate,
+                liveObservationAt,
                 rankChange,
                 rankChangeSource,
+                rankChangeStatus,
               }) => (
                 <tr key={entry.entryId}>
                   <td className="rank">{entry.rank}</td>
@@ -171,6 +214,7 @@ export function HourlyRankingTable({
                       const movement = formatRankChange(
                         rankChange,
                         rankChangeSource,
+                        rankChangeStatus,
                       );
                       return (
                         <span aria-label={movement.label}>{movement.text}</span>
@@ -196,12 +240,25 @@ export function HourlyRankingTable({
                     )}
                   </td>
                   <td>{entry.valueType}</td>
+                  <td className="number">{money(grossMarketValueUsd)}</td>
                   <td className="number">
+                    {money(acceptedAffiliatedOwnershipUsd)}
+                  </td>
+                  <td className="number">{money(acceptedOutsideCapitalUsd)}</td>
+                  <td className="number primary-value">
                     <strong>{money(provisionalValueCreatedUsd)}</strong>
                     {upperEstimate && <small>Upper estimate</small>}
                   </td>
                   <td>
                     {entry.confidence.score}/100 · {entry.confidence.label}
+                  </td>
+                  <td>
+                    <time dateTime={liveObservationAt ?? snapshotDate}>
+                      {snapshotDate}
+                    </time>
+                    <small>
+                      Observed {liveObservationAt ?? observationDate}
+                    </small>
                   </td>
                 </tr>
               ),

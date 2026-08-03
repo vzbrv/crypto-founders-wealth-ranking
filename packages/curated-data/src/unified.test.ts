@@ -7,6 +7,7 @@ import {
   buildUnifiedRanking,
   calculateUnifiedEntry,
   loadUnifiedData,
+  loadProductionUnifiedData,
   validateUnifiedDataset,
 } from "./unified.js";
 
@@ -31,6 +32,14 @@ describe("unified ranking dataset", () => {
     expect(
       buildUnifiedRanking(dataset).map((calculation) => calculation.entry.rank),
     ).toEqual(Array.from({ length: 20 }, (_, index) => index + 1));
+  });
+
+  it("loads the same reviewed unified universe from the production data directory", async () => {
+    const dataset = await loadProductionUnifiedData(
+      path.join(repositoryRoot, "data/production"),
+    );
+    expect(dataset.entries).toHaveLength(20);
+    expect(dataset.snapshotDate).toBe("2026-07-30");
   });
 
   it("reproduces Coinbase from stored share classes, ownership, and capital", async () => {

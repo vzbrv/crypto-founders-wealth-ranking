@@ -4,11 +4,15 @@ import { fileURLToPath } from "node:url";
 import {
   loadCuratedData,
   loadProductionCuratedData,
+  loadProductionUnifiedData,
 } from "@crypto-founders/curated-data";
 import { PGlite } from "@electric-sql/pglite";
 import { afterEach, describe, expect, it } from "vitest";
 
-import { createCuratedImportStatements } from "./curated-import.js";
+import {
+  createCuratedImportStatements,
+  createUnifiedRankingImportStatements,
+} from "./curated-import.js";
 
 const phaseThreeMigrationUrl = new URL(
   "../../../supabase/migrations/202607270001_phase_3_database.sql",
@@ -86,6 +90,10 @@ const providerQuotaProtectionMigrationUrl = new URL(
   "../../../supabase/migrations/202608010024_provider_quota_protection.sql",
   import.meta.url,
 );
+const unifiedHourlySourceMigrationUrl = new URL(
+  "../../../supabase/migrations/202608020025_unified_hourly_source_and_rank_changes.sql",
+  import.meta.url,
+);
 const sqlConfidenceEvidence = await readFile(
   sqlConfidenceEvidenceMigrationUrl,
   "utf8",
@@ -114,6 +122,7 @@ const migrationSql = [
   await readFile(hourlySnapshotsMigrationUrl, "utf8"),
   await readFile(hourlySnapshotStatusMigrationUrl, "utf8"),
   await readFile(providerQuotaProtectionMigrationUrl, "utf8"),
+  await readFile(unifiedHourlySourceMigrationUrl, "utf8"),
 ].join("\n");
 const seedSql = await readFile(seedUrl, "utf8");
 const productionDataDirectory = fileURLToPath(
@@ -146,6 +155,7 @@ const expectedTables = [
   "record_sources",
   "source_records",
   "tracked_wallets",
+  "unified_ranking_documents",
   "wallet_asset_mappings",
   "wallet_balance_observations",
 ];
@@ -162,6 +172,7 @@ const expectedViews = [
   "public_current_snapshot_provider_health",
   "public_current_snapshot_results",
   "public_data_freshness",
+  "public_historical_snapshot_results",
   "public_historical_snapshots",
   "public_latest_snapshot_status",
   "public_leaderboard",
@@ -194,7 +205,11 @@ async function importCuratedData(database: PGlite): Promise<void> {
 
 async function importProductionData(database: PGlite): Promise<void> {
   const data = await loadProductionCuratedData(productionDataDirectory);
-  const statements = createCuratedImportStatements(data);
+  const unified = await loadProductionUnifiedData(productionDataDirectory);
+  const statements = [
+    ...createCuratedImportStatements(data),
+    ...createUnifiedRankingImportStatements(unified),
+  ];
   for (const statement of statements) {
     await database.query(statement.text, [...statement.values]);
   }
@@ -282,6 +297,49 @@ describe("Hourly ranking snapshots", () => {
     );
 
     expect(duplicate.rows[0]?.snapshot_id).toBe(first.rows[0]?.snapshot_id);
+
+    const nextPayload = {
+      ...payload,
+      snapshot_id: "10000000-0000-4000-8000-000000000003",
+      utc_hour: "2026-08-01T02:00:00Z",
+      observation_at: "2026-08-01T02:05:00Z",
+      results: payload.results.map((result, index) =>
+        index === 0
+          ? { ...result, rank: 2 }
+          : index === 1
+            ? { ...result, rank: 1 }
+            : result,
+      ),
+    };
+    await database.query("select publish_hourly_snapshot($1::jsonb)", [
+      JSON.stringify(nextPayload),
+    ]);
+    const movement = await database.query<{
+      entry_id: string;
+      previous_rank: number | null;
+      rank_change: number | null;
+      rank_change_status: string;
+    }>(
+      `select entry_id, previous_rank, rank_change, rank_change_status
+       from hourly_snapshot_results
+       where snapshot_id = '10000000-0000-4000-8000-000000000003'
+         and entry_id in ('entry-1', 'entry-2')
+       order by entry_id`,
+    );
+    expect(movement.rows).toEqual([
+      {
+        entry_id: "entry-1",
+        previous_rank: 1,
+        rank_change: -1,
+        rank_change_status: "continued",
+      },
+      {
+        entry_id: "entry-2",
+        previous_rank: 2,
+        rank_change: 1,
+        rank_change_status: "continued",
+      },
+    ]);
 
     const published = await database.query<{ count: number }>(
       `select count(*)::int as count from hourly_snapshots
@@ -536,6 +594,19 @@ describe("Phase 3 database", () => {
       rounds: 4,
       sources: 17,
       links: 49,
+    });
+
+    const unified = await database.query<{
+      entries: number;
+      snapshot_date: string;
+    }>(
+      `select jsonb_array_length(dataset->'entries')::int as entries,
+              snapshot_date::text
+       from unified_ranking_documents where id = 'current'`,
+    );
+    expect(unified.rows[0]).toEqual({
+      entries: 20,
+      snapshot_date: "2026-07-30",
     });
 
     const publicRows = await database.query<{
