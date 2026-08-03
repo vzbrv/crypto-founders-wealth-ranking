@@ -1,4 +1,5 @@
 name: Provider status monitor
+run-name: Provider status monitor · ${{ github.event_name }} · ${{ github.run_number }}
 
 on:
   schedule:
@@ -27,6 +28,7 @@ jobs:
           test -n "$SUPABASE_PUBLISHABLE_KEY"
 
       - name: Check sanitized provider status
+        id: providers
         run: |
           curl --fail --silent --show-error \
             --header "apikey: $SUPABASE_PUBLISHABLE_KEY" \
@@ -36,3 +38,43 @@ jobs:
             length > 0 and
             all(.[]; .status == "healthy" and .freshness == "current")
           ' provider-status.json
+
+      - name: Check latest immutable snapshot
+        id: snapshot
+        run: |
+          curl --fail --silent --show-error \
+            --header "apikey: $SUPABASE_PUBLISHABLE_KEY" \
+            "$SUPABASE_URL/rest/v1/public_latest_snapshot_status?select=utc_hour,observation_at,publication_at,status,is_immutable,failure_reason&limit=1" \
+            --output latest-snapshot-status.json
+          jq --exit-status '
+            length == 1 and
+            .[0].status == "published" and
+            .[0].publication_at != null and
+            .[0].is_immutable == true
+          ' latest-snapshot-status.json
+          publication_at="$(jq --raw-output '.[0].publication_at' latest-snapshot-status.json)"
+          publication_epoch="$(date --date="$publication_at" +%s)"
+          test "$publication_epoch" -ge "$(( $(date +%s) - 7200 ))"
+
+      - name: Publish monitor evidence
+        if: always()
+        run: |
+          {
+            echo "## Provider status monitor"
+            echo ""
+            echo "- Trigger: \`${{ github.event_name }}\`"
+            echo "- Provider check: \`${{ steps.providers.outcome }}\`"
+            echo "- Snapshot check: \`${{ steps.snapshot.outcome }}\`"
+            echo "- Run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Retain monitor evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: provider-monitor-${{ github.run_id }}
+          path: |
+            provider-status.json
+            latest-snapshot-status.json
+          if-no-files-found: warn
+          retention-days: 30

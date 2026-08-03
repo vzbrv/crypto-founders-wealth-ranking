@@ -605,6 +605,7 @@ Deno.serve(async (request) => {
         metadata: {
           founderTeam: entry.founderTeam,
           project: entry.project,
+          market: entry.market,
           upperEstimate: entry.upperEstimate,
           unknowns: entry.unknowns,
           disputedEvidence: entry.disputedEvidence,
@@ -629,6 +630,8 @@ Deno.serve(async (request) => {
           entryId: entry.entryId,
           founderTeam: entry.founderTeam,
           project: entry.project,
+          market: entry.market,
+          upperEstimate: entry.upperEstimate,
           ownership: ownership === null ? "Unknown" : money(ownership),
           outsideCapital: capital === null ? "Unknown" : money(capital),
           observationAt,

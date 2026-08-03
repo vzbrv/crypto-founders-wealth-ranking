@@ -102,6 +102,10 @@ const unifiedHourlySourceMigrationUrl = new URL(
   "../../../supabase/migrations/202608020025_unified_hourly_source_and_rank_changes.sql",
   import.meta.url,
 );
+const immutableLiveSnapshotContractMigrationUrl = new URL(
+  "../../../supabase/migrations/202608030026_immutable_live_snapshot_contract.sql",
+  import.meta.url,
+);
 const sqlConfidenceEvidence = await readFile(
   sqlConfidenceEvidenceMigrationUrl,
   "utf8",
@@ -133,6 +137,7 @@ const migrationSql = [
   await readFile(hourlySnapshotRankChangesMigrationUrl, "utf8"),
   await readFile(hourlyRankChangeCommentMigrationUrl, "utf8"),
   await readFile(unifiedHourlySourceMigrationUrl, "utf8"),
+  await readFile(immutableLiveSnapshotContractMigrationUrl, "utf8"),
 ].join("\n");
 const seedSql = await readFile(seedUrl, "utf8");
 const productionDataDirectory = fileURLToPath(
@@ -258,7 +263,16 @@ function createHourlySnapshotPayload(snapshotId: string) {
       final_value_usd: 90 + index,
       confidence_score: 80,
       confidence_label: "medium",
-      calculation: { formula: "fixture" },
+      calculation: {
+        formula: "fixture",
+        founderTeam: `Founder ${index + 1}`,
+        project: `Project ${index + 1}`,
+        market:
+          index % 2 === 0
+            ? { type: "token" }
+            : { type: "public", ticker: `P${index + 1}`, exchange: "NASDAQ" },
+        upperEstimate: index === 0,
+      },
       source_ids: sourceIds,
     })),
     inputs: Array.from({ length: 20 }, (_, index) => ({
@@ -276,7 +290,15 @@ function createHourlySnapshotPayload(snapshotId: string) {
       max_staleness_seconds: 7200,
       freshness_status: "current",
       source_ids: sourceIds,
-      metadata: {},
+      metadata: {
+        founderTeam: `Founder ${index + 1}`,
+        project: `Project ${index + 1}`,
+        market:
+          index % 2 === 0
+            ? { type: "token" }
+            : { type: "public", ticker: `P${index + 1}`, exchange: "NASDAQ" },
+        upperEstimate: index === 0,
+      },
     })),
   };
 }
@@ -307,6 +329,41 @@ describe("Hourly ranking snapshots", () => {
     );
 
     expect(duplicate.rows[0]?.snapshot_id).toBe(first.rows[0]?.snapshot_id);
+
+    const sealed = await database.query<{ is_immutable: boolean }>(
+      "select is_immutable from hourly_snapshots where id = $1",
+      [first.rows[0]?.snapshot_id],
+    );
+    expect(sealed.rows[0]?.is_immutable).toBe(true);
+
+    const presentation = await database.query<{
+      founder_team: string;
+      project: string;
+      market: Record<string, unknown>;
+      upper_estimate: boolean;
+    }>(
+      `select founder_team, project, market, upper_estimate
+       from public_current_snapshot_results where entry_id = 'entry-1'`,
+    );
+    expect(presentation.rows[0]).toEqual({
+      founder_team: "Founder 1",
+      project: "Project 1",
+      market: { type: "token" },
+      upper_estimate: true,
+    });
+
+    await expect(
+      database.exec(
+        `update hourly_snapshot_results set rank = rank
+         where snapshot_id = '${first.rows[0]?.snapshot_id}'`,
+      ),
+    ).rejects.toThrow("immutable hourly snapshot children cannot be modified");
+    await expect(
+      database.exec(
+        `delete from hourly_snapshot_sources
+         where snapshot_id = '${first.rows[0]?.snapshot_id}'`,
+      ),
+    ).rejects.toThrow("immutable hourly snapshot children cannot be modified");
 
     const nextPayload = {
       ...payload,
@@ -362,6 +419,22 @@ describe("Hourly ranking snapshots", () => {
         JSON.stringify({ ...payload, results: payload.results.slice(0, 19) }),
       ]),
     ).rejects.toThrow("partial ranking cannot be published");
+
+    await expect(
+      database.query("select publish_hourly_snapshot($1::jsonb)", [
+        JSON.stringify({
+          ...payload,
+          snapshot_id: "10000000-0000-4000-8000-000000000004",
+          utc_hour: "2026-08-01T03:00:00Z",
+          observation_at: "2026-08-01T03:05:00Z",
+          results: payload.results.map((result, index) =>
+            index === 0
+              ? { ...result, calculation: { formula: "fixture" } }
+              : result,
+          ),
+        }),
+      ]),
+    ).rejects.toThrow("every result requires display identity");
 
     await database.query(
       "select record_hourly_snapshot_failure($1::timestamptz, $2, $3)",
