@@ -90,6 +90,14 @@ const providerQuotaProtectionMigrationUrl = new URL(
   "../../../supabase/migrations/202608010024_provider_quota_protection.sql",
   import.meta.url,
 );
+const hourlySnapshotRankChangesMigrationUrl = new URL(
+  "../../../supabase/migrations/202608020001_hourly_snapshot_rank_changes.sql",
+  import.meta.url,
+);
+const hourlyRankChangeCommentMigrationUrl = new URL(
+  "../../../supabase/migrations/202608020002_hourly_rank_change_comment.sql",
+  import.meta.url,
+);
 const unifiedHourlySourceMigrationUrl = new URL(
   "../../../supabase/migrations/202608020025_unified_hourly_source_and_rank_changes.sql",
   import.meta.url,
@@ -122,6 +130,8 @@ const migrationSql = [
   await readFile(hourlySnapshotsMigrationUrl, "utf8"),
   await readFile(hourlySnapshotStatusMigrationUrl, "utf8"),
   await readFile(providerQuotaProtectionMigrationUrl, "utf8"),
+  await readFile(hourlySnapshotRankChangesMigrationUrl, "utf8"),
+  await readFile(hourlyRankChangeCommentMigrationUrl, "utf8"),
   await readFile(unifiedHourlySourceMigrationUrl, "utf8"),
 ].join("\n");
 const seedSql = await readFile(seedUrl, "utf8");
