@@ -395,7 +395,7 @@ export function ProjectDetail({ evidence }: { evidence: ProjectEvidence }) {
         <p className="formula-statement">
           Estimated outside-holder token value = max(0, circulating market value
           − reviewed affiliated circulating holdings − reviewed disclosed
-          outside capital). It is not personal wealth.
+          outside capital). This is an estimate, not personal wealth.
         </p>
         <div className="formula-grid" id="market-data">
           <div

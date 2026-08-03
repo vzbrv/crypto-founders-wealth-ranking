@@ -24,6 +24,7 @@ type LiveResult = {
 
 const apiBase = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const apiKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+const LIVE_REFRESH_INTERVAL_MS = 60_000;
 
 async function readView<T>(view: string, query: string): Promise<T[]> {
   if (!apiBase || !apiKey) throw new Error("public data endpoint unavailable");
@@ -62,17 +63,18 @@ export function HourlyRankingTable({
 
   useEffect(() => {
     let active = true;
-    void Promise.all([
-      readView<LiveHeader>(
-        "public_current_published_snapshot",
-        "select=utc_hour,observation_at,publication_at&limit=1",
-      ),
-      readView<LiveResult>(
-        "public_current_snapshot_results",
-        "select=*&order=rank.asc",
-      ),
-    ])
-      .then(([headers, results]) => {
+    const loadLive = async () => {
+      try {
+        const [headers, results] = await Promise.all([
+          readView<LiveHeader>(
+            "public_current_published_snapshot",
+            "select=utc_hour,observation_at,publication_at&limit=1",
+          ),
+          readView<LiveResult>(
+            "public_current_snapshot_results",
+            "select=*&order=rank.asc",
+          ),
+        ]);
         const ranks = results
           .map((result) => result.rank)
           .sort((a, b) => a - b);
@@ -88,12 +90,17 @@ export function HourlyRankingTable({
               ) && result.final_value_usd !== null,
           );
         if (active && valid && header) setLive({ header, results });
-      })
-      .catch(() => {
+      } catch {
         // The bundled July 30 data remains the safe static-export fallback.
-      });
+      }
+    };
+    void loadLive();
+    const interval = window.setInterval(() => {
+      void loadLive();
+    }, LIVE_REFRESH_INTERVAL_MS);
     return () => {
       active = false;
+      window.clearInterval(interval);
     };
   }, [fallbackRanking]);
 
@@ -125,21 +132,17 @@ export function HourlyRankingTable({
         rankChange: null,
         rankChangeSource: "fallback" as const,
       }));
-  const snapshotDate = live?.header.utc_hour ?? fallbackSnapshotDate;
-  const observationDate =
-    live?.header.observation_at ?? fallbackObservationDate;
   return (
     <>
       <HourlySnapshotStatus
         variant="summary"
-        fallbackSnapshotDate={snapshotDate}
-        fallbackObservationDate={observationDate}
+        fallbackSnapshotDate={fallbackSnapshotDate}
+        fallbackObservationDate={fallbackObservationDate}
       />
       <div className="table-shell evidence-shell">
         <table className="evidence-table research-universe-table">
           <caption className="sr-only">
-            Current unified top 20 with provisional value created and
-            confidence.
+            Current top 20 with estimated value created and confidence.
           </caption>
           <thead>
             <tr>

@@ -128,8 +128,7 @@ export function SiteFooter() {
           height={32}
         />
         <p>
-          Research-driven provisional value estimates for outside holders and
-          shareholders.
+          Evidence-backed value estimates for outside holders and shareholders.
         </p>
       </div>
       <nav aria-label="Footer navigation">

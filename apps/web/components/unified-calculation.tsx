@@ -57,9 +57,9 @@ export function UnifiedCalculationPage({
         </p>
         <h1>{entry.founderTeam}</h1>
         <p>
-          Project/company: <strong>{entry.project}</strong>. This is a
-          provisional research ranking, not founder net worth, personal wealth,
-          founder-retained value, or an investment recommendation.
+          Project/company: <strong>{entry.project}</strong>. This published
+          index estimate is not founder net worth, personal wealth,
+          founder-retained value, or investment advice.
         </p>
       </header>
 
@@ -73,7 +73,7 @@ export function UnifiedCalculationPage({
       <section className="panel" aria-labelledby="unified-calculation-heading">
         <div className="section-heading compact">
           <h2 id="unified-calculation-heading">Calculation</h2>
-          <p>Provisional value created for outside holders and shareholders.</p>
+          <p>Estimated value created for outside holders and shareholders.</p>
         </div>
         <div className="formula-grid">
           <div>
@@ -93,7 +93,7 @@ export function UnifiedCalculationPage({
             <strong>{money(calculation.acceptedOutsideCapitalUsd)}</strong>
           </div>
           <div>
-            <span>Provisional value created</span>
+            <span>Estimated value created</span>
             <strong>{money(calculation.provisionalValueCreatedUsd)}</strong>
           </div>
           <div>
@@ -102,7 +102,7 @@ export function UnifiedCalculationPage({
           </div>
         </div>
         <p className="equation">
-          {calculation.formula} provisional value created for outside
+          {calculation.formula} estimated value created for outside
           holders/shareholders.
         </p>
         {calculation.upperEstimate && (

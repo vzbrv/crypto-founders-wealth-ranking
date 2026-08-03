@@ -55,6 +55,7 @@ type ProviderHealth = {
 
 const apiBase = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const apiKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+const LIVE_REFRESH_INTERVAL_MS = 60_000;
 
 async function readView<T>(view: string, query = ""): Promise<T[]> {
   if (!apiBase || !apiKey) throw new Error("public data endpoint unavailable");
@@ -107,7 +108,7 @@ export function HourlySnapshotStatus({
 
   useEffect(() => {
     let active = true;
-    void (async () => {
+    const loadStatus = async () => {
       try {
         const [headers, latestRows, results, inputs, sourceRows, healthRows] =
           await Promise.all([
@@ -147,6 +148,7 @@ export function HourlySnapshotStatus({
         setInput(inputs[0] ?? null);
         setSources(sourceRows);
         setHealth(healthRows);
+        setError(null);
       } catch (caught) {
         if (active)
           setError(
@@ -155,9 +157,14 @@ export function HourlySnapshotStatus({
               : "public data request failed",
           );
       }
-    })();
+    };
+    void loadStatus();
+    const interval = window.setInterval(() => {
+      void loadStatus();
+    }, LIVE_REFRESH_INTERVAL_MS);
     return () => {
       active = false;
+      window.clearInterval(interval);
     };
   }, [entryId]);
 
@@ -173,18 +180,17 @@ export function HourlySnapshotStatus({
       >
         <strong>
           {header
-            ? "Latest published hourly snapshot"
-            : "Bundled July 30 baseline"}
+            ? "Live rank from the latest published hourly snapshot"
+            : "No live hourly snapshot available"}
         </strong>
         <p>
-          Last updated:{" "}
-          {formatTimestamp(header?.publication_at ?? fallbackSnapshotDate)}. UTC
-          snapshot: {formatTimestamp(snapshotDate)}. Market observation:{" "}
-          {formatTimestamp(observationDate)}. Status: {stateLabel(freshness)}.
+          {header
+            ? `Published ${formatTimestamp(header.publication_at)}. UTC snapshot: ${formatTimestamp(snapshotDate)}. Market observation: ${formatTimestamp(observationDate)}. Status: ${stateLabel(freshness)}.`
+            : `Showing the historical bundled fallback dated ${formatTimestamp(fallbackSnapshotDate)}. No live rank or rank change is available.`}
         </p>
         {error && (
           <small>
-            Live snapshot unavailable; showing the bundled fallback.
+            Live hourly snapshot unavailable; showing the historical fallback.
           </small>
         )}
       </div>
@@ -206,18 +212,13 @@ export function HourlySnapshotStatus({
       >
         <strong>
           {header
-            ? `${stateLabel(status)} hourly snapshot`
-            : "Historical bundled baseline"}
+            ? `${stateLabel(status)} live hourly snapshot`
+            : "Historical bundled baseline (not live)"}
         </strong>
         <p>
-          Snapshot: {formatTimestamp(header?.utc_hour ?? fallbackSnapshotDate)}.
-          Market observation:{" "}
-          {formatTimestamp(
-            input?.original_observation_at ??
-              result?.observation_at ??
-              fallbackObservationDate,
-          )}
-          . Publication: {formatTimestamp(header?.publication_at)}.
+          {header
+            ? `Snapshot: ${formatTimestamp(header.utc_hour)}. Market observation: ${formatTimestamp(input?.original_observation_at ?? result?.observation_at ?? fallbackObservationDate)}. Publication: ${formatTimestamp(header.publication_at)}.`
+            : `Showing the historical bundled fallback dated ${formatTimestamp(fallbackSnapshotDate)}. Live rank changes are unavailable.`}
         </p>
         <p>
           Evidence version:{" "}
@@ -270,21 +271,23 @@ export function HourlySnapshotStatus({
       </div>
       <dl className="status-grid">
         <div>
-          <dt>Last successful update</dt>
+          <dt>Latest live publication</dt>
           <dd>
-            {formatTimestamp(header?.publication_at ?? fallbackSnapshotDate)}
+            {header
+              ? formatTimestamp(header.publication_at)
+              : "No live snapshot published"}
           </dd>
         </div>
         <div>
-          <dt>UTC snapshot</dt>
-          <dd>{formatTimestamp(header?.utc_hour ?? fallbackSnapshotDate)}</dd>
+          <dt>Live UTC snapshot</dt>
+          <dd>{header ? formatTimestamp(header.utc_hour) : "Not available"}</dd>
         </div>
         <div>
           <dt>Freshness</dt>
           <dd>
             {header
-              ? "Current published snapshot"
-              : "Bundled historical baseline"}
+              ? "Current live published snapshot"
+              : "Historical bundled baseline (not live)"}
           </dd>
         </div>
       </dl>
@@ -323,7 +326,7 @@ export function HourlySnapshotStatus({
       )}
       {error && (
         <p className="notice" role="status">
-          Live status unavailable; showing the bundled fallback.
+          Live snapshot status unavailable; showing the historical fallback.
         </p>
       )}
     </section>

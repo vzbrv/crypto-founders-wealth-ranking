@@ -308,33 +308,6 @@
       "url": "https://www.sec.gov/Archives/edgar/data/1859392/000185939226000041/glxy2025arsfinal.pdf",
       "quality": "SEC filing",
       "notes": "Used to document the missing complete historical capital reconstruction."
-    },
-    {
-      "id": "VAL-BINANCE",
-      "category": "Private valuation",
-      "name": "Binance private-company candidate evidence",
-      "date": null,
-      "url": "https://www.binance.com/en/blog/ecosystem",
-      "quality": "Company source",
-      "notes": "Candidate only; no accepted public-equity valuation input."
-    },
-    {
-      "id": "VAL-KRAKEN",
-      "category": "Private valuation",
-      "name": "Kraken private-company candidate evidence",
-      "date": null,
-      "url": "https://blog.kraken.com/",
-      "quality": "Company source",
-      "notes": "Candidate only; no accepted public-equity valuation input."
-    },
-    {
-      "id": "VAL-TETHER",
-      "category": "Private valuation",
-      "name": "Tether private-company candidate evidence",
-      "date": null,
-      "url": "https://tether.to/en/transparency/",
-      "quality": "Company source",
-      "notes": "Candidate only; no accepted public-equity valuation input."
     }
   ],
   "entries": [
@@ -2281,50 +2254,6 @@
       "unknowns": ["Founder holdings", "Other outside capital"],
       "upperEstimate": true,
       "comparability": "Deducts reviewed Mysten financing from token market value; unknown founder holdings and other capital remain unknown."
-    }
-  ],
-  "privateCandidates": [
-    {
-      "candidateId": "binance-private",
-      "founderTeam": "Changpeng Zhao, Yi He & founding team",
-      "company": "Binance",
-      "whyQualifies": "Major private crypto company with a qualifying founding team and substantial ecosystem exposure.",
-      "mostRecentValuationReference": "Private-company valuation references are non-ranking context only; no reproducible July 30 public-equity market value.",
-      "valuationSourceId": "VAL-BINANCE",
-      "missingEvidence": [
-        "Authoritative current capitalization table",
-        "Reproducible public-equity market capitalization",
-        "Complete founder/affiliate ownership"
-      ],
-      "exclusionReason": "Private-company valuation and ownership cannot be independently reconstructed for the primary formula; BNB is separately ranked as a token/network entry."
-    },
-    {
-      "candidateId": "kraken-private",
-      "founderTeam": "Jesse Powell & Thanh Luu",
-      "company": "Kraken",
-      "whyQualifies": "Major private crypto exchange with a documented founding unit.",
-      "mostRecentValuationReference": "Private funding/valuation references are non-ranking context only.",
-      "valuationSourceId": "VAL-KRAKEN",
-      "missingEvidence": [
-        "Authoritative current capitalization table",
-        "Reproducible public-equity market capitalization",
-        "Complete founder/affiliate ownership and pre-listing capital"
-      ],
-      "exclusionReason": "No independently reproducible public-company market capitalization and ownership evidence."
-    },
-    {
-      "candidateId": "tether-private",
-      "founderTeam": "Tether founding and controlling group",
-      "company": "Tether",
-      "whyQualifies": "Systemically important private stablecoin issuer and company candidate.",
-      "mostRecentValuationReference": "Transparency disclosures are not a public-equity valuation.",
-      "valuationSourceId": "VAL-TETHER",
-      "missingEvidence": [
-        "Public-equity market capitalization",
-        "Complete founder/affiliate ownership",
-        "Comparable pre-listing capital record"
-      ],
-      "exclusionReason": "Private-company evidence is incomplete; USDT supply is not shareholder equity and cannot substitute for company market capitalization."
     }
   ]
 }

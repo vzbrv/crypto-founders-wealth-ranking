@@ -73,14 +73,6 @@ describe("unified ranking dataset", () => {
       }
     }
     expect(
-      dataset.privateCandidates.every(
-        (candidate) =>
-          !dataset.entries.some(
-            (entry) => entry.entryId === candidate.candidateId,
-          ),
-      ),
-    ).toBe(true);
-    expect(
       dataset.entries.some((entry) =>
         /USDC|stablecoin supply/i.test(entry.project),
       ),

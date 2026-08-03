@@ -1,16 +1,11 @@
 import { SiteFooter, SiteNav } from "./site-nav";
 import { HourlyRankingTable } from "./hourly-ranking-table";
-import {
-  getPrivateCompanyCandidates,
-  getUnifiedDataset,
-  getUnifiedRanking,
-} from "../lib/research-data";
+import { getUnifiedDataset, getUnifiedRanking } from "../lib/research-data";
 
 export default async function UnifiedRankingPage() {
-  const [dataset, ranking, candidates] = await Promise.all([
+  const [dataset, ranking] = await Promise.all([
     getUnifiedDataset(),
     getUnifiedRanking(),
-    getPrivateCompanyCandidates(),
   ]);
 
   return (
@@ -18,13 +13,16 @@ export default async function UnifiedRankingPage() {
       <SiteNav />
       <main className="content-page" id="main-content" tabIndex={-1}>
         <header className="page-header">
-          <p className="eyebrow">Unified provisional screen</p>
+          <p className="eyebrow">Crypto Founders Value Index</p>
           <h1>Top Crypto Founders Ranked by Value Created for Others.</h1>
           <p>
-            One provisional top 20 across token/network founding teams and
-            qualifying public-company founders, using observations dated{" "}
-            {dataset.snapshotDate}. The metric is not founder net worth,
-            personal wealth, or an investment recommendation.
+            The top 20 token/network founding teams and qualifying
+            public-company founders. The table refreshes from each published
+            hourly snapshot and shows live rank changes versus the previous
+            published hour. If no live snapshot is available, it shows the
+            historical bundled fallback dated {dataset.snapshotDate}. The index
+            estimates value created for outside holders and shareholders; it is
+            not founder net worth, personal wealth, or investment advice.
           </p>
         </header>
 
@@ -44,7 +42,7 @@ export default async function UnifiedRankingPage() {
         >
           <div className="section-heading compact">
             <h2 id="ranking-heading">
-              Provisional value created for outside holders and shareholders
+              Estimated value created for outside holders and shareholders
             </h2>
             <p>
               One joint founding unit per economic entity. Public-company market
@@ -58,45 +56,6 @@ export default async function UnifiedRankingPage() {
               dataset.entries[0]?.observationDate ?? dataset.snapshotDate
             }
           />
-        </section>
-
-        <section className="panel" aria-labelledby="private-heading">
-          <div className="section-heading compact">
-            <h2 id="private-heading">Private-company candidates</h2>
-            <p>
-              Shown for transparency only. These candidates receive no rank and
-              do not affect the top 20.
-            </p>
-          </div>
-          <div className="table-shell evidence-shell">
-            <table className="evidence-table">
-              <thead>
-                <tr>
-                  <th>Founder/team</th>
-                  <th>Company</th>
-                  <th>Why it might qualify</th>
-                  <th>Most recent valuation reference</th>
-                  <th>Missing evidence / exclusion</th>
-                </tr>
-              </thead>
-              <tbody>
-                {candidates.map((candidate) => (
-                  <tr key={candidate.candidateId}>
-                    <td>{candidate.founderTeam}</td>
-                    <td>
-                      <strong>{candidate.company}</strong>
-                    </td>
-                    <td>{candidate.whyQualifies}</td>
-                    <td>{candidate.mostRecentValuationReference}</td>
-                    <td>
-                      {candidate.missingEvidence.join(" ")}{" "}
-                      {candidate.exclusionReason}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
         </section>
       </main>
       <SiteFooter />

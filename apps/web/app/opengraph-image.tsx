@@ -1,8 +1,7 @@
 import { ImageResponse } from "next/og";
 
 export const dynamic = "force-static";
-export const alt =
-  "IQ.wiki Value Created Index — Provisional Value Created for Others";
+export const alt = "IQ.wiki Value Created Index — Value Created for Others";
 export const size = { height: 630, width: 1200 };
 export const contentType = "image/png";
 
@@ -28,7 +27,7 @@ export default function OpenGraphImage() {
       <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
         <div style={{ fontSize: 82, letterSpacing: -4 }}>Crypto Founders</div>
         <div style={{ color: "#526074", fontSize: 40 }}>
-          Provisional value created for others · Calculations and sources
+          Estimated value created for others · Calculations and sources
         </div>
       </div>
       <div style={{ color: "#0F172A", fontSize: 26 }}>
