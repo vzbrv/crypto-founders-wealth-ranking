@@ -47,18 +47,60 @@ jobs:
             all(.[]; .status == "healthy" and .freshness == "current")
           ' provider-status.json
 
-      - name: Check latest immutable snapshot
-        id: snapshot
-        run: |
-          if ! curl --fail-with-body --silent --show-error \
-            --header "apikey: $SUPABASE_PUBLISHABLE_KEY" \
-            "${SUPABASE_URL%/}/rest/v1/public_latest_snapshot_status?select=utc_hour,observation_at,publication_at,status,is_immutable,failure_reason&limit=1" \
-            --output latest-snapshot-status.json
-          then
-            echo "::error::Supabase snapshot-status request failed:"
-            cat latest-snapshot-status.json || true
-            exit 1
-          fi
+            - name: Check latest immutable snapshot
+              id: snapshot
+              run: |
+                if ! curl --fail-with-body --silent --show-error \
+                  --header "apikey: $SUPABASE_PUBLISHABLE_KEY" \
+                  "${SUPABASE_URL%/}/rest/v1/public_latest_snapshot_status?select=utc_hour,observation_at,publication_at,status,is_immutable,failure_reason&limit=1" \
+                  --output latest-snapshot-status.json
+                then
+                  echo "::error::Supabase snapshot-status request failed:"
+                  cat latest-snapshot-status.json || true
+                  exit 1
+                fi
+
+                echo "Snapshot response:"
+                jq '.' latest-snapshot-status.json
+
+                snapshot_count="$(jq 'length' latest-snapshot-status.json)"
+                snapshot_status="$(jq --raw-output '.[0].status // "missing"' latest-snapshot-status.json)"
+                publication_at="$(jq --raw-output '.[0].publication_at // "missing"' latest-snapshot-status.json)"
+                is_immutable="$(jq --raw-output '.[0].is_immutable // false' latest-snapshot-status.json)"
+                failure_reason="$(jq --raw-output '.[0].failure_reason // "none"' latest-snapshot-status.json)"
+
+                echo "Snapshot count: $snapshot_count"
+                echo "Status: $snapshot_status"
+                echo "Publication time: $publication_at"
+                echo "Immutable: $is_immutable"
+                echo "Failure reason: $failure_reason"
+
+                if [ "$snapshot_count" -ne 1 ]; then
+                  echo "::error::No latest snapshot record was returned."
+                  exit 1
+                fi
+
+                if [ "$snapshot_status" != "published" ]; then
+                  echo "::error::Latest snapshot status is '$snapshot_status'. Reason: $failure_reason"
+                  exit 1
+                fi
+
+                if [ "$publication_at" = "missing" ]; then
+                  echo "::error::Latest snapshot has no publication time."
+                  exit 1
+                fi
+
+                if [ "$is_immutable" != "true" ]; then
+                  echo "::error::Latest snapshot is not immutable."
+                  exit 1
+                fi
+
+                publication_epoch="$(date --date="$publication_at" +%s)"
+
+                if [ "$publication_epoch" -lt "$(( $(date +%s) - 7200 ))" ]; then
+                  echo "::error::Latest published snapshot is more than two hours old."
+                  exit 1
+                fi
 
           jq --exit-status '
             length == 1 and
