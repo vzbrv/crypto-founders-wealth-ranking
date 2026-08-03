@@ -186,11 +186,11 @@ export function HourlySnapshotStatus({
         <p>
           {header
             ? `Published ${formatTimestamp(header.publication_at)}. UTC snapshot: ${formatTimestamp(snapshotDate)}. Market observation: ${formatTimestamp(observationDate)}. Status: ${stateLabel(freshness)}.`
-            : `Showing the historical bundled fallback dated ${formatTimestamp(fallbackSnapshotDate)}. No live rank or rank change is available.`}
+            : `Showing the historical bundled fallback dated ${formatTimestamp(fallbackSnapshotDate)}. Rank changes populate after the first complete live hourly snapshot is published.`}
         </p>
         {error && (
           <small>
-            Live hourly snapshot unavailable; showing the historical fallback.
+            Live snapshot read failed; showing the historical fallback.
           </small>
         )}
       </div>
@@ -218,7 +218,7 @@ export function HourlySnapshotStatus({
         <p>
           {header
             ? `Snapshot: ${formatTimestamp(header.utc_hour)}. Market observation: ${formatTimestamp(input?.original_observation_at ?? result?.observation_at ?? fallbackObservationDate)}. Publication: ${formatTimestamp(header.publication_at)}.`
-            : `Showing the historical bundled fallback dated ${formatTimestamp(fallbackSnapshotDate)}. Live rank changes are unavailable.`}
+            : `Showing the historical bundled fallback dated ${formatTimestamp(fallbackSnapshotDate)}. Rank changes populate after the first complete live hourly snapshot is published.`}
         </p>
         <p>
           Evidence version:{" "}
@@ -326,7 +326,7 @@ export function HourlySnapshotStatus({
       )}
       {error && (
         <p className="notice" role="status">
-          Live snapshot status unavailable; showing the historical fallback.
+          Live snapshot read failed; showing the historical fallback.
         </p>
       )}
     </section>

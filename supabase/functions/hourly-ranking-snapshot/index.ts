@@ -1,6 +1,5 @@
 interface LeaderboardRow {
   rank: number | null;
-  rank_change: number | null;
   score_usd: string | null;
   confidence_label: string | null;
   slug: string;
@@ -12,6 +11,16 @@ interface LeaderboardRow {
     eligibilityStatus: string;
     ineligibilityReasons: string[];
   }>;
+}
+
+interface PublishedSnapshotHeader {
+  id: string;
+  utc_hour: string;
+}
+
+interface PublishedSnapshotRank {
+  entry_id: string;
+  rank: number | null;
 }
 
 interface DetailRow {
@@ -88,6 +97,42 @@ async function restJson<T>(
   const response = await fetch(url, { headers });
   if (!response.ok) throw new Error(`read failed (${response.status})`);
   return (await response.json()) as T;
+}
+
+async function readPreviousPublishedRanks(
+  supabaseUrl: string,
+  headers: Record<string, string>,
+): Promise<Map<string, number>> {
+  const snapshotUrl = new URL(
+    "/rest/v1/public_historical_snapshots",
+    supabaseUrl,
+  );
+  snapshotUrl.searchParams.set("select", "id,utc_hour");
+  snapshotUrl.searchParams.set("order", "utc_hour.desc");
+  snapshotUrl.searchParams.set("limit", "1");
+  const [snapshot] = await restJson<PublishedSnapshotHeader[]>(
+    snapshotUrl,
+    headers,
+  );
+  if (!snapshot?.id) return new Map();
+
+  const resultsUrl = new URL("/rest/v1/hourly_snapshot_results", supabaseUrl);
+  resultsUrl.searchParams.set("select", "entry_id,rank");
+  resultsUrl.searchParams.set("snapshot_id", `eq.${snapshot.id}`);
+  const results = await restJson<PublishedSnapshotRank[]>(resultsUrl, headers);
+  const ranks = results
+    .filter(
+      (result): result is PublishedSnapshotRank & { rank: number } =>
+        Number.isInteger(result.rank) && result.rank > 0,
+    )
+    .sort((a, b) => a.rank - b.rank);
+  if (
+    ranks.length !== 20 ||
+    ranks.some((result, index) => result.rank !== index + 1)
+  ) {
+    return new Map();
+  }
+  return new Map(ranks.map((result) => [result.entry_id, result.rank]));
 }
 
 async function rpc<T>(
@@ -242,6 +287,10 @@ Deno.serve(async (request) => {
         409,
       );
     }
+    const previousPublishedRanks = await readPreviousPublishedRanks(
+      supabaseUrl,
+      headers,
+    );
     await rpc(supabaseUrl, headers, "recalculate_rankings", {
       p_trigger_type: "hourly_snapshot",
     });
@@ -249,7 +298,7 @@ Deno.serve(async (request) => {
     const leaderboardUrl = new URL("/rest/v1/public_leaderboard", supabaseUrl);
     leaderboardUrl.searchParams.set(
       "select",
-      "rank,rank_change,score_usd,confidence_label,slug,project_breakdown",
+      "rank,score_usd,confidence_label,slug,project_breakdown",
     );
     leaderboardUrl.searchParams.set("order", "rank.asc.nullslast");
     const leaderboard = await restJson<LeaderboardRow[]>(
@@ -343,7 +392,10 @@ Deno.serve(async (request) => {
       results.push({
         entry_id: row.slug,
         rank: row.rank,
-        rank_change: row.rank_change,
+        rank_change:
+          previousPublishedRanks.get(row.slug) == null || row.rank == null
+            ? null
+            : previousPublishedRanks.get(row.slug)! - row.rank,
         value_type: valueType,
         gross_value_usd: detail.market_cap_usd,
         final_value_usd: row.score_usd,
