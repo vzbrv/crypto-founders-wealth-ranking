@@ -457,7 +457,9 @@ Deno.serve(async (request) => {
     log("error", "configuration_error");
     return json({ error: "Server configuration error" }, 500);
   }
-  if (!timingSafeEqual(request.headers.get("x-cron-secret") ?? "", cronSecret)) {
+  if (
+    !timingSafeEqual(request.headers.get("x-cron-secret") ?? "", cronSecret)
+  ) {
     return json({ error: "Unauthorized" }, 401);
   }
 
