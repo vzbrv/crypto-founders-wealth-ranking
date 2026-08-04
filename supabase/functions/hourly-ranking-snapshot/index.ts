@@ -1,3 +1,5 @@
+import { timingSafeEqual } from "../_shared/timing-safe-equal.ts";
+
 type UnifiedSource = {
   id: string;
   category: string;
@@ -455,7 +457,7 @@ Deno.serve(async (request) => {
     log("error", "configuration_error");
     return json({ error: "Server configuration error" }, 500);
   }
-  if (request.headers.get("x-cron-secret") !== cronSecret) {
+  if (!timingSafeEqual(request.headers.get("x-cron-secret") ?? "", cronSecret)) {
     return json({ error: "Unauthorized" }, 401);
   }
 

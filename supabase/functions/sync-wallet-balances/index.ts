@@ -1,5 +1,6 @@
 import { createPublicClient, http, mainnet } from "viem";
 
+import { timingSafeEqual } from "../_shared/timing-safe-equal.ts";
 import {
   EvmBalanceAdapter,
   SolanaBalanceAdapter,
@@ -88,7 +89,7 @@ Deno.serve(async (request) => {
     log("error", "configuration_error");
     return json({ error: "Server configuration error" }, 500);
   }
-  if (request.headers.get("x-cron-secret") !== cronSecret) {
+  if (!timingSafeEqual(request.headers.get("x-cron-secret") ?? "", cronSecret)) {
     log("error", "unauthorized");
     return json({ error: "Unauthorized" }, 401);
   }
