@@ -14,6 +14,7 @@ describe("production database verification", () => {
       cronJobs: requiredCronJobs.map((name) => ({ name, active: true })),
       recentCronJobs: [...requiredCronJobs],
       publicViews: [...requiredPublicViews],
+      anonReadContract: { ok: true },
     });
 
     expect(checks.every(({ passed }) => passed)).toBe(true);
@@ -28,6 +29,7 @@ describe("production database verification", () => {
       })),
       recentCronJobs: requiredCronJobs.slice(0, -1),
       publicViews: requiredPublicViews.slice(0, -1),
+      anonReadContract: { ok: true },
     });
 
     expect(checks).toEqual(
@@ -40,6 +42,28 @@ describe("production database verification", () => {
         }),
         expect.objectContaining({
           name: "required-public-views",
+          passed: false,
+        }),
+      ]),
+    );
+  });
+
+  it("fails when anon/authenticated regain unexpected table access", () => {
+    const checks = evaluateProductionDatabase({
+      migrationVersions: [...expectedMigrationVersions],
+      cronJobs: requiredCronJobs.map((name) => ({ name, active: true })),
+      recentCronJobs: [...requiredCronJobs],
+      publicViews: [...requiredPublicViews],
+      anonReadContract: {
+        ok: false,
+        error: "anon can select wallet_balance_observations; ",
+      },
+    });
+
+    expect(checks).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          name: "anon-read-contract",
           passed: false,
         }),
       ]),

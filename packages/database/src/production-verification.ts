@@ -11,6 +11,7 @@ export const expectedMigrationVersions = [
   "202607280010",
   "202607280011",
   "202607280012",
+  "202608040001",
 ] as const;
 
 export const requiredCronJobs = [
@@ -32,6 +33,13 @@ export interface ProductionDatabaseSnapshot {
   cronJobs: Array<{ name: string; active: boolean }>;
   recentCronJobs: string[];
   publicViews: string[];
+  /**
+   * Result of `select assert_anon_read_contract()` against the target
+   * database: `{ ok: true }` if anon/authenticated select grants match the
+   * intended allowlist, or `{ ok: false, error: <message> }` if the function
+   * raised (naming the offending grant) or could not be called at all.
+   */
+  anonReadContract: { ok: true } | { ok: false; error: string };
 }
 
 export interface ProductionDatabaseCheck {
@@ -80,5 +88,12 @@ export function evaluateProductionDatabase(
       requiredPublicViews,
       snapshot.publicViews,
     ),
+    {
+      name: "anon-read-contract",
+      passed: snapshot.anonReadContract.ok,
+      status: snapshot.anonReadContract.ok
+        ? "anon/authenticated select grants match the intended allowlist"
+        : `regression detected: ${snapshot.anonReadContract.error}`,
+    },
   ];
 }

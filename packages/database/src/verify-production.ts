@@ -76,11 +76,23 @@ try {
       and table_name in ${sql(requiredPublicViews)}
   `;
 
+  let anonReadContract: { ok: true } | { ok: false; error: string };
+  try {
+    await sql`select assert_anon_read_contract()`;
+    anonReadContract = { ok: true };
+  } catch (error) {
+    anonReadContract = {
+      ok: false,
+      error: error instanceof Error ? error.message : "unknown error",
+    };
+  }
+
   for (const check of evaluateProductionDatabase({
     migrationVersions: migrations.map(({ version }) => version),
     cronJobs,
     recentCronJobs: recentCronJobs.map(({ name }) => name),
     publicViews: publicViews.map(({ name }) => name),
+    anonReadContract,
   })) {
     record(check);
   }
