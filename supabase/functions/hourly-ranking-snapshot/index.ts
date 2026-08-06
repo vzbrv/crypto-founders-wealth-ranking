@@ -230,7 +230,7 @@ async function recordQuotaStop(
   });
 }
 
-async function readUnifiedDocument(
+export async function readUnifiedDocument(
   supabaseUrl: string,
   headers: Record<string, string>,
 ): Promise<UnifiedDocument> {
@@ -243,7 +243,12 @@ async function readUnifiedDocument(
     headers,
   );
   const document = rows[0]?.dataset;
-  if (!document || document.entries.length !== 20) {
+  if (!document || typeof document !== "object" || Array.isArray(document)) {
+    throw new Error(
+      `unified ranking document is not a JSON object (got ${typeof document}); expected { entries: [...] } — check for double-encoded JSON in unified_ranking_documents.dataset`,
+    );
+  }
+  if (!Array.isArray(document.entries) || document.entries.length !== 20) {
     throw new Error("unified ranking document is not a complete top 20");
   }
   return document;
