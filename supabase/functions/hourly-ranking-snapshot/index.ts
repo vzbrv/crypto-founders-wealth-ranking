@@ -1,4 +1,5 @@
 import { timingSafeEqual } from "../_shared/timing-safe-equal.ts";
+import { RetryableProviderError, withProviderRetry } from "./retry.ts";
 import { computeEntryValuation } from "./valuation.ts";
 
 type UnifiedSource = {
@@ -11,7 +12,7 @@ type UnifiedSource = {
   notes: string;
 };
 
-type UnifiedEntry = {
+export type UnifiedEntry = {
   entryId: string;
   founderTeam: string;
   project: string;
@@ -65,7 +66,7 @@ type UnifiedEntry = {
   disputedEvidence: string[];
 };
 
-type UnifiedDocument = {
+export type UnifiedDocument = {
   snapshotDate: string;
   methodologyVersion: string;
   sources: UnifiedSource[];
@@ -95,6 +96,11 @@ const evidenceVersion = "reviewed-evidence-2026-07-30";
 const tokenMaxStalenessSeconds = 2 * 60 * 60;
 const publicMarketMaxStalenessSeconds = 7 * 24 * 60 * 60;
 const quotaPausedStatus = "Paused — provider quota exhausted";
+// One retry at 500ms, one more at 1.5s, before giving up — targets the
+// specific failure mode where a provider's batch response silently omits
+// one symbol (e.g. Yahoo Finance's spark endpoint dropping "COIN"), which
+// otherwise aborts the entire hourly snapshot for a single flaky quote.
+const providerRetryDelaysMs = [500, 1500];
 
 function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), { status, headers: jsonHeaders });
@@ -243,7 +249,7 @@ async function readUnifiedDocument(
   return document;
 }
 
-async function fetchCoinGecko(
+export async function fetchCoinGecko(
   document: UnifiedDocument,
   supabaseUrl: string,
   headers: Record<string, string>,
@@ -279,53 +285,68 @@ async function fetchCoinGecko(
     "/coins/markets",
     checkedAt,
   );
-  const response = await fetch(sourceUrl, {
-    headers: Deno.env.get("COINGECKO_DEMO_API_KEY")
-      ? { "x-cg-demo-api-key": Deno.env.get("COINGECKO_DEMO_API_KEY")! }
-      : {},
-  });
-  if (!response.ok) {
-    const condition = `HTTP_${response.status}_PROVIDER_LIMIT`;
-    if ([402, 403, 429].includes(response.status)) {
-      await recordQuotaStop(
-        supabaseUrl,
-        headers,
-        "coingecko",
-        condition,
-        checkedAt,
-      );
-      throw new Error(`${quotaPausedStatus}: coingecko ${condition}`);
-    }
-    throw new Error(`CoinGecko returned HTTP ${response.status}`);
-  }
-  const payload = (await response.json()) as unknown;
-  if (!Array.isArray(payload))
-    throw new Error("CoinGecko response must be an array");
-  const markets = new Map<
-    string,
-    { price: number; supply: number; marketCap: number; observedAt: string }
-  >();
-  for (const item of payload as CoinGeckoMarket[]) {
-    if (typeof item.id !== "string") continue;
-    const observedAt =
-      typeof item.last_updated === "string" &&
-      Number.isFinite(Date.parse(item.last_updated))
-        ? new Date(item.last_updated).toISOString()
-        : checkedAt;
-    markets.set(item.id, {
-      price: asNumber(item.current_price, `${item.id} price`),
-      supply: asNumber(item.circulating_supply, `${item.id} supply`),
-      marketCap: asNumber(item.market_cap, `${item.id} market cap`),
-      observedAt,
+
+  const fetchOnce = async (): Promise<
+    Map<
+      string,
+      { price: number; supply: number; marketCap: number; observedAt: string }
+    >
+  > => {
+    const response = await fetch(sourceUrl, {
+      headers: Deno.env.get("COINGECKO_DEMO_API_KEY")
+        ? { "x-cg-demo-api-key": Deno.env.get("COINGECKO_DEMO_API_KEY")! }
+        : {},
     });
-  }
-  for (const id of ids) {
-    const market = markets.get(id);
-    if (!market) throw new Error(`CoinGecko omitted ${id}`);
-    if (ageSeconds(market.observedAt, now) > tokenMaxStalenessSeconds) {
-      throw new Error(`stale CoinGecko data for ${id}`);
+    if (!response.ok) {
+      const condition = `HTTP_${response.status}_PROVIDER_LIMIT`;
+      if ([402, 403, 429].includes(response.status)) {
+        await recordQuotaStop(
+          supabaseUrl,
+          headers,
+          "coingecko",
+          condition,
+          checkedAt,
+        );
+        throw new Error(`${quotaPausedStatus}: coingecko ${condition}`);
+      }
+      throw new RetryableProviderError(
+        `CoinGecko returned HTTP ${response.status}`,
+      );
     }
-  }
+    const payload = (await response.json()) as unknown;
+    if (!Array.isArray(payload))
+      throw new Error("CoinGecko response must be an array");
+    const markets = new Map<
+      string,
+      { price: number; supply: number; marketCap: number; observedAt: string }
+    >();
+    for (const item of payload as CoinGeckoMarket[]) {
+      if (typeof item.id !== "string") continue;
+      const observedAt =
+        typeof item.last_updated === "string" &&
+        Number.isFinite(Date.parse(item.last_updated))
+          ? new Date(item.last_updated).toISOString()
+          : checkedAt;
+      markets.set(item.id, {
+        price: asNumber(item.current_price, `${item.id} price`),
+        supply: asNumber(item.circulating_supply, `${item.id} supply`),
+        marketCap: asNumber(item.market_cap, `${item.id} market cap`),
+        observedAt,
+      });
+    }
+    for (const id of ids) {
+      const market = markets.get(id);
+      if (!market) throw new RetryableProviderError(`CoinGecko omitted ${id}`);
+      if (ageSeconds(market.observedAt, now) > tokenMaxStalenessSeconds) {
+        throw new Error(`stale CoinGecko data for ${id}`);
+      }
+    }
+    return markets;
+  };
+
+  const markets = await withProviderRetry(fetchOnce, {
+    delaysMs: providerRetryDelaysMs,
+  });
   return {
     provider: "coingecko",
     checkedAt,
@@ -334,7 +355,7 @@ async function fetchCoinGecko(
   };
 }
 
-async function fetchPublicPrices(
+export async function fetchPublicPrices(
   document: UnifiedDocument,
   supabaseUrl: string,
   headers: Record<string, string>,
@@ -363,58 +384,74 @@ async function fetchPublicPrices(
     "/v7/finance/spark",
     checkedAt,
   );
-  const response = await fetch(sourceUrl, {
-    headers: {
-      accept: "application/json",
-      "user-agent": "crypto-founders-ranking/1.0",
-    },
-  });
-  if (!response.ok) {
-    const condition = `HTTP_${response.status}_PROVIDER_LIMIT`;
-    if ([402, 403, 429].includes(response.status)) {
-      await recordQuotaStop(
-        supabaseUrl,
-        headers,
-        "yahoo_finance",
-        condition,
-        checkedAt,
+
+  const fetchOnce = async (): Promise<
+    Map<string, { price: number; observedAt: string }>
+  > => {
+    const response = await fetch(sourceUrl, {
+      headers: {
+        accept: "application/json",
+        "user-agent": "crypto-founders-ranking/1.0",
+      },
+    });
+    if (!response.ok) {
+      const condition = `HTTP_${response.status}_PROVIDER_LIMIT`;
+      if ([402, 403, 429].includes(response.status)) {
+        await recordQuotaStop(
+          supabaseUrl,
+          headers,
+          "yahoo_finance",
+          condition,
+          checkedAt,
+        );
+        throw new Error(`${quotaPausedStatus}: yahoo_finance ${condition}`);
+      }
+      throw new RetryableProviderError(
+        `public market provider returned HTTP ${response.status}`,
       );
-      throw new Error(`${quotaPausedStatus}: yahoo_finance ${condition}`);
     }
-    throw new Error(`public market provider returned HTTP ${response.status}`);
-  }
-  const payload = (await response.json()) as {
-    spark?: { result?: YahooSparkResult[] };
-  };
-  const prices = new Map<string, { price: number; observedAt: string }>();
-  for (const result of payload.spark?.result ?? []) {
-    if (!result.symbol) continue;
-    const closes = result.indicators?.quote?.[0]?.close ?? [];
-    const timestamps = result.timestamp ?? [];
-    let index = -1;
-    for (let candidate = closes.length - 1; candidate >= 0; candidate -= 1) {
-      if (closes[candidate] !== null && closes[candidate] !== undefined) {
-        index = candidate;
-        break;
+    const payload = (await response.json()) as {
+      spark?: { result?: YahooSparkResult[] };
+    };
+    const prices = new Map<string, { price: number; observedAt: string }>();
+    for (const result of payload.spark?.result ?? []) {
+      if (!result.symbol) continue;
+      const closes = result.indicators?.quote?.[0]?.close ?? [];
+      const timestamps = result.timestamp ?? [];
+      let index = -1;
+      for (let candidate = closes.length - 1; candidate >= 0; candidate -= 1) {
+        if (closes[candidate] !== null && closes[candidate] !== undefined) {
+          index = candidate;
+          break;
+        }
+      }
+      const price =
+        index >= 0 ? closes[index] : result.meta?.regularMarketPrice;
+      const timestamp =
+        index >= 0 ? timestamps[index] : result.meta?.regularMarketTime;
+      if (price === null || price === undefined || timestamp === undefined)
+        continue;
+      prices.set(result.symbol, {
+        price: asNumber(price, `${result.symbol} price`),
+        observedAt: new Date(timestamp * 1000).toISOString(),
+      });
+    }
+    for (const symbol of symbols) {
+      const quote = prices.get(symbol);
+      if (!quote)
+        throw new RetryableProviderError(
+          `public market provider omitted ${symbol}`,
+        );
+      if (ageSeconds(quote.observedAt, now) > publicMarketMaxStalenessSeconds) {
+        throw new Error(`stale public market data for ${symbol}`);
       }
     }
-    const price = index >= 0 ? closes[index] : result.meta?.regularMarketPrice;
-    const timestamp =
-      index >= 0 ? timestamps[index] : result.meta?.regularMarketTime;
-    if (price === null || price === undefined || timestamp === undefined)
-      continue;
-    prices.set(result.symbol, {
-      price: asNumber(price, `${result.symbol} price`),
-      observedAt: new Date(timestamp * 1000).toISOString(),
-    });
-  }
-  for (const symbol of symbols) {
-    const quote = prices.get(symbol);
-    if (!quote) throw new Error(`public market provider omitted ${symbol}`);
-    if (ageSeconds(quote.observedAt, now) > publicMarketMaxStalenessSeconds) {
-      throw new Error(`stale public market data for ${symbol}`);
-    }
-  }
+    return prices;
+  };
+
+  const prices = await withProviderRetry(fetchOnce, {
+    delaysMs: providerRetryDelaysMs,
+  });
   return {
     provider: "yahoo_finance",
     checkedAt,
