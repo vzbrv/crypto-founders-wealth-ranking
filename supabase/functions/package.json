@@ -1,0 +1,13 @@
+{
+  "name": "@crypto-founders/edge-functions",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "vitest run --passWithNoTests"
+  },
+  "devDependencies": {
+    "vitest": "4.1.10",
+    "viem": "2.55.10"
+  }
+}

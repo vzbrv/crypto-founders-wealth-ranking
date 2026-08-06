@@ -2,6 +2,84 @@ import { expect, test, type Page } from "@playwright/test";
 
 const now = new Date().toISOString();
 
+// Builds a complete, internally-valid 20-entry live snapshot payload matching
+// what HourlyRankingTable (apps/web/components/hourly-ranking-table.tsx)
+// requires before it will render the live view instead of falling back to
+// the bundled snapshot: exactly 20 entries, unique entry ids, contiguous
+// ranks 1..20, and every entry has a non-null final_value_usd.
+function buildLiveSnapshotResults(
+  overrides: Partial<Record<number, Record<string, unknown>>> = {},
+): Record<string, unknown>[] {
+  return Array.from({ length: 20 }, (_, index) => {
+    const rank = index + 1;
+    return {
+      entry_id: `entry-${rank}`,
+      rank,
+      value_type: "Token/network",
+      gross_value_usd: "1000000000.00",
+      final_value_usd: "800000000.00",
+      confidence_score: 90,
+      confidence_label: "high",
+      source_ids: [`market:entry-${rank}`],
+      observation_at: now,
+      freshness_status: "current",
+      previous_rank: rank,
+      rank_change: 0,
+      rank_change_status: "unchanged",
+      founder_team: `Founder ${rank}`,
+      project: `Project ${rank}`,
+      market: { type: "token", coinGeckoCoinId: `token-${rank}` },
+      upper_estimate: false,
+      ...overrides[rank],
+    };
+  });
+}
+
+async function mockLiveSnapshot(
+  page: Page,
+  {
+    results,
+    latestStatus,
+  }: {
+    results: Record<string, unknown>[];
+    latestStatus?: Record<string, unknown>;
+  },
+) {
+  await page.route("**/rest/v1/public_latest_snapshot_status**", (route) =>
+    route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify([
+        {
+          status: "published",
+          publication_at: now,
+          observation_at: now,
+          failure_reason: null,
+          ...latestStatus,
+        },
+      ]),
+    }),
+  );
+  await page.route("**/rest/v1/public_current_published_snapshot**", (route) =>
+    route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify([
+        {
+          utc_hour: now,
+          observation_at: now,
+          publication_at: now,
+          is_immutable: true,
+        },
+      ]),
+    }),
+  );
+  await page.route("**/rest/v1/public_current_snapshot_results**", (route) =>
+    route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify(results),
+    }),
+  );
+}
+
 async function mockPublicData(page: Page) {
   await page.route("**/rest/v1/public_leaderboard**", (route) =>
     route.fulfill({
@@ -599,4 +677,76 @@ test("supports keyboard control of the mobile navigation", async ({ page }) => {
 
   await page.keyboard.press("Escape");
   await expect(openButton).toBeFocused();
+});
+
+// The three tests below exercise the degraded-data states documented in
+// docs/architecture.md's transparency promise: a live snapshot that's
+// present but stale, a live snapshot present alongside a failed scheduled
+// run, and total absence of a valid live snapshot (fallback to the bundled
+// production data). None of these were previously covered by e2e tests —
+// see the audit notes.
+
+test("shows a stale-data notice when the live snapshot reports stale freshness", async ({
+  page,
+}) => {
+  const results = buildLiveSnapshotResults({
+    1: { freshness_status: "stale" },
+  });
+  await mockLiveSnapshot(page, { results });
+
+  await page.goto("/");
+
+  await expect(
+    page.getByText("Live immutable snapshot", { exact: false }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("Data freshness: stale.", { exact: false }),
+  ).toBeVisible();
+});
+
+test("shows a scheduled-run-failed notice while still rendering the last good live snapshot", async ({
+  page,
+}) => {
+  const results = buildLiveSnapshotResults();
+  await mockLiveSnapshot(page, {
+    results,
+    latestStatus: {
+      status: "failed",
+      failure_reason: "CoinGecko quota exhausted",
+    },
+  });
+
+  await page.goto("/");
+
+  await expect(
+    page.getByText("Data freshness: current.", { exact: false }),
+  ).toBeVisible();
+  await expect(
+    page.getByText(
+      "Latest scheduled run failed. Showing the last complete immutable snapshot: CoinGecko quota exhausted",
+      { exact: false },
+    ),
+  ).toBeVisible();
+});
+
+test("falls back to the bundled snapshot when no valid live snapshot is available", async ({
+  page,
+}) => {
+  await page.route("**/rest/v1/public_latest_snapshot_status**", (route) =>
+    route.fulfill({ status: 500, body: "" }),
+  );
+  await page.route("**/rest/v1/public_current_published_snapshot**", (route) =>
+    route.fulfill({ status: 500, body: "" }),
+  );
+  await page.route("**/rest/v1/public_current_snapshot_results**", (route) =>
+    route.fulfill({ status: 500, body: "" }),
+  );
+
+  await page.goto("/");
+
+  await expect(
+    page.getByText("No complete immutable live snapshot is available.", {
+      exact: false,
+    }),
+  ).toBeVisible();
 });
