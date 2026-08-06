@@ -925,6 +925,94 @@ describe("Phase 3 database", () => {
     }
   });
 
+  it("filters tracked_wallets and funding_rounds for anon by status and parent project status", async () => {
+    const database = await createDatabase(true);
+    await database.exec(`
+      insert into projects (
+        id, slug, name, description, project_type, calculation_category,
+        status, confidence_level, methodology_notes, website_url, research_reviewed_at
+      ) values (
+        '92222222-2222-4222-8222-222222222222', 'hidden-wallet-project',
+        'Hidden Wallet Project', 'Hidden fixture for RLS test', 'protocol',
+        'liquid_token', 'hidden', 'high', 'Test', 'https://example.com/hidden-wallet-project', now()
+      );
+
+      -- Same active project as the seed, but a wallet marked inactive (hidden).
+      insert into tracked_wallets (
+        id, project_id, founding_unit_id, chain_code, address, normalized_address,
+        label, classification, ownership_confidence, circulating_inclusion_fraction,
+        affects_score, status, research_reviewed_at,
+        balance_included_in_circulating_supply, deduplication_key, review_status,
+        reviewer, reviewed_at, evidence_source_ids
+      ) values (
+        '95555555-5555-4555-8555-555555555555',
+        '11111111-1111-4111-8111-111111111111',
+        '22222222-2222-4222-8222-222222222222', 'ethereum',
+        '0x3333333333333333333333333333333333333333',
+        '0x3333333333333333333333333333333333333333',
+        'Inactive wallet', 'team', 'high', 0.5, true, 'hidden', now(), true,
+        'inactive-wallet', 'approved_sufficient', 'Synthetic reviewer', now(),
+        '["44444444-4444-4444-8444-444444444444"]'
+      );
+
+      -- An active-status wallet whose parent project is not active.
+      insert into tracked_wallets (
+        id, project_id, founding_unit_id, chain_code, address, normalized_address,
+        label, classification, ownership_confidence, circulating_inclusion_fraction,
+        affects_score, status, research_reviewed_at,
+        balance_included_in_circulating_supply, deduplication_key, review_status,
+        reviewer, reviewed_at, evidence_source_ids
+      ) values (
+        '96666666-6666-4666-8666-666666666666',
+        '92222222-2222-4222-8222-222222222222',
+        '22222222-2222-4222-8222-222222222222', 'ethereum',
+        '0x4444444444444444444444444444444444444444',
+        '0x4444444444444444444444444444444444444444',
+        'Active wallet on a hidden project', 'team', 'high', 0.5, true, 'active',
+        now(), true, 'hidden-project-wallet', 'approved_sufficient',
+        'Synthetic reviewer', now(), '["44444444-4444-4444-8444-444444444444"]'
+      );
+
+      -- Same active project, a funding round marked hidden.
+      insert into funding_rounds (
+        id, project_id, event_date, round_type, original_amount, original_currency,
+        amount_usd_at_event, amount_status, usd_conversion_method,
+        usd_conversion_date, include_in_capital_deduction, inclusion_reason,
+        status, reviewed_at, notes, deduplication_key, review_status, reviewer,
+        evidence_source_ids
+      ) values (
+        '97777777-7777-4777-8777-777777777777',
+        '11111111-1111-4111-8111-111111111111', '2025-01-10', 'seed', 1000000,
+        'USD', 1000000, 'exact', 'Already denominated in USD.', '2025-01-10',
+        true, 'Hidden funding round for RLS test.', 'hidden', now(),
+        'Synthetic funding event for validation only.', 'hidden-funding-round',
+        'approved_sufficient', 'Synthetic reviewer',
+        '["44444444-4444-4444-8444-444444444444"]'
+      );
+    `);
+
+    await database.exec("set role anon");
+    try {
+      const wallets = await database.query<{ deduplication_key: string }>(
+        "select deduplication_key from tracked_wallets order by deduplication_key",
+      );
+      expect(wallets.rows).toEqual([
+        { deduplication_key: "synthetic-horizon-team-wallet" },
+      ]);
+
+      const fundingRounds = await database.query<{
+        deduplication_key: string;
+      }>(
+        "select deduplication_key from funding_rounds order by deduplication_key",
+      );
+      expect(fundingRounds.rows).toEqual([
+        { deduplication_key: "synthetic-horizon-seed" },
+      ]);
+    } finally {
+      await database.exec("reset role");
+    }
+  });
+
   it("stores observations and calculations while excluding research scores", async () => {
     const database = await createDatabase(true);
     await database.exec(`

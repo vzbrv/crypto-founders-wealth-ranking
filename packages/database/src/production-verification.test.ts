@@ -1,3 +1,6 @@
+import { readdirSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+
 import { describe, expect, it } from "vitest";
 
 import {
@@ -6,6 +9,10 @@ import {
   requiredCronJobs,
   requiredPublicViews,
 } from "./production-verification.js";
+
+const migrationsDir = fileURLToPath(
+  new URL("../../../supabase/migrations", import.meta.url),
+);
 
 describe("production database verification", () => {
   it("passes a fully configured production database", () => {
@@ -68,5 +75,21 @@ describe("production database verification", () => {
         }),
       ]),
     );
+  });
+
+  it("expectedMigrationVersions matches every migration file on disk", () => {
+    // This is the guardrail against the exact drift that happened before:
+    // expectedMigrationVersions was hand-maintained and silently fell 16
+    // migrations behind supabase/migrations, so production verification
+    // never checked whether those migrations had actually been applied.
+    // Any new migration file added without updating the list above now
+    // fails this test instead of failing silently in production.
+    const versionsOnDisk = readdirSync(migrationsDir)
+      .filter((file) => file.endsWith(".sql"))
+      .map((file) => file.match(/^(\d+)_/)?.[1])
+      .filter((version): version is string => version !== undefined)
+      .sort();
+
+    expect([...expectedMigrationVersions].sort()).toEqual(versionsOnDisk);
   });
 });

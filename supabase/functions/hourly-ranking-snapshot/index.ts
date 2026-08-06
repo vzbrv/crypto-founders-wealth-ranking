@@ -1,4 +1,5 @@
 import { timingSafeEqual } from "../_shared/timing-safe-equal.ts";
+import { computeEntryValuation } from "./valuation.ts";
 
 type UnifiedSource = {
   id: string;
@@ -485,12 +486,12 @@ Deno.serve(async (request) => {
     const sourceRows = new Map<string, Record<string, unknown>>();
 
     for (const entry of document.entries) {
-      let gross: number;
       let observationAt: string;
       let marketProvider: string;
       let marketSourceUrl: string;
       let marketPrice: number | null = null;
       let circulatingSupply: number | null = null;
+      let tokenMarketCap: number | null = null;
       let shareCountInputs: Record<string, unknown> = {};
       const marketSourceId = `market:${entry.entryId}`;
 
@@ -498,9 +499,9 @@ Deno.serve(async (request) => {
         const market = tokens.markets.get(entry.market.coinGeckoCoinId);
         if (!market)
           throw new Error(`missing token market for ${entry.entryId}`);
-        gross = market.marketCap;
         marketPrice = market.price;
         circulatingSupply = market.supply;
+        tokenMarketCap = market.marketCap;
         observationAt = market.observedAt;
         marketProvider = tokens.provider;
         marketSourceUrl = tokens.sourceUrl;
@@ -517,30 +518,30 @@ Deno.serve(async (request) => {
           exchange: entry.market.exchange,
           shareClasses: entry.market.shareClasses,
         };
-        gross = entry.market.shareClasses.reduce(
-          (total, shareClass) =>
-            total + Number(shareClass.sharesOutstanding) * quote.price,
-          0,
-        );
       }
 
-      if (!Number.isFinite(gross) || gross < 0)
-        throw new Error(`invalid gross value for ${entry.entryId}`);
-      const ownership =
-        entry.market.type === "public" &&
-        entry.affiliatedOwnership.status === "Accepted"
-          ? Number(entry.affiliatedOwnership.totalShares ?? 0) * marketPrice!
-          : null;
-      const capital =
-        entry.outsideCapital.status === "Accepted"
-          ? entry.outsideCapital.events
-              .filter((event) => event.disposition === "Accepted")
-              .reduce((total, event) => total + Number(event.amountUsd), 0)
-          : null;
-      const finalValue = gross - (ownership ?? 0) - (capital ?? 0);
-      if (!Number.isFinite(finalValue) || finalValue < 0) {
-        throw new Error(`invalid final value for ${entry.entryId}`);
-      }
+      // computeEntryValuation (supabase/functions/hourly-ranking-snapshot/valuation.ts)
+      // is the single source of truth for gross/ownership/capital/final value —
+      // see valuation.test.ts for the covered cases. Token gross value is the
+      // provider-reported market cap (tokenMarketCap), not price * supply
+      // recomputed locally — those can diverge from what the provider reports.
+      const valuation = computeEntryValuation({
+        entryId: entry.entryId,
+        market:
+          entry.market.type === "token"
+            ? { type: "token", marketCap: tokenMarketCap! }
+            : {
+                type: "public",
+                price: marketPrice,
+                shareClasses: entry.market.shareClasses,
+              },
+        affiliatedOwnership: entry.affiliatedOwnership,
+        outsideCapital: entry.outsideCapital,
+      });
+      const gross = valuation.grossValueUsd;
+      const ownership = valuation.founderAffiliateDeductionUsd;
+      const capital = valuation.outsideCapitalDeductionUsd;
+      const finalValue = valuation.finalValueUsd;
 
       sourceRows.set(marketSourceId, {
         source_id: marketSourceId,
