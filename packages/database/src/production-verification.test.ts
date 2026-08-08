@@ -92,4 +92,9 @@ describe("production database verification", () => {
 
     expect([...expectedMigrationVersions].sort()).toEqual(versionsOnDisk);
   });
+
+  it("expects the current hourly snapshot scheduler", () => {
+    expect(requiredCronJobs).toContain("hourly-ranking-snapshot");
+    expect(requiredCronJobs).not.toContain("calculate-rankings");
+  });
 });
