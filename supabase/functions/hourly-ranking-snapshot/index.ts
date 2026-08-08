@@ -82,6 +82,23 @@ type CoinGeckoMarket = {
   last_updated?: unknown;
 };
 
+type HourlyResultRow = {
+  entry_id: string;
+  _sort_value: string | number;
+};
+
+export function compareHourlyResultRows(
+  left: HourlyResultRow,
+  right: HourlyResultRow,
+): number {
+  const valueOrder = new Decimal(String(right._sort_value)).comparedTo(
+    String(left._sort_value),
+  );
+  return valueOrder === 0
+    ? left.entry_id.localeCompare(right.entry_id)
+    : valueOrder;
+}
+
 type YahooSparkResult = {
   symbol?: string;
   meta?: { regularMarketPrice?: number; regularMarketTime?: number };
@@ -810,11 +827,7 @@ Deno.serve(async (request) => {
       });
     }
 
-    resultRows.sort((left, right) =>
-      new Decimal(String(right._sort_value)).comparedTo(
-        String(left._sort_value),
-      ),
-    );
+    resultRows.sort(compareHourlyResultRows);
     resultRows.forEach((row, index) => {
       row.rank = index + 1;
       delete row._sort_value;
