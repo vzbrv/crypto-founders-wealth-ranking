@@ -31,7 +31,17 @@ jobs:
       - run: pnpm build
       - uses: supabase/setup-cli@v1
         with:
-          version: latest
+          # Pinned below v2.105.0, which ported `supabase link` to a new
+          # TypeScript implementation (see supabase/cli release notes,
+          # v2.105.0-beta.5: "port link and unlink commands to native
+          # TypeScript"). That port appears to reject a legitimately-
+          # formatted `inserted_at` timestamp from the project's API keys
+          # response with a SchemaError, breaking `supabase link` in this
+          # workflow. `version: latest` meant this landed with no warning.
+          # Un-pin (or bump forward) once Supabase ships a fix upstream —
+          # check https://github.com/supabase/cli/releases for anything
+          # mentioning `link` after v2.105.0.
+          version: 2.104.0
       - name: Link and apply migrations
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
