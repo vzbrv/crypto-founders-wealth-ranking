@@ -180,10 +180,11 @@ export function buildRankingEntries(
     );
 
     const normalizedConfidence = confidence(row.confidence_label);
+    const isRanked = row.eligibility_status === "ranked";
     return {
-      rank: row.rank,
-      rankChange: row.rank_change,
-      scoreUsd: numberOrNull(row.score_usd),
+      rank: isRanked ? row.rank : null,
+      rankChange: isRanked ? row.rank_change : null,
+      scoreUsd: isRanked ? numberOrNull(row.score_usd) : null,
       confidence: normalizedConfidence,
       calculatedAt: row.calculated_at,
       foundingUnitId: row.founding_unit_id,
@@ -203,7 +204,7 @@ export function buildRankingEntries(
       fundingReviewStatus: row.funding_review_status ?? null,
       isStale: row.is_stale ?? false,
       staleReason: row.stale_reason ?? null,
-      status: row.eligibility_status === "ranked" ? "ranked" : "research",
+      status: isRanked ? "ranked" : "research",
     };
   });
 }

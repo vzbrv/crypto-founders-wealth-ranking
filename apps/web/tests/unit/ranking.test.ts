@@ -115,6 +115,29 @@ describe("ranking data", () => {
     });
   });
 
+  it("withholds scores and ranks from provisional rows", () => {
+    const [entry] = buildRankingEntries(
+      [
+        {
+          ...rows[1]!,
+          rank: 2,
+          previous_rank: 3,
+          rank_change: 1,
+          score_usd: "999999999.99999999",
+        },
+      ],
+      projects,
+    );
+
+    expect(entry).toMatchObject({
+      rank: null,
+      rankChange: null,
+      scoreUsd: null,
+      status: "research",
+      eligibilityStatus: "research_in_progress",
+    });
+  });
+
   it("filters by founder, project, and confidence", () => {
     const entries = buildRankingEntries(rows, projects);
 
