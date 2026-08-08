@@ -1,3 +1,6 @@
+import Decimal from "decimal.js";
+
+import { decimalOrNull, type DecimalString } from "./decimal";
 import type { RankingEntry } from "./ranking";
 
 export const COINBASE_WS_URL = "wss://advanced-trade-ws.coinbase.com";
@@ -20,7 +23,7 @@ const USD_PRODUCTS: Record<string, string> = {
 
 export interface PriceTick {
   productId: string;
-  priceUsd: number;
+  priceUsd: DecimalString;
   observedAt: string;
 }
 
@@ -30,14 +33,14 @@ export interface LiveProductPrice extends PriceTick {
 }
 
 export interface LiveEstimate {
-  scoreUsd: number;
+  scoreUsd: DecimalString;
   liveProjectCount: number;
   stale: boolean;
 }
 
 export interface LiveProductConfig {
   productId: string;
-  canonicalPriceUsd: number;
+  canonicalPriceUsd: DecimalString;
 }
 
 export function coinbaseProductId(symbol: string | null): string | null {
@@ -54,7 +57,7 @@ export function collectLiveProducts(
       if (
         productId &&
         project.canonicalPriceUsd &&
-        project.canonicalPriceUsd > 0
+        new Decimal(project.canonicalPriceUsd).gt(0)
       ) {
         products.set(productId, {
           productId,
@@ -105,10 +108,10 @@ export function parseCoinbaseMessage(raw: string): PriceTick[] {
     return tickers.flatMap((ticker) => {
       if (!ticker || typeof ticker !== "object") return [];
       const value = ticker as Record<string, unknown>;
-      const priceUsd = Number(value.price);
+      const priceUsd = decimalOrNull(value.price);
       return typeof value.product_id === "string" &&
-        Number.isFinite(priceUsd) &&
-        priceUsd > 0
+        priceUsd !== null &&
+        new Decimal(priceUsd).gt(0)
         ? [{ productId: value.product_id, priceUsd, observedAt }]
         : [];
     });
@@ -117,15 +120,22 @@ export function parseCoinbaseMessage(raw: string): PriceTick[] {
 
 export function reconcileLivePrice(
   tick: PriceTick,
-  canonicalPriceUsd: number,
+  canonicalPriceUsd: DecimalString,
   maxVarianceRatio = LIVE_PRICE_MAX_VARIANCE_RATIO,
 ): { accepted: true; price: LiveProductPrice } | { accepted: false } {
-  if (!(canonicalPriceUsd > 0) || !(tick.priceUsd > 0))
-    return { accepted: false };
-  const varianceRatio =
-    Math.abs(tick.priceUsd - canonicalPriceUsd) / canonicalPriceUsd;
-  return varianceRatio <= maxVarianceRatio
-    ? { accepted: true, price: { ...tick, stale: false, varianceRatio } }
+  const canonical = new Decimal(canonicalPriceUsd);
+  const price = new Decimal(tick.priceUsd);
+  if (!canonical.gt(0) || !price.gt(0)) return { accepted: false };
+  const varianceRatio = price.minus(canonical).abs().div(canonical);
+  return varianceRatio.lte(maxVarianceRatio)
+    ? {
+        accepted: true,
+        price: {
+          ...tick,
+          stale: false,
+          varianceRatio: varianceRatio.toNumber(),
+        },
+      }
     : { accepted: false };
 }
 
@@ -134,7 +144,7 @@ export function calculateEntryLiveEstimate(
   prices: ReadonlyMap<string, LiveProductPrice>,
 ): LiveEstimate | null {
   if (entry.scoreUsd === null) return null;
-  let scoreUsd = entry.scoreUsd;
+  let scoreUsd = new Decimal(entry.scoreUsd);
   let liveProjectCount = 0;
   let stale = false;
 
@@ -144,7 +154,9 @@ export function calculateEntryLiveEstimate(
     const outsideSupply =
       project.outsideHolderSupply ??
       (project.circulatingSupply !== null && project.excludedSupply !== null
-        ? project.circulatingSupply - project.excludedSupply
+        ? new Decimal(project.circulatingSupply)
+            .minus(project.excludedSupply)
+            .toString()
         : null);
     if (
       !price ||
@@ -154,14 +166,19 @@ export function calculateEntryLiveEstimate(
     ) {
       continue;
     }
-    const liveProjectScore =
-      price.priceUsd * Math.max(0, outsideSupply) - project.capitalRaisedUsd;
-    scoreUsd +=
-      (liveProjectScore - project.canonicalScoreUsd) *
-      project.attributionFraction;
+    const liveProjectScore = new Decimal(price.priceUsd)
+      .times(Decimal.max(0, outsideSupply))
+      .minus(project.capitalRaisedUsd);
+    scoreUsd = scoreUsd.plus(
+      liveProjectScore
+        .minus(project.canonicalScoreUsd)
+        .times(project.attributionFraction),
+    );
     liveProjectCount += 1;
     stale ||= price.stale;
   }
 
-  return liveProjectCount ? { scoreUsd, liveProjectCount, stale } : null;
+  return liveProjectCount
+    ? { scoreUsd: scoreUsd.toString(), liveProjectCount, stale }
+    : null;
 }

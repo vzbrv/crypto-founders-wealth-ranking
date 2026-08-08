@@ -13,7 +13,7 @@ import type { RankingEntry } from "../../lib/ranking";
 const entry: RankingEntry = {
   rank: 1,
   rankChange: 0,
-  scoreUsd: 800_000_000,
+  scoreUsd: "800000000",
   confidence: "high",
   calculatedAt: "2026-07-28T12:00:00.000Z",
   foundingUnitId: "unit-ethereum",
@@ -28,17 +28,17 @@ const entry: RankingEntry = {
       slug: "ethereum",
       name: "Ethereum",
       symbol: "ETH",
-      attributionFraction: 1,
-      canonicalScoreUsd: 800_000_000,
-      canonicalPriceUsd: 2,
-      circulatingSupply: 500_000_000,
-      excludedSupply: 75_000_000,
-      outsideHolderSupply: 425_000_000,
-      capitalRaisedUsd: 50_000_000,
+      attributionFraction: "1",
+      canonicalScoreUsd: "800000000",
+      canonicalPriceUsd: "2",
+      circulatingSupply: "500000000",
+      excludedSupply: "75000000",
+      outsideHolderSupply: "425000000",
+      capitalRaisedUsd: "50000000",
     },
   ],
-  excludedHoldingsUsd: 150_000_000,
-  capitalDeductedUsd: 50_000_000,
+  excludedHoldingsUsd: "150000000",
+  capitalDeductedUsd: "50000000",
   freshestObservationAt: "2026-07-28T12:00:00.000Z",
   warnings: [],
   eligibilityStatus: "ranked",
@@ -53,7 +53,7 @@ const entry: RankingEntry = {
 describe("live price overlay", () => {
   it("builds Coinbase subscriptions only for supported canonical pairs", () => {
     expect(collectLiveProducts([entry])).toEqual([
-      { productId: "ETH-USD", canonicalPriceUsd: 2 },
+      { productId: "ETH-USD", canonicalPriceUsd: "2" },
     ]);
     expect(
       subscriptionMessages(["ETH-USD"]).map((message) => JSON.parse(message)),
@@ -78,11 +78,11 @@ describe("live price overlay", () => {
 
     expect(tick).toEqual({
       productId: "ETH-USD",
-      priceUsd: 2.1,
+      priceUsd: "2.1",
       observedAt: "2026-07-28T12:00:01.000Z",
     });
-    expect(reconcileLivePrice(tick!, 2).accepted).toBe(true);
-    expect(reconcileLivePrice({ ...tick!, priceUsd: 3 }, 2).accepted).toBe(
+    expect(reconcileLivePrice(tick!, "2").accepted).toBe(true);
+    expect(reconcileLivePrice({ ...tick!, priceUsd: "3" }, "2").accepted).toBe(
       false,
     );
   });
@@ -90,7 +90,7 @@ describe("live price overlay", () => {
   it("updates a presentation estimate without changing the canonical score", () => {
     const price: LiveProductPrice = {
       productId: "ETH-USD",
-      priceUsd: 2.1,
+      priceUsd: "2.1",
       observedAt: "2026-07-28T12:00:01.000Z",
       varianceRatio: 0.05,
       stale: true,
@@ -99,10 +99,10 @@ describe("live price overlay", () => {
     expect(
       calculateEntryLiveEstimate(entry, new Map([[price.productId, price]])),
     ).toEqual({
-      scoreUsd: 842_500_000,
+      scoreUsd: "842500000",
       liveProjectCount: 1,
       stale: true,
     });
-    expect(entry.scoreUsd).toBe(800_000_000);
+    expect(entry.scoreUsd).toBe("800000000");
   });
 });

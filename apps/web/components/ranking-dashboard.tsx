@@ -6,6 +6,7 @@ import {
   calculateEntryLiveEstimate,
   type LiveEstimate,
 } from "../lib/live-prices";
+import { compareDecimals, type DecimalString } from "../lib/decimal";
 import {
   buildRankingEntries,
   filterEntries,
@@ -20,14 +21,14 @@ import { SiteNav } from "./site-nav";
 const DISCLAIMER =
   "Value-created estimates are not personal wealth. Scores use public market data and reviewed evidence about project-affiliated holdings and disclosed outside capital. Wallet attribution and circulating-supply classifications may be incomplete or disputed.";
 
-function money(value: number | null): string {
+function money(value: DecimalString | null): string {
   if (value === null) return "—";
   return new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: "USD",
     notation: "compact",
     maximumFractionDigits: 1,
-  }).format(value);
+  }).format(Number(value));
 }
 
 function canonicalTime(entries: RankingEntry[]): string {
@@ -276,12 +277,17 @@ export function RankingDashboard() {
           const leftScore =
             liveEstimatesRef.current.get(left.foundingUnitId)?.scoreUsd ??
             left.scoreUsd ??
-            Number.NEGATIVE_INFINITY;
+            null;
           const rightScore =
             liveEstimatesRef.current.get(right.foundingUnitId)?.scoreUsd ??
             right.scoreUsd ??
-            Number.NEGATIVE_INFINITY;
-          return rightScore - leftScore || (left.rank ?? 0) - (right.rank ?? 0);
+            null;
+          return (
+            compareDecimals(rightScore, leftScore) ||
+            (left.rank ?? Number.MAX_SAFE_INTEGER) -
+              (right.rank ?? Number.MAX_SAFE_INTEGER) ||
+            left.foundingUnitId.localeCompare(right.foundingUnitId)
+          );
         })
         .map(({ foundingUnitId }) => foundingUnitId);
       setLiveOrder(nextOrder);
