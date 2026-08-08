@@ -36,7 +36,7 @@ export const expectedMigrationVersions = [
 export const requiredCronJobs = [
   "sync-market-data",
   "sync-wallet-balances",
-  "calculate-rankings",
+  "hourly-ranking-snapshot",
   "provider-health",
 ] as const;
 
