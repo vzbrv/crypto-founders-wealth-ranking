@@ -69,6 +69,8 @@ function documentWithPublicEntry(
 
 function stubReserveAndFetch(
   fetchYahoo: (call: number, url: URL) => Response,
+  fetchNasdaq: (url: URL) => Response = () =>
+    new Response(JSON.stringify({ data: null }), { status: 200 }),
 ): ReturnType<typeof vi.fn> {
   let yahooCallCount = 0;
   const fetchMock = vi.fn().mockImplementation((input: URL | string) => {
@@ -82,6 +84,9 @@ function stubReserveAndFetch(
       const response = fetchYahoo(yahooCallCount, url);
       yahooCallCount += 1;
       return Promise.resolve(response);
+    }
+    if (url.hostname === "api.nasdaq.com") {
+      return Promise.resolve(fetchNasdaq(url));
     }
     throw new Error(`unexpected fetch to ${url.toString()}`);
   });
@@ -99,6 +104,18 @@ function sparkResponse(symbols: string[]): Response {
           indicators: { quote: [{ close: [200] }] },
         })),
       },
+    }),
+    { status: 200 },
+  );
+}
+
+function nasdaqResponse(
+  price = "$201.25",
+  lastTradeTimestamp = "Aug 6, 2026",
+): Response {
+  return new Response(
+    JSON.stringify({
+      data: { primaryData: { lastSalePrice: price, lastTradeTimestamp } },
     }),
     { status: 200 },
   );
@@ -137,7 +154,7 @@ describe("fetchPublicPrices retry behavior", () => {
     // can't fix a persistent omission, so fetchPublicPrices returns whatever
     // it did find and leaves it to the caller to carry forward a prior value.
     vi.useFakeTimers();
-    stubReserveAndFetch(() => sparkResponse([]));
+    const fetchMock = stubReserveAndFetch(() => sparkResponse([]));
 
     const resultPromise = fetchPublicPrices(
       documentWithPublicEntry(),
@@ -151,6 +168,66 @@ describe("fetchPublicPrices retry behavior", () => {
 
     const result = await resultPromise;
     expect(result.prices.has("COIN")).toBe(false);
+    const nasdaqCalls = fetchMock.mock.calls.filter(([input]: [URL | string]) =>
+      String(input).includes("api.nasdaq.com"),
+    );
+    expect(nasdaqCalls).toHaveLength(1);
+  });
+
+  it("uses Nasdaq for a symbol Yahoo persistently omits", async () => {
+    vi.useFakeTimers();
+    const fetchMock = stubReserveAndFetch(
+      () => sparkResponse([]),
+      () => nasdaqResponse(),
+    );
+
+    const resultPromise = fetchPublicPrices(
+      documentWithPublicEntry(),
+      "https://example.supabase.co",
+      { "content-type": "application/json" },
+      new Date("2026-08-06T12:00:00Z"),
+    );
+
+    await vi.advanceTimersByTimeAsync(600);
+    await vi.advanceTimersByTimeAsync(1600);
+
+    const result = await resultPromise;
+    expect(result.prices.get("COIN")).toEqual({
+      price: 201.25,
+      observedAt: "2026-08-06T00:00:00.000Z",
+      provider: "nasdaq",
+      sourceUrl: "https://api.nasdaq.com/api/quote/COIN/info?assetclass=stocks",
+    });
+    const nasdaqCalls = fetchMock.mock.calls.filter(([input]: [URL | string]) =>
+      String(input).includes("api.nasdaq.com"),
+    );
+    expect(nasdaqCalls).toHaveLength(1);
+  });
+
+  it("rejects a stale Nasdaq quote", async () => {
+    vi.useFakeTimers();
+    const fetchMock = stubReserveAndFetch(
+      () => sparkResponse([]),
+      () => nasdaqResponse("$201.25", "Jul 1, 2026"),
+    );
+
+    const resultPromise = fetchPublicPrices(
+      documentWithPublicEntry(),
+      "https://example.supabase.co",
+      { "content-type": "application/json" },
+      new Date("2026-08-06T12:00:00Z"),
+    );
+
+    await vi.advanceTimersByTimeAsync(600);
+    await vi.advanceTimersByTimeAsync(1600);
+
+    const result = await resultPromise;
+    expect(result.prices.has("COIN")).toBe(false);
+    expect(
+      fetchMock.mock.calls.filter(([input]: [URL | string]) =>
+        String(input).includes("api.nasdaq.com"),
+      ),
+    ).toHaveLength(1);
   });
 
   it("recovers a symbol with a single-symbol request after batch omission", async () => {
