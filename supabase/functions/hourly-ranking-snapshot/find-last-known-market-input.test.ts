@@ -47,6 +47,8 @@ describe("findLastKnownMarketInput", () => {
       "coinbase",
       "https://example.supabase.co",
       { "content-type": "application/json" },
+      7 * 24 * 60 * 60,
+      new Date("2026-08-06T15:00:00.000Z"),
     );
 
     expect(result).toEqual({
@@ -64,6 +66,8 @@ describe("findLastKnownMarketInput", () => {
       "brand-new-entry",
       "https://example.supabase.co",
       { "content-type": "application/json" },
+      7 * 24 * 60 * 60,
+      new Date("2026-08-06T15:00:00.000Z"),
     );
 
     expect(result).toBeNull();
@@ -76,6 +80,8 @@ describe("findLastKnownMarketInput", () => {
       "coinbase",
       "https://example.supabase.co",
       { "content-type": "application/json" },
+      7 * 24 * 60 * 60,
+      new Date("2026-08-06T15:00:00.000Z"),
     );
 
     expect(result).toBeNull();
@@ -91,6 +97,8 @@ describe("findLastKnownMarketInput", () => {
       "coinbase",
       "https://example.supabase.co",
       { "content-type": "application/json" },
+      7 * 24 * 60 * 60,
+      new Date("2026-08-06T15:00:00.000Z"),
     );
 
     expect(result).toBeNull();
@@ -110,6 +118,8 @@ describe("findLastKnownMarketInput", () => {
       "some-entry",
       "https://example.supabase.co",
       { "content-type": "application/json" },
+      7 * 24 * 60 * 60,
+      new Date("2026-08-06T15:00:00.000Z"),
     );
 
     expect(result).toEqual({
@@ -118,5 +128,26 @@ describe("findLastKnownMarketInput", () => {
       grossValueUsd: null,
       observedAt: "2026-08-06T14:00:00.000Z",
     });
+  });
+
+  it("rejects a carried-forward value older than the market-data limit", async () => {
+    stubRpcResponse([
+      {
+        price_usd: "152.34",
+        circulating_supply: null,
+        gross_value_usd: "45000000000",
+        observed_at: "2026-08-06T14:00:00.000Z",
+      },
+    ]);
+
+    const result = await findLastKnownMarketInput(
+      "coinbase",
+      "https://example.supabase.co",
+      { "content-type": "application/json" },
+      60 * 60,
+      new Date("2026-08-06T16:00:01.000Z"),
+    );
+
+    expect(result).toBeNull();
   });
 });

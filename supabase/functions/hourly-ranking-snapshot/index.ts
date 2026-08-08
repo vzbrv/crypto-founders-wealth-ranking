@@ -512,6 +512,8 @@ export async function findLastKnownMarketInput(
   entryId: string,
   supabaseUrl: string,
   headers: Record<string, string>,
+  maxStalenessSeconds: number,
+  now: Date,
 ): Promise<{
   priceUsd: number;
   circulatingSupply: number | null;
@@ -536,6 +538,7 @@ export async function findLastKnownMarketInput(
   }
   const row = rows[0];
   if (!row || row.price_usd === null || !row.observed_at) return null;
+  if (ageSeconds(row.observed_at, now) > maxStalenessSeconds) return null;
   return {
     priceUsd: asNumber(row.price_usd, `${entryId} carried-forward price`),
     circulatingSupply:
@@ -618,6 +621,8 @@ Deno.serve(async (request) => {
             entry.entryId,
             supabaseUrl,
             headers,
+            tokenMaxStalenessSeconds,
+            now,
           );
           if (!carried) {
             throw new Error(
@@ -649,6 +654,8 @@ Deno.serve(async (request) => {
             entry.entryId,
             supabaseUrl,
             headers,
+            publicMarketMaxStalenessSeconds,
+            now,
           );
           if (!carried) {
             throw new Error(
