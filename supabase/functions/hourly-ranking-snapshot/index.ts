@@ -393,9 +393,7 @@ export async function fetchPublicPrices(
 
   const fetchOnce = async (
     requestUrl: URL,
-  ): Promise<
-    Map<string, { price: number; observedAt: string }>
-  > => {
+  ): Promise<Map<string, { price: number; observedAt: string }>> => {
     const response = await fetch(requestUrl, {
       headers: {
         accept: "application/json",
