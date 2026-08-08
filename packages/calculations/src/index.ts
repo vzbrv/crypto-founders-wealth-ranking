@@ -36,6 +36,12 @@ export { CalculationInputError } from "./decimal.js";
 
 export const DEFAULT_MARKET_CAP_VARIANCE_TOLERANCE = "0.05";
 
+const SCORE_ELIGIBLE_WALLET_CLASSIFICATIONS = new Set([
+  "founder",
+  "cofounder",
+  "founder_controlled_company",
+]);
+
 const warning = (
   code: CalculationWarning["code"],
   severity: CalculationWarning["severity"],
@@ -90,14 +96,14 @@ export function calculateDeductibleWalletBalance(
   }
 
   if (
-    wallet.ownershipConfidence === "low" ||
-    wallet.ownershipConfidence === "disputed"
+    wallet.ownershipConfidence !== "high" ||
+    !SCORE_ELIGIBLE_WALLET_CLASSIFICATIONS.has(wallet.classification)
   ) {
     warnings.push(
       warning(
         "WALLET_ATTRIBUTION_INELIGIBLE",
         "blocking",
-        "Low-confidence or disputed attribution cannot affect a published score.",
+        "Only high-confidence founder ownership can affect a published score.",
         [wallet.walletId],
       ),
     );
