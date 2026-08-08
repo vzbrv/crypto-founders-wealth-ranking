@@ -109,7 +109,7 @@ insert into tracked_wallets (
   '22222222-2222-4222-8222-222222222222', 'ethereum',
   '0x2222222222222222222222222222222222222222',
   '0x2222222222222222222222222222222222222222',
-  'Synthetic team wallet', 'team', 'high', 0.75, true, 'active',
+  'Synthetic founder wallet', 'founder', 'high', 0.75, true, 'active',
   '2026-07-27T12:00:00Z',
   'Fictional address and balance scope for validation only.', true,
   'synthetic-horizon-team-wallet', 'approved_sufficient',
