@@ -29,6 +29,7 @@ const wallet = (
   circulatingInclusionFraction: "1",
   balanceIncludedInCirculatingSupply: true,
   affectsScore: true,
+  classification: "founder",
   ownershipConfidence: "high",
   reviewStatus: "approved_sufficient",
   evidenceComplete: true,
@@ -146,6 +147,18 @@ describe("wallet and supply deductions", () => {
         { code: "WALLET_ATTRIBUTION_LOW_CONFIDENCE" },
         { code: "WALLET_ATTRIBUTION_INELIGIBLE" },
       ],
+    });
+  });
+
+  it("never deducts a non-founder score-affecting wallet", () => {
+    expect(
+      calculateDeductibleWalletBalance(
+        wallet({ walletId: "team-wallet", classification: "team" }),
+      ),
+    ).toMatchObject({
+      deductibleBalance: null,
+      complete: false,
+      warnings: [{ code: "WALLET_ATTRIBUTION_INELIGIBLE" }],
     });
   });
 

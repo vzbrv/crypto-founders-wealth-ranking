@@ -22,6 +22,16 @@ export const CALCULATION_WARNING_CODES = [
 export type CalculationWarningCode = (typeof CALCULATION_WARNING_CODES)[number];
 export type ConfidenceLabel = "high" | "medium" | "low" | "insufficient";
 export type OwnershipConfidence = "high" | "medium" | "low" | "disputed";
+export type WalletClassification =
+  | "founder"
+  | "cofounder"
+  | "founder_controlled_company"
+  | "team"
+  | "foundation"
+  | "treasury"
+  | "employee_pool"
+  | "affiliate"
+  | "unknown";
 export type WarningSeverity = "info" | "warning" | "blocking";
 export type ReviewStatus =
   | "not_reviewed"
@@ -43,6 +53,7 @@ export type ProjectWalletInput = {
   circulatingInclusionFraction: string | null;
   balanceIncludedInCirculatingSupply: boolean | null;
   affectsScore: boolean;
+  classification: WalletClassification;
   ownershipConfidence: OwnershipConfidence;
   reviewStatus: ReviewStatus;
   evidenceComplete: boolean;
