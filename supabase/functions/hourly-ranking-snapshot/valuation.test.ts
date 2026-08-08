@@ -39,6 +39,29 @@ describe("computeEntryValuation", () => {
     expect(result.finalValueUsd).toBe("1500");
   });
 
+  it("preserves exact decimal arithmetic at precision boundaries", () => {
+    const result = computeEntryValuation({
+      entryId: "precision-boundary",
+      market: {
+        type: "public",
+        price: "0.1",
+        shareClasses: [{ sharesOutstanding: "3" }],
+      },
+      affiliatedOwnership: { status: "Accepted", totalShares: "2" },
+      outsideCapital: {
+        status: "Accepted",
+        events: [{ amountUsd: "0.01", disposition: "Accepted" }],
+      },
+    });
+
+    expect(result).toEqual({
+      grossValueUsd: "0.3",
+      founderAffiliateDeductionUsd: "0.2",
+      outsideCapitalDeductionUsd: "0.01",
+      finalValueUsd: "0.09",
+    });
+  });
+
   it("deducts accepted founder/affiliate ownership at market price, public companies only", () => {
     const result = computeEntryValuation({
       entryId: "public-2",

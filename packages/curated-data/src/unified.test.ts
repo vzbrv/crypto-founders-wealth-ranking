@@ -9,6 +9,8 @@ import {
   loadUnifiedData,
   loadProductionUnifiedData,
   validateUnifiedDataset,
+  type UnifiedEntry,
+  type UnifiedMarketToken,
 } from "./unified.js";
 
 const repositoryRoot = path.resolve(
@@ -86,5 +88,48 @@ describe("unified ranking dataset", () => {
         /USDC|stablecoin supply/i.test(entry.project),
       ),
     ).toBe(false);
+  });
+
+  it("rejects Accepted token ownership instead of silently ignoring it", async () => {
+    const dataset = await loadUnifiedData(
+      path.join(repositoryRoot, "data/research"),
+    );
+    const token = dataset.entries.find(
+      (entry): entry is UnifiedEntry & { market: UnifiedMarketToken } =>
+        entry.market.type === "token",
+    );
+    if (!token) {
+      throw new Error("test fixture must include a token entry");
+    }
+
+    const invalidDataset = {
+      ...dataset,
+      entries: dataset.entries.map((entry) =>
+        entry.entryId === token.entryId
+          ? {
+              ...entry,
+              affiliatedOwnership: {
+                ...entry.affiliatedOwnership,
+                status: "Accepted" as const,
+                totalShares: "1",
+                sourceId: token.market.sourceId,
+              },
+            }
+          : entry,
+      ),
+    };
+
+    expect(validateUnifiedDataset(invalidDataset)).toContain(
+      `${token.entryId} Accepted token ownership requires a calculable token supply/price model`,
+    );
+    expect(() =>
+      calculateUnifiedEntry(
+        invalidDataset.entries.find(
+          (entry) => entry.entryId === token.entryId,
+        )!,
+      ),
+    ).toThrow(
+      "Accepted token ownership requires a calculable token supply/price model",
+    );
   });
 });
