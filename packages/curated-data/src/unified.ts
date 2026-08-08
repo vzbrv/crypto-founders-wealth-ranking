@@ -216,13 +216,14 @@ export function calculateUnifiedEntry(entry: UnifiedEntry): UnifiedCalculation {
 export function buildUnifiedRanking(
   dataset: UnifiedDataset,
 ): UnifiedCalculation[] {
-  return dataset.entries
-    .map(calculateUnifiedEntry)
-    .sort((left, right) =>
-      new Decimal(right.provisionalValueCreatedUsd).cmp(
-        left.provisionalValueCreatedUsd,
-      ),
+  return dataset.entries.map(calculateUnifiedEntry).sort((left, right) => {
+    const valueOrder = new Decimal(right.provisionalValueCreatedUsd).cmp(
+      left.provisionalValueCreatedUsd,
     );
+    return valueOrder === 0
+      ? left.entry.entryId.localeCompare(right.entry.entryId)
+      : valueOrder;
+  });
 }
 
 export function validateUnifiedDataset(dataset: UnifiedDataset): string[] {
