@@ -1,3 +1,7 @@
+import Decimal from "decimal.js";
+
+import { decimalOrNull, type DecimalString } from "./decimal";
+
 export type Confidence = "high" | "medium" | "low" | "insufficient";
 
 export interface RawLeaderboardRow {
@@ -50,7 +54,7 @@ export interface RawProjectDetail {
 export interface RankingEntry {
   rank: number | null;
   rankChange: number | null;
-  scoreUsd: number | null;
+  scoreUsd: DecimalString | null;
   confidence: Confidence;
   calculatedAt: string;
   foundingUnitId: string;
@@ -64,16 +68,16 @@ export interface RankingEntry {
     slug: string;
     name: string;
     symbol: string | null;
-    attributionFraction: number;
-    canonicalScoreUsd: number | null;
-    canonicalPriceUsd: number | null;
-    circulatingSupply: number | null;
-    excludedSupply: number | null;
-    outsideHolderSupply: number | null;
-    capitalRaisedUsd: number | null;
+    attributionFraction: DecimalString;
+    canonicalScoreUsd: DecimalString | null;
+    canonicalPriceUsd: DecimalString | null;
+    circulatingSupply: DecimalString | null;
+    excludedSupply: DecimalString | null;
+    outsideHolderSupply: DecimalString | null;
+    capitalRaisedUsd: DecimalString | null;
   }>;
-  excludedHoldingsUsd: number | null;
-  capitalDeductedUsd: number | null;
+  excludedHoldingsUsd: DecimalString | null;
+  capitalDeductedUsd: DecimalString | null;
   freshestObservationAt: string;
   warnings: string[];
   eligibilityStatus: "ranked" | "research_in_progress";
@@ -87,13 +91,7 @@ export interface RankingEntry {
 
 interface ProjectBreakdownItem {
   projectId: string;
-  attributionFraction: number;
-}
-
-function numberOrNull(value: unknown): number | null {
-  if (value === null || value === undefined || value === "") return null;
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : null;
+  attributionFraction: DecimalString;
 }
 
 function confidence(value: string): Confidence {
@@ -108,7 +106,7 @@ function breakdown(value: unknown): ProjectBreakdownItem[] {
     if (!item || typeof item !== "object") return [];
     const record = item as Record<string, unknown>;
     const projectId = record.projectId;
-    const attributionFraction = numberOrNull(record.attributionFraction);
+    const attributionFraction = decimalOrNull(record.attributionFraction);
     return typeof projectId === "string" && attributionFraction !== null
       ? [{ projectId, attributionFraction }]
       : [];
@@ -137,8 +135,8 @@ export function buildRankingEntries(
 
   return rows.map((row) => {
     const linkedProjects = breakdown(row.project_breakdown);
-    let excludedHoldingsUsd = 0;
-    let capitalDeductedUsd = 0;
+    let excludedHoldingsUsd = new Decimal(0);
+    let capitalDeductedUsd = new Decimal(0);
     let hasExcludedDetail = false;
     let hasCapitalDetail = false;
     const observations: string[] = [];
@@ -148,14 +146,18 @@ export function buildRankingEntries(
         const project = projectsById.get(projectId);
         if (!project) return [];
 
-        const excludedValue = numberOrNull(project.excluded_value_usd);
-        const capitalRaised = numberOrNull(project.capital_raised_usd);
+        const excludedValue = decimalOrNull(project.excluded_value_usd);
+        const capitalRaised = decimalOrNull(project.capital_raised_usd);
         if (excludedValue !== null) {
-          excludedHoldingsUsd += excludedValue * attributionFraction;
+          excludedHoldingsUsd = excludedHoldingsUsd.plus(
+            new Decimal(excludedValue).times(attributionFraction),
+          );
           hasExcludedDetail = true;
         }
         if (capitalRaised !== null) {
-          capitalDeductedUsd += capitalRaised * attributionFraction;
+          capitalDeductedUsd = capitalDeductedUsd.plus(
+            new Decimal(capitalRaised).times(attributionFraction),
+          );
           hasCapitalDetail = true;
         }
         const observedAt = marketObservedAt(project.data_freshness);
@@ -168,11 +170,11 @@ export function buildRankingEntries(
             name: project.name,
             symbol: project.symbol,
             attributionFraction,
-            canonicalScoreUsd: numberOrNull(project.score_usd),
-            canonicalPriceUsd: numberOrNull(project.price_usd),
-            circulatingSupply: numberOrNull(project.circulating_supply),
-            excludedSupply: numberOrNull(project.excluded_supply),
-            outsideHolderSupply: numberOrNull(project.outside_holder_supply),
+            canonicalScoreUsd: decimalOrNull(project.score_usd),
+            canonicalPriceUsd: decimalOrNull(project.price_usd),
+            circulatingSupply: decimalOrNull(project.circulating_supply),
+            excludedSupply: decimalOrNull(project.excluded_supply),
+            outsideHolderSupply: decimalOrNull(project.outside_holder_supply),
             capitalRaisedUsd: capitalRaised,
           },
         ];
@@ -183,7 +185,7 @@ export function buildRankingEntries(
     return {
       rank: row.rank,
       rankChange: row.rank_change,
-      scoreUsd: numberOrNull(row.score_usd),
+      scoreUsd: decimalOrNull(row.score_usd),
       confidence: normalizedConfidence,
       calculatedAt: row.calculated_at,
       foundingUnitId: row.founding_unit_id,
@@ -193,8 +195,12 @@ export function buildRankingEntries(
       imageUrl: row.image_url,
       iqWikiSlug: row.iq_wiki_slug,
       projects,
-      excludedHoldingsUsd: hasExcludedDetail ? excludedHoldingsUsd : null,
-      capitalDeductedUsd: hasCapitalDetail ? capitalDeductedUsd : null,
+      excludedHoldingsUsd: hasExcludedDetail
+        ? excludedHoldingsUsd.toString()
+        : null,
+      capitalDeductedUsd: hasCapitalDetail
+        ? capitalDeductedUsd.toString()
+        : null,
       freshestObservationAt: observations.sort().at(-1) ?? row.calculated_at,
       warnings: warnings(row.warnings),
       eligibilityStatus: row.eligibility_status,

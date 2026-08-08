@@ -93,16 +93,16 @@ describe("ranking data", () => {
 
     expect(entries[0]).toMatchObject({
       status: "ranked",
-      excludedHoldingsUsd: 200_000_000,
-      capitalDeductedUsd: 50_000_000,
+      excludedHoldingsUsd: "200000000",
+      capitalDeductedUsd: "50000000",
       freshestObservationAt: "2026-07-28T11:58:00.000Z",
       isStale: true,
       staleReason: "market_data_stale",
       projects: [
         expect.objectContaining({
-          attributionFraction: 0.5,
-          canonicalPriceUsd: 2,
-          outsideHolderSupply: 800_000_000,
+          attributionFraction: "0.5",
+          canonicalPriceUsd: "2",
+          outsideHolderSupply: "800000000",
         }),
       ],
     });
