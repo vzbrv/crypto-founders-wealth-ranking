@@ -1,3 +1,4 @@
+import Decimal from "decimal.js";
 import { timingSafeEqual } from "../_shared/timing-safe-equal.ts";
 import { accumulatePartialResults, RetryableProviderError } from "./retry.ts";
 import { computeEntryValuation } from "./valuation.ts";
@@ -148,10 +149,11 @@ function asNumber(value: unknown, label: string): number {
   return number;
 }
 
-function money(value: number): string {
-  if (!Number.isFinite(value) || value < 0)
+function money(value: string | number | Decimal): string {
+  const decimal = new Decimal(value);
+  if (!decimal.isFinite() || decimal.lt(0))
     throw new Error("invalid money value");
-  return value.toFixed(2);
+  return decimal.toFixed(2);
 }
 
 async function restJson<T>(
@@ -808,8 +810,10 @@ Deno.serve(async (request) => {
       });
     }
 
-    resultRows.sort(
-      (left, right) => Number(right._sort_value) - Number(left._sort_value),
+    resultRows.sort((left, right) =>
+      new Decimal(String(right._sort_value)).comparedTo(
+        String(left._sort_value),
+      ),
     );
     resultRows.forEach((row, index) => {
       row.rank = index + 1;

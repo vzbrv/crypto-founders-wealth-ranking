@@ -134,6 +134,9 @@ importers:
 
   supabase/functions:
     devDependencies:
+      decimal.js:
+        specifier: 10.6.0
+        version: 10.6.0
       viem:
         specifier: 2.55.10
         version: 2.55.10(typescript@6.0.3)(zod@4.4.3)
