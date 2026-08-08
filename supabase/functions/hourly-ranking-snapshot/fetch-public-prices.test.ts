@@ -131,7 +131,13 @@ describe("fetchPublicPrices retry behavior", () => {
     expect(yahooCalls).toHaveLength(2);
   });
 
-  it("still fails after exhausting retries if every attempt omits the symbol", async () => {
+  it("returns a partial map (COIN missing) instead of throwing once retries are exhausted", async () => {
+    // This is the exact real-world case: Yahoo omitted COIN for 6+
+    // consecutive hourly runs, not just a one-off blip. Retrying alone
+    // can't fix a persistent omission, so fetchPublicPrices now returns
+    // whatever it *did* find and leaves it to the caller (the main entry
+    // loop in index.ts) to carry forward a prior value for what's missing,
+    // instead of aborting the entire snapshot over one symbol.
     vi.useFakeTimers();
     stubReserveAndFetch(() => sparkResponse([]));
 
@@ -141,13 +147,11 @@ describe("fetchPublicPrices retry behavior", () => {
       { "content-type": "application/json" },
       new Date(),
     );
-    const assertion = expect(resultPromise).rejects.toThrow(
-      "public market provider omitted COIN",
-    );
 
     await vi.advanceTimersByTimeAsync(600);
     await vi.advanceTimersByTimeAsync(1600);
 
-    await assertion;
+    const result = await resultPromise;
+    expect(result.prices.has("COIN")).toBe(false);
   });
 });
