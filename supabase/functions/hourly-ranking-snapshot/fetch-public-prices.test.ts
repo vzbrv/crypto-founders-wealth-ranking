@@ -68,7 +68,7 @@ function documentWithPublicEntry(
 }
 
 function stubReserveAndFetch(
-  fetchYahoo: (call: number) => Response,
+  fetchYahoo: (call: number, url: URL) => Response,
 ): ReturnType<typeof vi.fn> {
   let yahooCallCount = 0;
   const fetchMock = vi.fn().mockImplementation((input: URL | string) => {
@@ -79,7 +79,7 @@ function stubReserveAndFetch(
       );
     }
     if (url.hostname === "query1.finance.yahoo.com") {
-      const response = fetchYahoo(yahooCallCount);
+      const response = fetchYahoo(yahooCallCount, url);
       yahooCallCount += 1;
       return Promise.resolve(response);
     }
@@ -134,10 +134,8 @@ describe("fetchPublicPrices retry behavior", () => {
   it("returns a partial map (COIN missing) instead of throwing once retries are exhausted", async () => {
     // This is the exact real-world case: Yahoo omitted COIN for 6+
     // consecutive hourly runs, not just a one-off blip. Retrying alone
-    // can't fix a persistent omission, so fetchPublicPrices now returns
-    // whatever it *did* find and leaves it to the caller (the main entry
-    // loop in index.ts) to carry forward a prior value for what's missing,
-    // instead of aborting the entire snapshot over one symbol.
+    // can't fix a persistent omission, so fetchPublicPrices returns whatever
+    // it did find and leaves it to the caller to carry forward a prior value.
     vi.useFakeTimers();
     stubReserveAndFetch(() => sparkResponse([]));
 
@@ -153,5 +151,29 @@ describe("fetchPublicPrices retry behavior", () => {
 
     const result = await resultPromise;
     expect(result.prices.has("COIN")).toBe(false);
+  });
+
+  it("recovers a symbol with a single-symbol request after batch omission", async () => {
+    vi.useFakeTimers();
+    const fetchMock = stubReserveAndFetch((call) =>
+      call < 3 ? sparkResponse([]) : sparkResponse(["COIN"]),
+    );
+
+    const resultPromise = fetchPublicPrices(
+      documentWithPublicEntry(),
+      "https://example.supabase.co",
+      { "content-type": "application/json" },
+      new Date(),
+    );
+
+    await vi.advanceTimersByTimeAsync(600);
+    await vi.advanceTimersByTimeAsync(1600);
+
+    const result = await resultPromise;
+    expect(result.prices.has("COIN")).toBe(true);
+    const yahooCalls = fetchMock.mock.calls.filter(([input]: [URL | string]) =>
+      String(input).includes("query1.finance.yahoo.com"),
+    );
+    expect(yahooCalls).toHaveLength(4);
   });
 });
