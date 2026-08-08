@@ -391,10 +391,12 @@ export async function fetchPublicPrices(
     checkedAt,
   );
 
-  const fetchOnce = async (): Promise<
+  const fetchOnce = async (
+    requestUrl: URL,
+  ): Promise<
     Map<string, { price: number; observedAt: string }>
   > => {
-    const response = await fetch(sourceUrl, {
+    const response = await fetch(requestUrl, {
       headers: {
         accept: "application/json",
         "user-agent": "crypto-founders-ranking/1.0",
@@ -453,9 +455,30 @@ export async function fetchPublicPrices(
     return prices;
   };
 
-  const prices = await accumulatePartialResults(fetchOnce, symbols, {
-    delaysMs: providerRetryDelaysMs,
-  });
+  const prices = await accumulatePartialResults(
+    () => fetchOnce(sourceUrl),
+    symbols,
+    { delaysMs: providerRetryDelaysMs },
+  );
+
+  for (const symbol of symbols.filter((candidate) => !prices.has(candidate))) {
+    const fallbackUrl = new URL(sourceUrl);
+    fallbackUrl.searchParams.set("symbols", symbol);
+    try {
+      await reserveProviderRequest(
+        supabaseUrl,
+        headers,
+        "yahoo_finance",
+        "/v7/finance/spark",
+        checkedAt,
+      );
+      const fallbackPrices = await fetchOnce(fallbackUrl);
+      const quote = fallbackPrices.get(symbol);
+      if (quote) prices.set(symbol, quote);
+    } catch {
+      // Leave unresolved symbols for the caller's published-value fallback.
+    }
+  }
   return {
     provider: "yahoo_finance",
     checkedAt,
