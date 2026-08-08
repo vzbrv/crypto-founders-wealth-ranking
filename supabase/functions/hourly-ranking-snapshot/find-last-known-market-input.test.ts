@@ -15,10 +15,12 @@ import {
 
 let denoStub: DenoStub;
 let findLastKnownMarketInput: typeof import("./index.js").findLastKnownMarketInput;
+let compareHourlyResultRows: typeof import("./index.js").compareHourlyResultRows;
 
 beforeAll(async () => {
   denoStub = installDenoStub();
-  ({ findLastKnownMarketInput } = await import("./index.js"));
+  ({ findLastKnownMarketInput, compareHourlyResultRows } =
+    await import("./index.js"));
 });
 
 afterEach(() => {
@@ -149,5 +151,58 @@ describe("findLastKnownMarketInput", () => {
     );
 
     expect(result).toBeNull();
+  });
+
+  it.each([
+    [
+      "token",
+      2 * 60 * 60,
+      "2026-08-06T14:00:00.000Z",
+      "2026-08-06T16:00:01.000Z",
+    ],
+    [
+      "public",
+      7 * 24 * 60 * 60,
+      "2026-07-30T00:00:00.000Z",
+      "2026-08-06T00:00:01.000Z",
+    ],
+  ])(
+    "rejects stale %s fallback before it can be published",
+    async (_market, maxStalenessSeconds, observedAt, now) => {
+      stubRpcResponse([
+        {
+          price_usd: "152.34",
+          circulating_supply: null,
+          gross_value_usd: "45000000000",
+          observed_at: observedAt,
+        },
+      ]);
+
+      const result = await findLastKnownMarketInput(
+        `${_market}-entry`,
+        "https://example.supabase.co",
+        { "content-type": "application/json" },
+        maxStalenessSeconds,
+        new Date(now),
+      );
+
+      expect(result).toBeNull();
+    },
+  );
+
+  it("orders close Decimal values exactly, then uses entry ID as the tie-break", () => {
+    const rows = [
+      { entry_id: "zeta", _sort_value: "100.09" },
+      { entry_id: "alpha", _sort_value: "100.09" },
+      { entry_id: "lower", _sort_value: "100.08999999999999999" },
+      { entry_id: "higher", _sort_value: "100.09000000000000001" },
+    ].sort(compareHourlyResultRows);
+
+    expect(rows.map((row) => row.entry_id)).toEqual([
+      "higher",
+      "alpha",
+      "zeta",
+      "lower",
+    ]);
   });
 });
