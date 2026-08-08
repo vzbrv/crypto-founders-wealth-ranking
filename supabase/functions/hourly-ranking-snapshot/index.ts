@@ -1,5 +1,5 @@
 import { timingSafeEqual } from "../_shared/timing-safe-equal.ts";
-import { RetryableProviderError, withProviderRetry } from "./retry.ts";
+import { accumulatePartialResults, RetryableProviderError } from "./retry.ts";
 import { computeEntryValuation } from "./valuation.ts";
 
 type UnifiedSource = {
@@ -107,7 +107,7 @@ function json(body: unknown, status = 200): Response {
 }
 
 function log(
-  level: "info" | "error",
+  level: "info" | "warn" | "error",
   event: string,
   details: Record<string, unknown> = {},
 ): void {
@@ -339,17 +339,18 @@ export async function fetchCoinGecko(
         observedAt,
       });
     }
-    for (const id of ids) {
-      const market = markets.get(id);
-      if (!market) throw new RetryableProviderError(`CoinGecko omitted ${id}`);
+    for (const [id, market] of [...markets]) {
       if (ageSeconds(market.observedAt, now) > tokenMaxStalenessSeconds) {
-        throw new Error(`stale CoinGecko data for ${id}`);
+        // Treated the same as "not found" — excluding it here (rather than
+        // throwing) lets the caller fall back to a carried-forward value,
+        // same as a symbol CoinGecko omitted entirely.
+        markets.delete(id);
       }
     }
     return markets;
   };
 
-  const markets = await withProviderRetry(fetchOnce, {
+  const markets = await accumulatePartialResults(fetchOnce, ids, {
     delaysMs: providerRetryDelaysMs,
   });
   return {
@@ -441,20 +442,18 @@ export async function fetchPublicPrices(
         observedAt: new Date(timestamp * 1000).toISOString(),
       });
     }
-    for (const symbol of symbols) {
-      const quote = prices.get(symbol);
-      if (!quote)
-        throw new RetryableProviderError(
-          `public market provider omitted ${symbol}`,
-        );
+    for (const [symbol, quote] of [...prices]) {
       if (ageSeconds(quote.observedAt, now) > publicMarketMaxStalenessSeconds) {
-        throw new Error(`stale public market data for ${symbol}`);
+        // Same rationale as fetchCoinGecko: excluded, not thrown — this
+        // makes it eligible for the caller's carried-forward fallback
+        // instead of aborting the whole run.
+        prices.delete(symbol);
       }
     }
     return prices;
   };
 
-  const prices = await withProviderRetry(fetchOnce, {
+  const prices = await accumulatePartialResults(fetchOnce, symbols, {
     delaysMs: providerRetryDelaysMs,
   });
   return {
@@ -485,6 +484,51 @@ function sourceRecord(
     observed_at: observedAt,
     fetched_at: now.toISOString(),
     metadata: { ...metadata, quality: source.quality, notes: source.notes },
+  };
+}
+
+export async function findLastKnownMarketInput(
+  entryId: string,
+  supabaseUrl: string,
+  headers: Record<string, string>,
+): Promise<{
+  priceUsd: number;
+  circulatingSupply: number | null;
+  grossValueUsd: number | null;
+  observedAt: string;
+} | null> {
+  let rows: Array<{
+    price_usd: string | number | null;
+    circulating_supply: string | number | null;
+    gross_value_usd: string | number | null;
+    observed_at: string | null;
+  }>;
+  try {
+    rows = await rpc(supabaseUrl, headers, "get_last_known_market_input", {
+      p_entry_id: entryId,
+    });
+  } catch {
+    // A failed lookup just means no carry-forward is available — the
+    // caller falls back to its existing "no prior value" error, same as
+    // if this function had never been called.
+    return null;
+  }
+  const row = rows[0];
+  if (!row || row.price_usd === null || !row.observed_at) return null;
+  return {
+    priceUsd: asNumber(row.price_usd, `${entryId} carried-forward price`),
+    circulatingSupply:
+      row.circulating_supply === null
+        ? null
+        : asNumber(row.circulating_supply, `${entryId} carried-forward supply`),
+    grossValueUsd:
+      row.gross_value_usd === null
+        ? null
+        : asNumber(
+            row.gross_value_usd,
+            `${entryId} carried-forward gross value`,
+          ),
+    observedAt: row.observed_at,
   };
 }
 
@@ -537,24 +581,70 @@ Deno.serve(async (request) => {
       let shareCountInputs: Record<string, unknown> = {};
       const marketSourceId = `market:${entry.entryId}`;
 
+      let carriedForward = false;
+
       if (entry.market.type === "token") {
         const market = tokens.markets.get(entry.market.coinGeckoCoinId);
-        if (!market)
-          throw new Error(`missing token market for ${entry.entryId}`);
-        marketPrice = market.price;
-        circulatingSupply = market.supply;
-        tokenMarketCap = market.marketCap;
-        observationAt = market.observedAt;
-        marketProvider = tokens.provider;
-        marketSourceUrl = tokens.sourceUrl;
+        if (market) {
+          marketPrice = market.price;
+          circulatingSupply = market.supply;
+          tokenMarketCap = market.marketCap;
+          observationAt = market.observedAt;
+          marketProvider = tokens.provider;
+          marketSourceUrl = tokens.sourceUrl;
+        } else {
+          const carried = await findLastKnownMarketInput(
+            entry.entryId,
+            supabaseUrl,
+            headers,
+          );
+          if (!carried) {
+            throw new Error(
+              `missing token market for ${entry.entryId} and no prior published value to carry forward`,
+            );
+          }
+          marketPrice = carried.priceUsd;
+          circulatingSupply = carried.circulatingSupply;
+          tokenMarketCap = carried.grossValueUsd ?? carried.priceUsd;
+          observationAt = carried.observedAt;
+          marketProvider = tokens.provider;
+          marketSourceUrl = tokens.sourceUrl;
+          carriedForward = true;
+          log("warn", "carried_forward_market_data", {
+            entryId: entry.entryId,
+            marketType: "token",
+            observationAt,
+          });
+        }
       } else {
         const quote = publicMarkets.prices.get(entry.market.ticker);
-        if (!quote)
-          throw new Error(`missing public market for ${entry.entryId}`);
-        marketPrice = quote.price;
-        observationAt = quote.observedAt;
-        marketProvider = publicMarkets.provider;
-        marketSourceUrl = publicMarkets.sourceUrl;
+        if (quote) {
+          marketPrice = quote.price;
+          observationAt = quote.observedAt;
+          marketProvider = publicMarkets.provider;
+          marketSourceUrl = publicMarkets.sourceUrl;
+        } else {
+          const carried = await findLastKnownMarketInput(
+            entry.entryId,
+            supabaseUrl,
+            headers,
+          );
+          if (!carried) {
+            throw new Error(
+              `missing public market for ${entry.entryId} and no prior published value to carry forward`,
+            );
+          }
+          marketPrice = carried.priceUsd;
+          observationAt = carried.observedAt;
+          marketProvider = publicMarkets.provider;
+          marketSourceUrl = publicMarkets.sourceUrl;
+          carriedForward = true;
+          log("warn", "carried_forward_market_data", {
+            entryId: entry.entryId,
+            marketType: "public",
+            observationAt,
+          });
+        }
         shareCountInputs = {
           ticker: entry.market.ticker,
           exchange: entry.market.exchange,
@@ -657,6 +747,7 @@ Deno.serve(async (request) => {
           unknowns: entry.unknowns,
           disputedEvidence: entry.disputedEvidence,
           evidenceVersion,
+          carriedForwardMarketData: carriedForward,
         },
       });
       resultRows.push({
