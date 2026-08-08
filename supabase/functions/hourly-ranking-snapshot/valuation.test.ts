@@ -57,18 +57,15 @@ describe("computeEntryValuation", () => {
     expect(result.finalValueUsd).toBe("8000");
   });
 
-  it("never deducts affiliate ownership for a token entry even if status is Accepted", () => {
-    // Tokens don't carry a market price for the deduction formula to use;
-    // the original handler's branch condition requires market.type === "public".
-    const result = computeEntryValuation({
-      entryId: "token-2",
-      market: { type: "token", marketCap: 500_000 },
-      affiliatedOwnership: { status: "Accepted", totalShares: "999" },
-      outsideCapital: { status: "Unknown", events: [] },
-    });
-
-    expect(result.founderAffiliateDeductionUsd).toBeNull();
-    expect(result.finalValueUsd).toBe("500000");
+  it("rejects Accepted ownership for a token entry without a calculable model", () => {
+    expect(() =>
+      computeEntryValuation({
+        entryId: "token-2",
+        market: { type: "token", marketCap: 500_000 },
+        affiliatedOwnership: { status: "Accepted", totalShares: "999" },
+        outsideCapital: { status: "Unknown", events: [] },
+      }),
+    ).toThrow("accepted token ownership is unsupported for token-2");
   });
 
   it("sums only Accepted-disposition outside capital events", () => {

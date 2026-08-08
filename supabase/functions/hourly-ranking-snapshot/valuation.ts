@@ -62,6 +62,15 @@ function parseNonNegativeDecimal(
 export function computeEntryValuation(
   input: EntryValuationInput,
 ): EntryValuationResult {
+  if (
+    input.market.type === "token" &&
+    input.affiliatedOwnership.status === "Accepted"
+  ) {
+    throw new Error(
+      `accepted token ownership is unsupported for ${input.entryId}; provide a calculable token supply/price model`,
+    );
+  }
+
   let gross: Decimal;
   let marketPrice: Decimal | null = null;
 
