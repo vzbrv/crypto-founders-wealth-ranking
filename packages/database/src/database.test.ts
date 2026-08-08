@@ -106,6 +106,10 @@ const immutableLiveSnapshotContractMigrationUrl = new URL(
   "../../../supabase/migrations/202608030026_immutable_live_snapshot_contract.sql",
   import.meta.url,
 );
+const ownershipConfidenceRankingGateMigrationUrl = new URL(
+  "../../../supabase/migrations/202608080003_ownership_confidence_ranking_gate.sql",
+  import.meta.url,
+);
 const sqlConfidenceEvidence = await readFile(
   sqlConfidenceEvidenceMigrationUrl,
   "utf8",
@@ -138,6 +142,7 @@ const migrationSql = [
   await readFile(hourlyRankChangeCommentMigrationUrl, "utf8"),
   await readFile(unifiedHourlySourceMigrationUrl, "utf8"),
   await readFile(immutableLiveSnapshotContractMigrationUrl, "utf8"),
+  await readFile(ownershipConfidenceRankingGateMigrationUrl, "utf8"),
 ].join("\n");
 const seedSql = await readFile(seedUrl, "utf8");
 const productionDataDirectory = fileURLToPath(
@@ -1985,7 +1990,7 @@ describe("Phase 8 Solana wallet sync", () => {
       ) values (
         '${walletId}', '${projectId}', '${foundingUnitId}', 'solana',
         '11111111111111111111111111111111', '11111111111111111111111111111111',
-        'Solana team wallet', 'team', 'high', 1, true, 'active', now(), true,
+        'Solana founder wallet', 'founder', 'high', 1, true, 'active', now(), true,
         'solana-team-wallet', 'approved_sufficient', 'Synthetic reviewer', now(),
         '["synthetic-source"]'
       );
