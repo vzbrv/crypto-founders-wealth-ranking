@@ -12,10 +12,10 @@ describe("computeEntryValuation", () => {
     });
 
     expect(result).toEqual({
-      grossValueUsd: 1_000_000,
+      grossValueUsd: "1000000",
       founderAffiliateDeductionUsd: null,
       outsideCapitalDeductionUsd: null,
-      finalValueUsd: 1_000_000,
+      finalValueUsd: "1000000",
     });
   });
 
@@ -35,8 +35,8 @@ describe("computeEntryValuation", () => {
     });
 
     // (100 + 50) shares * $10 = $1,500
-    expect(result.grossValueUsd).toBe(1_500);
-    expect(result.finalValueUsd).toBe(1_500);
+    expect(result.grossValueUsd).toBe("1500");
+    expect(result.finalValueUsd).toBe("1500");
   });
 
   it("deducts accepted founder/affiliate ownership at market price, public companies only", () => {
@@ -52,9 +52,9 @@ describe("computeEntryValuation", () => {
     });
 
     // gross = 1000 * 10 = 10,000; ownership deduction = 200 * 10 = 2,000
-    expect(result.grossValueUsd).toBe(10_000);
-    expect(result.founderAffiliateDeductionUsd).toBe(2_000);
-    expect(result.finalValueUsd).toBe(8_000);
+    expect(result.grossValueUsd).toBe("10000");
+    expect(result.founderAffiliateDeductionUsd).toBe("2000");
+    expect(result.finalValueUsd).toBe("8000");
   });
 
   it("never deducts affiliate ownership for a token entry even if status is Accepted", () => {
@@ -68,7 +68,7 @@ describe("computeEntryValuation", () => {
     });
 
     expect(result.founderAffiliateDeductionUsd).toBeNull();
-    expect(result.finalValueUsd).toBe(500_000);
+    expect(result.finalValueUsd).toBe("500000");
   });
 
   it("sums only Accepted-disposition outside capital events", () => {
@@ -89,8 +89,8 @@ describe("computeEntryValuation", () => {
     });
 
     // Only the two Accepted events (10,000 + 7,000) count.
-    expect(result.outsideCapitalDeductionUsd).toBe(17_000);
-    expect(result.finalValueUsd).toBe(83_000);
+    expect(result.outsideCapitalDeductionUsd).toBe("17000");
+    expect(result.finalValueUsd).toBe("83000");
   });
 
   it("treats outsideCapital status Unknown as no known deduction, regardless of event contents", () => {
@@ -105,7 +105,7 @@ describe("computeEntryValuation", () => {
     });
 
     expect(result.outsideCapitalDeductionUsd).toBeNull();
-    expect(result.finalValueUsd).toBe(100_000);
+    expect(result.finalValueUsd).toBe("100000");
   });
 
   it("throws when gross value is negative", () => {
@@ -161,9 +161,9 @@ describe("computeEntryValuation", () => {
 
     // gross = 1000*20 = 20,000; ownership = 100*20 = 2,000; capital = 3,000
     // final = 20,000 - 2,000 - 3,000 = 15,000
-    expect(result.grossValueUsd).toBe(20_000);
-    expect(result.founderAffiliateDeductionUsd).toBe(2_000);
-    expect(result.outsideCapitalDeductionUsd).toBe(3_000);
-    expect(result.finalValueUsd).toBe(15_000);
+    expect(result.grossValueUsd).toBe("20000");
+    expect(result.founderAffiliateDeductionUsd).toBe("2000");
+    expect(result.outsideCapitalDeductionUsd).toBe("3000");
+    expect(result.finalValueUsd).toBe("15000");
   });
 });

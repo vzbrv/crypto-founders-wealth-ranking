@@ -1,19 +1,12 @@
 /**
  * Pure per-entry valuation math for the hourly ranking snapshot.
  *
- * This is a faithful extraction of the arithmetic that used to live inline
- * inside the `Deno.serve` handler in index.ts — same operations, same error
- * conditions, same order of operations. Pulling it out here makes it
- * testable with a plain test runner (no Deno.serve, no fetch mocking, no
- * Supabase), and gives future changes to this math a place to add
- * regression tests before they ship.
- *
- * NOTE ON PRECISION: this module intentionally mirrors the existing
- * behavior, which uses native `number` arithmetic (not `Decimal`, unlike
- * `packages/calculations`). That's a real difference from the rest of the
- * codebase worth revisiting — see the audit notes — but this extraction
- * does not change behavior on its own.
+ * This is a pure, testable boundary for the hourly ranking valuation. It uses
+ * the same Decimal arithmetic as the shared calculation packages so values
+ * remain exact until they are formatted for publication.
  */
+
+import Decimal from "decimal.js";
 
 export interface OutsideCapitalEventInput {
   amountUsd: string;
@@ -31,10 +24,10 @@ export interface AffiliatedOwnershipInput {
 }
 
 export type MarketValuationInput =
-  | { type: "token"; marketCap: number }
+  | { type: "token"; marketCap: string | number }
   | {
       type: "public";
-      price: number;
+      price: string | number;
       shareClasses: Array<{ sharesOutstanding: string }>;
     };
 
@@ -46,59 +39,91 @@ export interface EntryValuationInput {
 }
 
 export interface EntryValuationResult {
-  grossValueUsd: number;
-  founderAffiliateDeductionUsd: number | null;
-  outsideCapitalDeductionUsd: number | null;
-  finalValueUsd: number;
+  grossValueUsd: string;
+  founderAffiliateDeductionUsd: string | null;
+  outsideCapitalDeductionUsd: string | null;
+  finalValueUsd: string;
+}
+
+function parseNonNegativeDecimal(
+  value: string | number,
+  label: string,
+): Decimal {
+  let decimal: Decimal;
+  try {
+    decimal = new Decimal(value);
+  } catch {
+    throw new Error(`invalid ${label}`);
+  }
+  if (!decimal.isFinite() || decimal.lt(0)) throw new Error(`invalid ${label}`);
+  return decimal;
 }
 
 export function computeEntryValuation(
   input: EntryValuationInput,
 ): EntryValuationResult {
-  let gross: number;
-  let marketPrice: number | null = null;
+  let gross: Decimal;
+  let marketPrice: Decimal | null = null;
 
   if (input.market.type === "token") {
-    gross = input.market.marketCap;
+    gross = parseNonNegativeDecimal(
+      input.market.marketCap,
+      `gross value for ${input.entryId}`,
+    );
   } else {
-    marketPrice = input.market.price;
+    marketPrice = parseNonNegativeDecimal(
+      input.market.price,
+      `market price for ${input.entryId}`,
+    );
     gross = input.market.shareClasses.reduce(
       (total, shareClass) =>
-        total + Number(shareClass.sharesOutstanding) * marketPrice!,
-      0,
+        total.plus(
+          parseNonNegativeDecimal(
+            shareClass.sharesOutstanding,
+            `shares outstanding for ${input.entryId}`,
+          ).times(marketPrice!),
+        ),
+      new Decimal(0),
     );
   }
 
-  if (!Number.isFinite(gross) || gross < 0) {
-    throw new Error(`invalid gross value for ${input.entryId}`);
-  }
-
-  const founderAffiliateDeductionUsd =
+  const founderAffiliateDeduction =
     input.market.type === "public" &&
     input.affiliatedOwnership.status === "Accepted"
-      ? Number(input.affiliatedOwnership.totalShares ?? 0) * marketPrice!
+      ? parseNonNegativeDecimal(
+          input.affiliatedOwnership.totalShares ?? "0",
+          `affiliate shares for ${input.entryId}`,
+        ).times(marketPrice!)
       : null;
 
-  const outsideCapitalDeductionUsd =
+  const outsideCapitalDeduction =
     input.outsideCapital.status === "Accepted"
       ? input.outsideCapital.events
           .filter((event) => event.disposition === "Accepted")
-          .reduce((total, event) => total + Number(event.amountUsd), 0)
+          .reduce(
+            (total, event) =>
+              total.plus(
+                parseNonNegativeDecimal(
+                  event.amountUsd,
+                  `outside capital for ${input.entryId}`,
+                ),
+              ),
+            new Decimal(0),
+          )
       : null;
 
-  const finalValueUsd =
-    gross -
-    (founderAffiliateDeductionUsd ?? 0) -
-    (outsideCapitalDeductionUsd ?? 0);
+  const finalValue = gross
+    .minus(founderAffiliateDeduction ?? 0)
+    .minus(outsideCapitalDeduction ?? 0);
 
-  if (!Number.isFinite(finalValueUsd) || finalValueUsd < 0) {
+  if (!finalValue.isFinite() || finalValue.lt(0)) {
     throw new Error(`invalid final value for ${input.entryId}`);
   }
 
   return {
-    grossValueUsd: gross,
-    founderAffiliateDeductionUsd,
-    outsideCapitalDeductionUsd,
-    finalValueUsd,
+    grossValueUsd: gross.toString(),
+    founderAffiliateDeductionUsd: founderAffiliateDeduction?.toString() ?? null,
+    outsideCapitalDeductionUsd: outsideCapitalDeduction?.toString() ?? null,
+    finalValueUsd: finalValue.toString(),
   };
 }
