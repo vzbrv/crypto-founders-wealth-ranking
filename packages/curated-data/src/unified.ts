@@ -175,7 +175,19 @@ function acceptedCapital(entry: UnifiedEntry): Decimal | null {
     .reduce((total, event) => total.plus(event.amountUsd), new Decimal(0));
 }
 
+function unsupportedAcceptedTokenOwnership(entry: UnifiedEntry): string | null {
+  if (
+    entry.market.type === "token" &&
+    entry.affiliatedOwnership.status === "Accepted"
+  )
+    return `${entry.entryId} Accepted token ownership requires a calculable token supply/price model`;
+  return null;
+}
+
 export function calculateUnifiedEntry(entry: UnifiedEntry): UnifiedCalculation {
+  const ownershipError = unsupportedAcceptedTokenOwnership(entry);
+  if (ownershipError) throw new Error(ownershipError);
+
   const publicMarket =
     entry.market.type === "public" ? entry.market : undefined;
   const gross = publicMarket
@@ -229,7 +241,11 @@ export function buildUnifiedRanking(
 export function validateUnifiedDataset(dataset: UnifiedDataset): string[] {
   const errors: string[] = [];
   const sourceIds = new Set(dataset.sources.map((source) => source.id));
-  const ranking = buildUnifiedRanking(dataset);
+  const ranking = dataset.entries.some((entry) =>
+    unsupportedAcceptedTokenOwnership(entry),
+  )
+    ? []
+    : buildUnifiedRanking(dataset);
   const ranks = dataset.entries
     .map((entry) => entry.rank)
     .sort((a, b) => a - b);
@@ -249,7 +265,9 @@ export function validateUnifiedDataset(dataset: UnifiedDataset): string[] {
     errors.push("Coinbase must appear exactly once");
 
   for (const entry of dataset.entries) {
-    const calculation = calculateUnifiedEntry(entry);
+    const ownershipError = unsupportedAcceptedTokenOwnership(entry);
+    if (ownershipError) errors.push(ownershipError);
+    const calculation = ownershipError ? null : calculateUnifiedEntry(entry);
     if (entry.valueType === "Public company" && entry.market.type !== "public")
       errors.push(`${entry.entryId} must use the public-company market model`);
     if (entry.valueType === "Token/network" && entry.market.type !== "token")
@@ -257,6 +275,7 @@ export function validateUnifiedDataset(dataset: UnifiedDataset): string[] {
     if (
       entry.valueType === "Public company" &&
       entry.market.type === "public" &&
+      calculation &&
       !new Decimal(entry.grossMarketValueUsd).eq(
         calculation.grossMarketValueUsd,
       )
