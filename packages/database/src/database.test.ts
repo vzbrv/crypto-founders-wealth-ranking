@@ -1218,6 +1218,52 @@ describe("Funding review ranking eligibility", () => {
     });
   });
 
+  it("blocks a high-confidence non-founder wallet at the ranking boundary", async () => {
+    const database = await createDatabase(true);
+    await prepareRankableInputs(database);
+    await database.exec(`
+      update tracked_wallets
+      set classification = 'team'
+      where id = '55555555-5555-4555-8555-555555555555'
+    `);
+
+    expect(await recalculate(database)).toEqual({
+      capital_raised_usd: "2500000.00000000",
+      eligibility_status: "research_in_progress",
+      rank: null,
+    });
+
+    const blockedEvidence = await database.query<{
+      classification: string;
+      ownership_confidence: string;
+      deductible_balance: string | null;
+      deductible_value_usd: string | null;
+    }>(`
+      select classification, ownership_confidence,
+        deductible_balance::text, deductible_value_usd::text
+      from public_wallet_evidence
+      where deduplication_key = 'synthetic-horizon-team-wallet'
+    `);
+    expect(blockedEvidence.rows[0]).toEqual({
+      classification: "team",
+      ownership_confidence: "high",
+      deductible_balance: null,
+      deductible_value_usd: null,
+    });
+
+    await database.exec(`
+      update tracked_wallets
+      set classification = 'founder'
+      where id = '55555555-5555-4555-8555-555555555555'
+    `);
+
+    expect(await recalculate(database)).toEqual({
+      capital_raised_usd: "2500000.00000000",
+      eligibility_status: "ranked",
+      rank: 1,
+    });
+  });
+
   it("does not deduct a duplicate funding event twice", async () => {
     const database = await createDatabase(true);
     await prepareRankableInputs(database);
