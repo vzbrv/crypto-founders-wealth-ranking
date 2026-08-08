@@ -106,6 +106,22 @@ type YahooSparkResult = {
   indicators?: { quote?: Array<{ close?: Array<number | null> }> };
 };
 
+type PublicPriceQuote = {
+  price: number;
+  observedAt: string;
+  provider: string;
+  sourceUrl: string;
+};
+
+type NasdaqQuoteResponse = {
+  data?: {
+    primaryData?: {
+      lastSalePrice?: unknown;
+      lastTradeTimestamp?: unknown;
+    };
+  };
+};
+
 const functionName = "hourly-ranking-snapshot";
 const jsonHeaders = { "content-type": "application/json" };
 const calculationVersion = "unified-v1-hourly";
@@ -164,6 +180,16 @@ function asNumber(value: unknown, label: string): number {
     throw new Error(`${label} is not a valid non-negative number`);
   }
   return number;
+}
+
+function parseNasdaqObservedAt(value: unknown): string | null {
+  if (typeof value !== "string" || !value.trim()) return null;
+  const parsed = Date.parse(value);
+  if (!Number.isFinite(parsed)) return null;
+  const date = new Date(parsed);
+  return new Date(
+    Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()),
+  ).toISOString();
 }
 
 function money(value: string | number | Decimal): string {
@@ -389,7 +415,7 @@ export async function fetchPublicPrices(
   provider: string;
   checkedAt: string;
   sourceUrl: string;
-  prices: Map<string, { price: number; observedAt: string }>;
+  prices: Map<string, PublicPriceQuote>;
 }> {
   const entries = document.entries.filter(
     (entry) => entry.market.type === "public",
@@ -412,7 +438,7 @@ export async function fetchPublicPrices(
 
   const fetchOnce = async (
     requestUrl: URL,
-  ): Promise<Map<string, { price: number; observedAt: string }>> => {
+  ): Promise<Map<string, PublicPriceQuote>> => {
     const response = await fetch(requestUrl, {
       headers: {
         accept: "application/json",
@@ -459,6 +485,8 @@ export async function fetchPublicPrices(
       prices.set(result.symbol, {
         price: asNumber(price, `${result.symbol} price`),
         observedAt: new Date(timestamp * 1000).toISOString(),
+        provider: "yahoo_finance",
+        sourceUrl: requestUrl.toString(),
       });
     }
     for (const [symbol, quote] of [...prices]) {
@@ -494,6 +522,55 @@ export async function fetchPublicPrices(
       if (quote) prices.set(symbol, quote);
     } catch {
       // Leave unresolved symbols for the caller's published-value fallback.
+    }
+  }
+
+  for (const symbol of symbols.filter((candidate) => !prices.has(candidate))) {
+    const normalizedSymbol = symbol.trim().toUpperCase();
+    if (!/^[A-Z0-9.-]{1,16}$/.test(normalizedSymbol)) continue;
+    const requestUrl = new URL(
+      `https://api.nasdaq.com/api/quote/${encodeURIComponent(normalizedSymbol)}/info`,
+    );
+    requestUrl.searchParams.set("assetclass", "stocks");
+    try {
+      await reserveProviderRequest(
+        supabaseUrl,
+        headers,
+        "nasdaq",
+        "/api/quote/:symbol/info",
+        checkedAt,
+      );
+      const response = await fetch(requestUrl, {
+        headers: {
+          accept: "application/json",
+          "user-agent": "crypto-founders-ranking/1.0",
+        },
+      });
+      if (!response.ok) continue;
+      const payload = (await response.json()) as NasdaqQuoteResponse;
+      const primaryData = payload.data?.primaryData;
+      const observedAt = parseNasdaqObservedAt(primaryData?.lastTradeTimestamp);
+      if (
+        !observedAt ||
+        ageSeconds(observedAt, now) > publicMarketMaxStalenessSeconds
+      ) {
+        continue;
+      }
+      const rawPrice =
+        typeof primaryData?.lastSalePrice === "string"
+          ? primaryData.lastSalePrice.replace(/[,$\s]/g, "")
+          : primaryData?.lastSalePrice;
+      const price = asNumber(rawPrice, `${normalizedSymbol} price`);
+      if (price <= 0) continue;
+      prices.set(symbol, {
+        price,
+        observedAt,
+        provider: "nasdaq",
+        sourceUrl: requestUrl.toString(),
+      });
+    } catch {
+      // A secondary public endpoint is best-effort; unresolved symbols may
+      // still use the caller's validated carried-forward fallback.
     }
   }
   return {
@@ -666,8 +743,8 @@ Deno.serve(async (request) => {
         if (quote) {
           marketPrice = quote.price;
           observationAt = quote.observedAt;
-          marketProvider = publicMarkets.provider;
-          marketSourceUrl = publicMarkets.sourceUrl;
+          marketProvider = quote.provider;
+          marketSourceUrl = quote.sourceUrl;
         } else {
           const carried = await findLastKnownMarketInput(
             entry.entryId,
