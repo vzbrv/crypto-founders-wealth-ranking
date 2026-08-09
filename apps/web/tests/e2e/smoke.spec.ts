@@ -38,6 +38,53 @@ function buildLiveSnapshotResults(
   });
 }
 
+function buildV2SnapshotResults(): Record<string, unknown>[] {
+  return [
+    {
+      snapshot_id: "snapshot-v2",
+      economic_as_of: now,
+      knowledge_cutoff: now,
+      published_at: now,
+      economic_project_id: "project-ethereum",
+      project_slug: "ethereum",
+      project_name: "Ethereum",
+      founder_team: "Vitalik Buterin (founder); Ethereum founding team",
+      value_created_lower: "70000000.00000000",
+      value_created_upper: "90000000.00000000",
+      eligibility_status: "provisional",
+      rank_min: 1,
+      rank_max: 2,
+      rank_order_status: "overlapping",
+      confidence_status: "medium",
+      is_invalidated: false,
+      invalidation_message: null,
+      methodology_version_id: "v2",
+      confidence_policy_version: "v1",
+    },
+    {
+      snapshot_id: "snapshot-v2",
+      economic_as_of: now,
+      knowledge_cutoff: now,
+      published_at: now,
+      economic_project_id: "project-solana",
+      project_slug: "solana",
+      project_name: "Solana",
+      founder_team: "Anatoly Yakovenko (founder); Solana founding team",
+      value_created_lower: "60000000.00000000",
+      value_created_upper: "60000000.00000000",
+      eligibility_status: "eligible",
+      rank_min: 2,
+      rank_max: 2,
+      rank_order_status: "exact",
+      confidence_status: "high",
+      is_invalidated: false,
+      invalidation_message: null,
+      methodology_version_id: "v2",
+      confidence_policy_version: "v1",
+    },
+  ];
+}
+
 async function mockLiveSnapshot(
   page: Page,
   {
@@ -48,6 +95,9 @@ async function mockLiveSnapshot(
     latestStatus?: Record<string, unknown>;
   },
 ) {
+  await page.route("**/rest/v1/rpc/get_current_ranking_v2", (route) =>
+    route.fulfill({ status: 404, body: "" }),
+  );
   await page.route("**/rest/v1/public_latest_snapshot_status**", (route) =>
     route.fulfill({
       contentType: "application/json",
@@ -572,7 +622,7 @@ test("publishes unified founder calculations and sources separately", async ({
     page.getByRole("columnheader", { name: "Value type" }),
   ).toBeVisible();
   await expect(
-    page.getByRole("columnheader", { name: "Provisional value created" }),
+    page.getByRole("columnheader", { name: "Value created for others" }),
   ).toBeVisible();
   await expect(
     page.getByRole("columnheader", { name: "Confidence" }),
@@ -695,6 +745,30 @@ test("supports keyboard control of the mobile navigation", async ({ page }) => {
 // production data). None of these were previously covered by e2e tests —
 // see the audit notes.
 
+test("renders the atomic v2 project ranking before the legacy snapshot", async ({
+  page,
+}) => {
+  await page.route("**/rest/v1/public_latest_snapshot_status**", (route) =>
+    route.fulfill({ status: 500, body: "" }),
+  );
+  await page.route("**/rest/v1/rpc/get_current_ranking_v2", (route) =>
+    route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify(buildV2SnapshotResults()),
+    }),
+  );
+
+  await page.goto("/");
+
+  await expect(page.getByText("Published v2 snapshot")).toBeVisible();
+  await expect(
+    page.getByText("Vitalik Buterin (founder); Ethereum founding team"),
+  ).toBeVisible();
+  await expect(page.getByText("$70M–$90M")).toBeVisible();
+  await expect(page.getByText("Rank order: overlapping")).toBeVisible();
+  await expect(page.getByText("Provisional interval")).toBeVisible();
+});
+
 test("shows a stale-data notice when the live snapshot reports stale freshness", async ({
   page,
 }) => {
@@ -742,6 +816,9 @@ test("shows a scheduled-run-failed notice while still rendering the last good li
 test("falls back to the bundled snapshot when no valid live snapshot is available", async ({
   page,
 }) => {
+  await page.route("**/rest/v1/rpc/get_current_ranking_v2", (route) =>
+    route.fulfill({ status: 500, body: "" }),
+  );
   await page.route("**/rest/v1/public_latest_snapshot_status**", (route) =>
     route.fulfill({ status: 500, body: "" }),
   );

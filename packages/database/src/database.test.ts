@@ -122,6 +122,10 @@ const rankingV2PublicationMigrationUrl = new URL(
   "../../../supabase/migrations/202608090003_ranking_v2_publication.sql",
   import.meta.url,
 );
+const rankingV2CutoverMigrationUrl = new URL(
+  "../../../supabase/migrations/202608090004_ranking_v2_cutover.sql",
+  import.meta.url,
+);
 const sqlConfidenceEvidence = await readFile(
   sqlConfidenceEvidenceMigrationUrl,
   "utf8",
@@ -158,6 +162,7 @@ const migrationSql = [
   await readFile(rankingV2FoundationMigrationUrl, "utf8"),
   await readFile(rankingV2InputsMigrationUrl, "utf8"),
   await readFile(rankingV2PublicationMigrationUrl, "utf8"),
+  await readFile(rankingV2CutoverMigrationUrl, "utf8"),
 ].join("\n");
 const seedSql = await readFile(seedUrl, "utf8");
 const productionDataDirectory = fileURLToPath(
@@ -640,6 +645,14 @@ describe("Phase 3 database", () => {
     await database.exec(`
       insert into ranking_v2.economic_projects (id, slug, name) values
         ('20000000-0000-4000-8000-000000000001', 'alpha', 'Alpha');
+      insert into ranking_v2.people (id, display_name) values
+        ('21000000-0000-4000-8000-000000000001', 'Ada Founder');
+      insert into ranking_v2.project_memberships
+        (id, economic_project_id, person_id, role, effective_from)
+      values
+        ('22000000-0000-4000-8000-000000000001',
+         '20000000-0000-4000-8000-000000000001',
+         '21000000-0000-4000-8000-000000000001', 'founder', '2020-01-01');
       insert into ranking_v2.snapshots
         (id, economic_as_of, knowledge_cutoff, snapshot_currency, monetary_basis,
          methodology_version_id, confidence_policy_version,
@@ -691,6 +704,43 @@ describe("Phase 3 database", () => {
         '40000000-0000-4000-8000-000000000001', 'engine')
     `);
     expect(published.rows[0]).toEqual({ published: true, reason_code: null });
+
+    const publicRows = await database.query<{
+      project_slug: string;
+      founder_team: string;
+      value_created_lower: string;
+      is_invalidated: boolean;
+    }>("select * from public.get_current_ranking_v2()");
+    expect(publicRows.rows).toEqual([
+      expect.objectContaining({
+        project_slug: "alpha",
+        founder_team: "Ada Founder (founder)",
+        value_created_lower: "70.00000000",
+        is_invalidated: false,
+      }),
+    ]);
+
+    await database.query(
+      `select ranking_v2.invalidate_snapshot($1, $2, $3, $4, $5)`,
+      [
+        "60000000-0000-4000-8000-000000000001",
+        "40000000-0000-4000-8000-000000000001",
+        "INPUT_CORRECTION",
+        "Snapshot withdrawn pending correction.",
+        JSON.stringify({ private: "not public" }),
+      ],
+    );
+    const invalidated = await database.query<{
+      is_invalidated: boolean;
+      invalidation_message: string;
+    }>("select * from public.get_current_ranking_v2()");
+    expect(invalidated.rows[0]).toMatchObject({
+      is_invalidated: true,
+      invalidation_message: "Snapshot withdrawn pending correction.",
+    });
+    expect(invalidated.fields.map(({ name }) => name)).not.toContain(
+      "private_diagnostics",
+    );
 
     const state = await database.query<{
       status: string;
