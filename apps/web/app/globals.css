@@ -723,7 +723,58 @@ select {
     gap: 0.75rem 1rem;
   }
   .research-universe-table {
-    min-width: 1000px;
+    display: block;
+    min-width: 0;
+  }
+  .research-universe-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+  .research-universe-table tbody,
+  .research-universe-table tr {
+    display: block;
+  }
+  .research-universe-table tbody {
+    padding: 0.75rem;
+  }
+  .research-universe-table tr {
+    overflow: hidden;
+    margin-bottom: 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    background: var(--surface);
+  }
+  .research-universe-table tr:last-child {
+    margin-bottom: 0;
+  }
+  .research-universe-table td {
+    display: grid;
+    grid-template-columns: minmax(7rem, 40%) minmax(0, 1fr);
+    gap: 0.75rem;
+    width: auto;
+    padding: 0.7rem 0.8rem;
+    white-space: normal;
+  }
+  .research-universe-table td::before {
+    content: attr(data-label);
+    color: var(--muted);
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .research-universe-table tr:last-child td {
+    border-bottom: 1px solid var(--border);
+  }
+  .research-universe-table td:last-child {
+    border-bottom: 0;
   }
   .evidence-shell {
     -webkit-overflow-scrolling: touch;
