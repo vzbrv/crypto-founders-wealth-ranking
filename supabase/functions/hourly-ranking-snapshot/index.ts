@@ -310,7 +310,13 @@ export async function fetchCoinGecko(
   sourceUrl: string;
   markets: Map<
     string,
-    { price: number; supply: number; marketCap: number; observedAt: string }
+    {
+      price: number;
+      supply: number;
+      marketCap: number;
+      observedAt: string;
+      sourceUrl: string;
+    }
   >;
 }> {
   const entries = document.entries.filter(
@@ -336,13 +342,21 @@ export async function fetchCoinGecko(
     checkedAt,
   );
 
-  const fetchOnce = async (): Promise<
+  const fetchOnce = async (
+    requestUrl: URL,
+  ): Promise<
     Map<
       string,
-      { price: number; supply: number; marketCap: number; observedAt: string }
+      {
+        price: number;
+        supply: number;
+        marketCap: number;
+        observedAt: string;
+        sourceUrl: string;
+      }
     >
   > => {
-    const response = await fetch(sourceUrl, {
+    const response = await fetch(requestUrl, {
       headers: Deno.env.get("COINGECKO_DEMO_API_KEY")
         ? { "x-cg-demo-api-key": Deno.env.get("COINGECKO_DEMO_API_KEY")! }
         : {},
@@ -368,7 +382,13 @@ export async function fetchCoinGecko(
       throw new Error("CoinGecko response must be an array");
     const markets = new Map<
       string,
-      { price: number; supply: number; marketCap: number; observedAt: string }
+      {
+        price: number;
+        supply: number;
+        marketCap: number;
+        observedAt: string;
+        sourceUrl: string;
+      }
     >();
     for (const item of payload as CoinGeckoMarket[]) {
       if (typeof item.id !== "string") continue;
@@ -382,6 +402,7 @@ export async function fetchCoinGecko(
         supply: asNumber(item.circulating_supply, `${item.id} supply`),
         marketCap: asNumber(item.market_cap, `${item.id} market cap`),
         observedAt,
+        sourceUrl: requestUrl.toString(),
       });
     }
     for (const [id, market] of [...markets]) {
@@ -395,9 +416,30 @@ export async function fetchCoinGecko(
     return markets;
   };
 
-  const markets = await accumulatePartialResults(fetchOnce, ids, {
-    delaysMs: providerRetryDelaysMs,
-  });
+  const markets = await accumulatePartialResults(
+    () => fetchOnce(sourceUrl),
+    ids,
+    { delaysMs: providerRetryDelaysMs },
+  );
+
+  for (const id of ids.filter((candidate) => !markets.has(candidate))) {
+    const fallbackUrl = new URL(sourceUrl);
+    fallbackUrl.searchParams.set("ids", id);
+    try {
+      await reserveProviderRequest(
+        supabaseUrl,
+        headers,
+        "coingecko",
+        "/coins/markets",
+        checkedAt,
+      );
+      const fallbackMarkets = await fetchOnce(fallbackUrl);
+      const market = fallbackMarkets.get(id);
+      if (market) markets.set(id, market);
+    } catch {
+      // Leave unresolved tokens for the caller's published-value fallback.
+    }
+  }
   return {
     provider: "coingecko",
     checkedAt,
@@ -711,7 +753,7 @@ Deno.serve(async (request) => {
           tokenMarketCap = market.marketCap;
           observationAt = market.observedAt;
           marketProvider = tokens.provider;
-          marketSourceUrl = tokens.sourceUrl;
+          marketSourceUrl = market.sourceUrl;
         } else {
           const carried = await findLastKnownMarketInput(
             entry.entryId,
