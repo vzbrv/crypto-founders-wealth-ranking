@@ -15,29 +15,45 @@ const migrationsDir = fileURLToPath(
 );
 
 describe("production database verification", () => {
+  const now = new Date("2026-08-09T12:00:00.000Z");
+  const healthyLatestSnapshot = {
+    status: "published",
+    publicationAt: "2026-08-09T11:00:00.000Z",
+    isImmutable: true,
+    failureReason: null,
+  };
+
   it("passes a fully configured production database", () => {
-    const checks = evaluateProductionDatabase({
-      migrationVersions: [...expectedMigrationVersions],
-      cronJobs: requiredCronJobs.map((name) => ({ name, active: true })),
-      recentCronJobs: [...requiredCronJobs],
-      publicViews: [...requiredPublicViews],
-      anonReadContract: { ok: true },
-    });
+    const checks = evaluateProductionDatabase(
+      {
+        migrationVersions: [...expectedMigrationVersions],
+        cronJobs: requiredCronJobs.map((name) => ({ name, active: true })),
+        recentCronJobs: [...requiredCronJobs],
+        publicViews: [...requiredPublicViews],
+        latestSnapshot: healthyLatestSnapshot,
+        anonReadContract: { ok: true },
+      },
+      now,
+    );
 
     expect(checks.every(({ passed }) => passed)).toBe(true);
   });
 
   it("reports missing, inactive, and stale infrastructure", () => {
-    const checks = evaluateProductionDatabase({
-      migrationVersions: expectedMigrationVersions.slice(0, -1),
-      cronJobs: requiredCronJobs.map((name, index) => ({
-        name,
-        active: index !== 0,
-      })),
-      recentCronJobs: requiredCronJobs.slice(0, -1),
-      publicViews: requiredPublicViews.slice(0, -1),
-      anonReadContract: { ok: true },
-    });
+    const checks = evaluateProductionDatabase(
+      {
+        migrationVersions: expectedMigrationVersions.slice(0, -1),
+        cronJobs: requiredCronJobs.map((name, index) => ({
+          name,
+          active: index !== 0,
+        })),
+        recentCronJobs: requiredCronJobs.slice(0, -1),
+        publicViews: requiredPublicViews.slice(0, -1),
+        latestSnapshot: healthyLatestSnapshot,
+        anonReadContract: { ok: true },
+      },
+      now,
+    );
 
     expect(checks).toEqual(
       expect.arrayContaining([
@@ -56,21 +72,69 @@ describe("production database verification", () => {
   });
 
   it("fails when anon/authenticated regain unexpected table access", () => {
-    const checks = evaluateProductionDatabase({
-      migrationVersions: [...expectedMigrationVersions],
-      cronJobs: requiredCronJobs.map((name) => ({ name, active: true })),
-      recentCronJobs: [...requiredCronJobs],
-      publicViews: [...requiredPublicViews],
-      anonReadContract: {
-        ok: false,
-        error: "anon can select wallet_balance_observations; ",
+    const checks = evaluateProductionDatabase(
+      {
+        migrationVersions: [...expectedMigrationVersions],
+        cronJobs: requiredCronJobs.map((name) => ({ name, active: true })),
+        recentCronJobs: [...requiredCronJobs],
+        publicViews: [...requiredPublicViews],
+        latestSnapshot: healthyLatestSnapshot,
+        anonReadContract: {
+          ok: false,
+          error: "anon can select wallet_balance_observations; ",
+        },
       },
-    });
+      now,
+    );
 
     expect(checks).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
           name: "anon-read-contract",
+          passed: false,
+        }),
+      ]),
+    );
+  });
+
+  it.each([
+    {
+      name: "latest attempt failed",
+      latestSnapshot: {
+        ...healthyLatestSnapshot,
+        status: "failed",
+        failureReason: "missing market input",
+      },
+    },
+    {
+      name: "latest snapshot is mutable",
+      latestSnapshot: { ...healthyLatestSnapshot, isImmutable: false },
+    },
+    {
+      name: "latest snapshot is stale",
+      latestSnapshot: {
+        ...healthyLatestSnapshot,
+        publicationAt: "2026-08-09T09:59:59.999Z",
+      },
+    },
+    { name: "latest snapshot is missing", latestSnapshot: null },
+  ])("fails when $name", ({ latestSnapshot }) => {
+    const checks = evaluateProductionDatabase(
+      {
+        migrationVersions: [...expectedMigrationVersions],
+        cronJobs: requiredCronJobs.map((name) => ({ name, active: true })),
+        recentCronJobs: [...requiredCronJobs],
+        publicViews: [...requiredPublicViews],
+        latestSnapshot,
+        anonReadContract: { ok: true },
+      },
+      now,
+    );
+
+    expect(checks).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          name: "latest-snapshot-publication",
           passed: false,
         }),
       ]),
