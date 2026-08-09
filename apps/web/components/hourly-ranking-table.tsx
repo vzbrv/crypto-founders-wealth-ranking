@@ -6,6 +6,12 @@ import { useEffect, useState } from "react";
 import type { UnifiedCalculation } from "@crypto-founders/curated-data/unified";
 
 import { formatRankChange, type RankChangeStatus } from "../lib/rank-change";
+import {
+  formatV2Rank,
+  formatV2Value,
+  validateCurrentRankingV2,
+  type CurrentRankingV2,
+} from "../lib/ranking-v2";
 
 type LiveHeader = {
   id: string;
@@ -55,6 +61,19 @@ async function readView<T>(view: string, query: string): Promise<T[]> {
   return (await response.json()) as T[];
 }
 
+async function readRpc<T>(functionName: string): Promise<T> {
+  if (!apiBase || !apiKey) throw new Error("public data endpoint unavailable");
+  const response = await fetch(`${apiBase}/rest/v1/rpc/${functionName}`, {
+    method: "POST",
+    headers: { apikey: apiKey, "Content-Type": "application/json" },
+    body: "{}",
+    cache: "no-store",
+  });
+  if (!response.ok)
+    throw new Error(`public data request failed: ${response.status}`);
+  return (await response.json()) as T;
+}
+
 function money(value: string | number | null): string {
   if (value === null || !Number.isFinite(Number(value))) return "Unknown";
   return new Intl.NumberFormat("en-US", {
@@ -97,6 +116,42 @@ function validTimestamp(value: string | null | undefined): value is string {
   return typeof value === "string" && Number.isFinite(Date.parse(value));
 }
 
+function validateLegacySnapshot(
+  results: LiveResult[],
+  expectedCount: number,
+): { header: LiveHeader; results: LiveResult[] } | null {
+  const ranks = results.map((result) => result.rank).sort((a, b) => a - b);
+  const first = results[0];
+  const header = first?.publication_at
+    ? {
+        id: first.snapshot_id,
+        utc_hour: first.utc_hour,
+        observation_at: first.observation_at,
+        publication_at: first.publication_at,
+      }
+    : null;
+  const valid =
+    Boolean(header?.id) &&
+    validTimestamp(header?.utc_hour) &&
+    validTimestamp(header?.observation_at) &&
+    validTimestamp(header?.publication_at) &&
+    results.length === expectedCount &&
+    new Set(results.map((result) => result.entry_id)).size === expectedCount &&
+    ranks.every((rank, index) => rank === index + 1) &&
+    results.every(
+      (result) =>
+        result.snapshot_id === header?.id &&
+        result.utc_hour === header?.utc_hour &&
+        result.observation_at === header?.observation_at &&
+        result.publication_at === header?.publication_at &&
+        result.entry_id !== "" &&
+        result.founder_team !== "" &&
+        result.project !== "" &&
+        result.final_value_usd !== null,
+    );
+  return valid && header ? { header, results } : null;
+}
+
 export function HourlyRankingTable({
   fallbackRanking,
   fallbackSnapshotDate,
@@ -106,6 +161,7 @@ export function HourlyRankingTable({
   fallbackSnapshotDate: string;
   fallbackObservationDate: string;
 }) {
+  const [rankingV2, setRankingV2] = useState<CurrentRankingV2 | null>(null);
   const [live, setLive] = useState<{
     header: LiveHeader;
     results: LiveResult[];
@@ -115,7 +171,8 @@ export function HourlyRankingTable({
 
   useEffect(() => {
     let active = true;
-    const refresh = () => {
+    let hasVerifiedV2 = false;
+    const refresh = async () => {
       void readView<LatestStatus>(
         "public_latest_snapshot_status",
         "select=status,publication_at,observation_at,failure_reason&limit=1",
@@ -125,116 +182,136 @@ export function HourlyRankingTable({
         })
         .catch(() => undefined);
 
-      // This view binds every result to the current published snapshot in one
-      // database statement. Reading it once avoids combining two snapshots if
-      // publication advances between requests.
-      void readView<LiveResult>(
-        "public_current_snapshot_results",
-        "select=*&order=rank.asc",
-      )
-        .then((results) => {
-          const ranks = results
-            .map((result) => result.rank)
-            .sort((a, b) => a - b);
-          const first = results[0];
-          const header = first?.publication_at
-            ? {
-                id: first.snapshot_id,
-                utc_hour: first.utc_hour,
-                observation_at: first.observation_at,
-                publication_at: first.publication_at,
-              }
-            : null;
-          const valid =
-            Boolean(header) &&
-            Boolean(header?.id) &&
-            validTimestamp(header?.utc_hour) &&
-            validTimestamp(header?.observation_at) &&
-            validTimestamp(header?.publication_at) &&
-            results.length === fallbackRanking.length &&
-            new Set(results.map((result) => result.entry_id)).size ===
-              fallbackRanking.length &&
-            ranks.every((rank, index) => rank === index + 1) &&
-            results.every(
-              (result) =>
-                result.snapshot_id === header?.id &&
-                result.utc_hour === header?.utc_hour &&
-                result.observation_at === header?.observation_at &&
-                result.publication_at === header?.publication_at &&
-                result.entry_id !== "" &&
-                result.founder_team !== "" &&
-                result.project !== "" &&
-                result.final_value_usd !== null,
-            );
-          if (!active) return;
-          if (!valid || !header) throw new Error("invalid live snapshot");
-          setLive({ header, results });
-          setEndpointError(false);
-        })
-        .catch(() => {
+      try {
+        const response = await readRpc<unknown>("get_current_ranking_v2");
+        const nextV2 = validateCurrentRankingV2(response);
+        if (!nextV2) throw new Error("invalid v2 snapshot");
+        if (!active) return;
+        hasVerifiedV2 = true;
+        setRankingV2(nextV2);
+        setLive(null);
+        setEndpointError(false);
+        return;
+      } catch {
+        if (hasVerifiedV2) {
           if (active) setEndpointError(true);
-        });
+          return;
+        }
+      }
+
+      try {
+        const results = await readView<LiveResult>(
+          "public_current_snapshot_results",
+          "select=*&order=rank.asc",
+        );
+        const nextLegacy = validateLegacySnapshot(
+          results,
+          fallbackRanking.length,
+        );
+        if (!nextLegacy) throw new Error("invalid legacy snapshot");
+        if (!active) return;
+        setRankingV2(null);
+        setLive(nextLegacy);
+        setEndpointError(false);
+      } catch {
+        if (active) setEndpointError(true);
+      }
     };
-    refresh();
-    const interval = window.setInterval(refresh, 60_000);
+    void refresh();
+    const interval = window.setInterval(() => void refresh(), 60_000);
     return () => {
       active = false;
       window.clearInterval(interval);
     };
   }, [fallbackRanking.length]);
 
-  const rows = live
-    ? live.results.map((result) => {
+  const rows = rankingV2
+    ? rankingV2.rows.map((result) => {
         const fallback = fallbackRanking.find(
-          ({ entry }) => entry.entryId === result.entry_id,
+          ({ entry }) =>
+            entry.entryId === result.project_slug ||
+            entry.entryId === result.economic_project_id,
         );
         return {
-          entryId: result.entry_id,
-          rank: result.rank,
+          entryId: result.economic_project_id,
+          rank: formatV2Rank(result),
           founderTeam: result.founder_team,
-          project: result.project,
-          marketLabel: publicMarketLabel(result.market),
-          valueType: result.value_type,
-          provisionalValueCreatedUsd: result.final_value_usd,
-          confidenceScore: result.confidence_score,
-          confidenceLabel: result.confidence_label,
-          upperEstimate: result.upper_estimate,
-          rankChange: result.rank_change,
-          rankChangeSource: "live" as const,
-          rankChangeStatus: result.rank_change_status,
-          freshnessStatus: result.freshness_status,
-          href: fallback ? `/ranking/${result.entry_id}/` : null,
+          project: result.project_name,
+          marketLabel: null,
+          valueType: "Value created for others",
+          formattedValue: formatV2Value(result),
+          valueNote:
+            result.eligibility_status === "ineligible"
+              ? "Not eligible for official rank"
+              : result.eligibility_status === "provisional"
+                ? "Provisional interval"
+                : null,
+          confidenceText: result.confidence_status,
+          confidenceNote: `Rank order: ${result.rank_order_status.replace(/_/g, " ")}`,
+          movement: {
+            text: "—",
+            label: "Rank movement is not published for v2 snapshots",
+          },
+          href: fallback ? `/ranking/${fallback.entry.entryId}/` : null,
         };
       })
-    : fallbackRanking.map(
-        ({ entry, provisionalValueCreatedUsd, upperEstimate }) => ({
-          entryId: entry.entryId,
-          rank: entry.rank,
-          founderTeam: entry.founderTeam,
-          project: entry.project,
-          marketLabel:
-            entry.market.type === "public"
-              ? `${entry.market.ticker} · ${entry.market.exchange}`
-              : null,
-          valueType: entry.valueType,
-          provisionalValueCreatedUsd,
-          confidenceScore: entry.confidence.score,
-          confidenceLabel: entry.confidence.label,
-          upperEstimate,
-          rankChange: null,
-          rankChangeSource: "fallback" as const,
-          rankChangeStatus: "baseline" as const,
-          freshnessStatus: "historical" as const,
-          href: `/ranking/${entry.entryId}/`,
-        }),
-      );
+    : live
+      ? live.results.map((result) => {
+          const fallback = fallbackRanking.find(
+            ({ entry }) => entry.entryId === result.entry_id,
+          );
+          const movement = formatRankChange(
+            result.rank_change,
+            "live",
+            result.rank_change_status,
+          );
+          return {
+            entryId: result.entry_id,
+            rank: result.rank,
+            founderTeam: result.founder_team,
+            project: result.project,
+            marketLabel: publicMarketLabel(result.market),
+            valueType: result.value_type,
+            formattedValue: money(result.final_value_usd),
+            valueNote: result.upper_estimate ? "Upper estimate" : null,
+            confidenceText: `${result.confidence_score}/100 · ${result.confidence_label}`,
+            confidenceNote: `Observation: ${result.freshness_status}`,
+            movement,
+            href: fallback ? `/ranking/${result.entry_id}/` : null,
+          };
+        })
+      : fallbackRanking.map(
+          ({ entry, provisionalValueCreatedUsd, upperEstimate }) => ({
+            entryId: entry.entryId,
+            rank: entry.rank,
+            founderTeam: entry.founderTeam,
+            project: entry.project,
+            marketLabel:
+              entry.market.type === "public"
+                ? `${entry.market.ticker} · ${entry.market.exchange}`
+                : null,
+            valueType: entry.valueType,
+            formattedValue: money(provisionalValueCreatedUsd),
+            valueNote: upperEstimate ? "Upper estimate" : null,
+            confidenceText: `${entry.confidence.score}/100 · ${entry.confidence.label}`,
+            confidenceNote: "Observation: historical",
+            movement: formatRankChange(null, "fallback", "baseline"),
+            href: `/ranking/${entry.entryId}/`,
+          }),
+        );
   const snapshotDate = live?.header.utc_hour ?? fallbackSnapshotDate;
   const observationDate =
     live?.header.observation_at ?? fallbackObservationDate;
 
   return (
     <>
-      {live ? (
+      {rankingV2 ? (
+        <p className="notice">
+          Published v2 snapshot · Published {dateTime(rankingV2.publishedAt)}{" "}
+          UTC · Economic as of {dateTime(rankingV2.economicAsOf)} UTC ·
+          Knowledge cutoff {dateTime(rankingV2.knowledgeCutoff)} UTC.
+        </p>
+      ) : live ? (
         <p className="notice">
           Live immutable snapshot · Published{" "}
           {dateTime(live.header.publication_at)} UTC · Observed{" "}
@@ -247,7 +324,7 @@ export function HourlyRankingTable({
           complete immutable live snapshot is available.
         </p>
       )}
-      {latestStatus?.status === "failed" && (
+      {latestStatus?.status === "failed" && !rankingV2 && (
         <p className="notice warning" role="alert">
           Latest scheduled run failed. Showing the{" "}
           {live ? "last complete immutable" : "bundled"} snapshot
@@ -259,14 +336,18 @@ export function HourlyRankingTable({
       {endpointError && (
         <p className="notice warning" role="alert">
           Live endpoint refresh failed. The{" "}
-          {live ? "last verified immutable" : "bundled"} snapshot remains
-          displayed.
+          {rankingV2
+            ? "last verified published v2"
+            : live
+              ? "last verified immutable"
+              : "bundled"}{" "}
+          snapshot remains displayed.
         </p>
       )}
       <div className="table-shell evidence-shell">
         <table className="evidence-table research-universe-table">
           <caption className="sr-only">
-            Current unified top 20 ranked by provisional value created.
+            Current economic projects ranked by value created for others.
           </caption>
           <thead>
             <tr>
@@ -275,9 +356,7 @@ export function HourlyRankingTable({
               <th>Founder or joint founding team</th>
               <th>Project or company</th>
               <th>Value type</th>
-              <th className="number primary-value">
-                Provisional value created
-              </th>
+              <th className="number primary-value">Value created for others</th>
               <th>Confidence</th>
             </tr>
           </thead>
@@ -290,14 +369,11 @@ export function HourlyRankingTable({
                 project,
                 marketLabel,
                 valueType,
-                provisionalValueCreatedUsd,
-                confidenceScore,
-                confidenceLabel,
-                upperEstimate,
-                rankChange,
-                rankChangeSource,
-                rankChangeStatus,
-                freshnessStatus,
+                formattedValue,
+                valueNote,
+                confidenceText,
+                confidenceNote,
+                movement,
                 href,
               }) => (
                 <tr key={entryId}>
@@ -305,16 +381,7 @@ export function HourlyRankingTable({
                     {rank}
                   </td>
                   <td className="rank-move" data-label="Rank change">
-                    {(() => {
-                      const movement = formatRankChange(
-                        rankChange,
-                        rankChangeSource,
-                        rankChangeStatus,
-                      );
-                      return (
-                        <span aria-label={movement.label}>{movement.text}</span>
-                      );
-                    })()}
+                    <span aria-label={movement.label}>{movement.text}</span>
                   </td>
                   <td data-label="Founder / founding team">
                     {href ? (
@@ -329,7 +396,7 @@ export function HourlyRankingTable({
                     ) : (
                       <>
                         <strong>{founderTeam}</strong>
-                        <small>Live snapshot record</small>
+                        <small>Published snapshot record</small>
                       </>
                     )}
                   </td>
@@ -340,14 +407,14 @@ export function HourlyRankingTable({
                   <td data-label="Value type">{valueType}</td>
                   <td
                     className="number primary-value"
-                    data-label="Provisional value created"
+                    data-label="Value created for others"
                   >
-                    <strong>{money(provisionalValueCreatedUsd)}</strong>
-                    {upperEstimate && <small>Upper estimate</small>}
+                    <strong>{formattedValue}</strong>
+                    {valueNote && <small>{valueNote}</small>}
                   </td>
                   <td data-label="Confidence">
-                    {confidenceScore}/100 · {confidenceLabel}
-                    <small>Observation: {freshnessStatus}</small>
+                    {confidenceText}
+                    <small>{confidenceNote}</small>
                   </td>
                 </tr>
               ),
