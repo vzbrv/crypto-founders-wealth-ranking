@@ -75,6 +75,19 @@ try {
     where table_schema = 'public'
       and table_name in ${sql(requiredPublicViews)}
   `;
+  const latestSnapshots = await sql<
+    {
+      status: string;
+      publication_at: Date | null;
+      is_immutable: boolean;
+      failure_reason: string | null;
+    }[]
+  >`
+    select status, publication_at, is_immutable, failure_reason
+    from public.public_latest_snapshot_status
+    limit 1
+  `;
+  const latestSnapshotRow = latestSnapshots[0];
 
   let anonReadContract: { ok: true } | { ok: false; error: string };
   try {
@@ -92,6 +105,15 @@ try {
     cronJobs,
     recentCronJobs: recentCronJobs.map(({ name }) => name),
     publicViews: publicViews.map(({ name }) => name),
+    latestSnapshot: latestSnapshotRow
+      ? {
+          status: latestSnapshotRow.status,
+          publicationAt:
+            latestSnapshotRow.publication_at?.toISOString() ?? null,
+          isImmutable: latestSnapshotRow.is_immutable,
+          failureReason: latestSnapshotRow.failure_reason,
+        }
+      : null,
     anonReadContract,
   })) {
     record(check);

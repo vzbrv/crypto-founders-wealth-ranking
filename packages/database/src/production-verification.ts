@@ -51,13 +51,24 @@ export const requiredPublicViews = [
   "current_scores",
   "public_provider_status",
   "public_project_details",
+  "public_latest_snapshot_status",
 ] as const;
+
+export const latestSnapshotFreshnessMs = 2 * 60 * 60 * 1_000;
+
+export interface LatestSnapshotStatus {
+  status: string;
+  publicationAt: string | null;
+  isImmutable: boolean;
+  failureReason: string | null;
+}
 
 export interface ProductionDatabaseSnapshot {
   migrationVersions: string[];
   cronJobs: Array<{ name: string; active: boolean }>;
   recentCronJobs: string[];
   publicViews: string[];
+  latestSnapshot: LatestSnapshotStatus | null;
   /**
    * Result of `select assert_anon_read_contract()` against the target
    * database: `{ ok: true }` if anon/authenticated select grants match the
@@ -91,6 +102,7 @@ function requiredItemsCheck(
 
 export function evaluateProductionDatabase(
   snapshot: ProductionDatabaseSnapshot,
+  now = new Date(),
 ): ProductionDatabaseCheck[] {
   const activeCronJobs = snapshot.cronJobs
     .filter(({ active }) => active)
@@ -120,5 +132,59 @@ export function evaluateProductionDatabase(
         ? "anon/authenticated select grants match the intended allowlist"
         : `regression detected: ${snapshot.anonReadContract.error}`,
     },
+    latestSnapshotCheck(snapshot.latestSnapshot, now),
   ];
+}
+
+function latestSnapshotCheck(
+  snapshot: LatestSnapshotStatus | null,
+  now: Date,
+): ProductionDatabaseCheck {
+  if (!snapshot) {
+    return {
+      name: "latest-snapshot-publication",
+      passed: false,
+      status: "no snapshot status was returned",
+    };
+  }
+
+  if (snapshot.status !== "published") {
+    return {
+      name: "latest-snapshot-publication",
+      passed: false,
+      status: `latest attempt is ${snapshot.status}: ${snapshot.failureReason ?? "no failure reason recorded"}`,
+    };
+  }
+
+  if (!snapshot.isImmutable) {
+    return {
+      name: "latest-snapshot-publication",
+      passed: false,
+      status: "latest published snapshot is not immutable",
+    };
+  }
+
+  const publicationTime = snapshot.publicationAt
+    ? Date.parse(snapshot.publicationAt)
+    : Number.NaN;
+  const ageMs = now.getTime() - publicationTime;
+  if (
+    !Number.isFinite(publicationTime) ||
+    ageMs < 0 ||
+    ageMs > latestSnapshotFreshnessMs
+  ) {
+    return {
+      name: "latest-snapshot-publication",
+      passed: false,
+      status:
+        "latest published snapshot is missing a valid publication time or is more than two hours old",
+    };
+  }
+
+  return {
+    name: "latest-snapshot-publication",
+    passed: true,
+    status:
+      "latest snapshot is published, immutable, and no more than two hours old",
+  };
 }
