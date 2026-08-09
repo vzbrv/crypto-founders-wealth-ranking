@@ -22,6 +22,7 @@
     "validate:data": "pnpm --filter @crypto-founders/curated-data validate",
     "validate:production-data": "CURATED_DATA_DIR=data/production pnpm --filter @crypto-founders/curated-data validate:production",
     "validate:research-data": "pnpm --filter @crypto-founders/curated-data validate:research",
+    "reproduce:snapshot": "tsx scripts/reproduce-snapshot.ts",
     "validate:unified-data": "pnpm --filter @crypto-founders/curated-data validate:unified",
     "smoke:production": "node scripts/smoke-production.mjs",
     "verify:production-database": "pnpm --filter @crypto-founders/database verify:production",
