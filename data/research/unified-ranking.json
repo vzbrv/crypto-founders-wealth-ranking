@@ -62,7 +62,7 @@
       "category": "Market",
       "name": "CoinGecko Hyperliquid historical market data",
       "date": "2026-07-30",
-      "url": "https://api.coingecko.com/api/v3/coins/hyperliquid-hype/history?date=30-07-2026&localization=false",
+      "url": "https://api.coingecko.com/api/v3/coins/hyperliquid/history?date=30-07-2026&localization=false",
       "quality": "Market API",
       "notes": "Circulating market value observation."
     },
@@ -1132,7 +1132,7 @@
         "type": "token",
         "sourceId": "CG-HYPE",
         "observationDate": "2026-07-30",
-        "coinGeckoCoinId": "hyperliquid-hype"
+        "coinGeckoCoinId": "hyperliquid"
       },
       "affiliatedOwnership": {
         "status": "Unknown",

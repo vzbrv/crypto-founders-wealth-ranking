@@ -42,6 +42,18 @@ describe("unified ranking dataset", () => {
     );
     expect(dataset.entries).toHaveLength(20);
     expect(dataset.snapshotDate).toBe("2026-07-30");
+
+    const hyperliquid = dataset.entries.find(
+      (entry) => entry.entryId === "hyperliquid",
+    );
+    expect(hyperliquid?.market).toMatchObject({
+      type: "token",
+      coinGeckoCoinId: "hyperliquid",
+      sourceId: "CG-HYPE",
+    });
+    expect(dataset.sources.find((source) => source.id === "CG-HYPE")?.url).toBe(
+      "https://api.coingecko.com/api/v3/coins/hyperliquid/history?date=30-07-2026&localization=false",
+    );
   });
 
   it("reproduces Coinbase from stored share classes, ownership, and capital", async () => {
