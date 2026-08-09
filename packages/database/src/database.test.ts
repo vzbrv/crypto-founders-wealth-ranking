@@ -713,16 +713,6 @@ describe("Phase 3 database", () => {
 
     expect(publicRows.rows).toEqual([
       {
-        display_name: "Ethereum Founding Team",
-        rank: null,
-        score_usd: null,
-        research_status: "Research in progress",
-        eligibility_status: "research_in_progress",
-        reviewed_confidence: "insufficient",
-        wallet_review_status: "reviewed_insufficient",
-        funding_review_status: "reviewed_insufficient",
-      },
-      {
         display_name: "Hayden Adams",
         rank: null,
         score_usd: null,
@@ -734,6 +724,16 @@ describe("Phase 3 database", () => {
       },
       {
         display_name: "Solana Founding Team",
+        rank: null,
+        score_usd: null,
+        research_status: "Research in progress",
+        eligibility_status: "research_in_progress",
+        reviewed_confidence: "insufficient",
+        wallet_review_status: "reviewed_insufficient",
+        funding_review_status: "reviewed_insufficient",
+      },
+      {
+        display_name: "Vitalik Buterin & Ethereum Founding Team",
         rank: null,
         score_usd: null,
         research_status: "Research in progress",

@@ -233,9 +233,6 @@ export function HourlyRankingTable({
           remains displayed.
         </p>
       )}
-      <p className="table-scroll-note">
-        Scroll horizontally to view the complete ranking on smaller screens.
-      </p>
       <div className="table-shell evidence-shell">
         <table className="evidence-table research-universe-table">
           <caption className="sr-only">
@@ -273,8 +270,10 @@ export function HourlyRankingTable({
                 href,
               }) => (
                 <tr key={entryId}>
-                  <td className="rank">{rank}</td>
-                  <td className="rank-move">
+                  <td className="rank" data-label="Rank">
+                    {rank}
+                  </td>
+                  <td className="rank-move" data-label="Rank change">
                     {(() => {
                       const movement = formatRankChange(
                         rankChange,
@@ -286,7 +285,7 @@ export function HourlyRankingTable({
                       );
                     })()}
                   </td>
-                  <td>
+                  <td data-label="Founder / founding team">
                     {href ? (
                       <>
                         <Link href={href}>
@@ -303,16 +302,19 @@ export function HourlyRankingTable({
                       </>
                     )}
                   </td>
-                  <td>
+                  <td data-label="Project / company">
                     <strong>{project}</strong>
                     {marketLabel && <small>{marketLabel}</small>}
                   </td>
-                  <td>{valueType}</td>
-                  <td className="number primary-value">
+                  <td data-label="Value type">{valueType}</td>
+                  <td
+                    className="number primary-value"
+                    data-label="Provisional value created"
+                  >
                     <strong>{money(provisionalValueCreatedUsd)}</strong>
                     {upperEstimate && <small>Upper estimate</small>}
                   </td>
-                  <td>
+                  <td data-label="Confidence">
                     {confidenceScore}/100 · {confidenceLabel}
                   </td>
                 </tr>

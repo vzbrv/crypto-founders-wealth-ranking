@@ -46,8 +46,11 @@ export default async function UnifiedRankingPage() {
               Estimated value created for outside holders and shareholders
             </h2>
             <p>
-              One joint founding unit per economic entity. Public-company market
-              caps use reconstructed outstanding shares, not enterprise value.
+              Each rank belongs to one founder or joint founding team. Notable
+              public members are named inside team rows when supported by cited
+              evidence; they are not ranked again separately. Public-company
+              market caps use reconstructed outstanding shares, not enterprise
+              value.
             </p>
           </div>
           <HourlyRankingTable

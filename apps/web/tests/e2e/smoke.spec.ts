@@ -193,12 +193,18 @@ test("fits the founder ranking on a mobile viewport", async ({ page }) => {
       name: "Top Crypto Founders Ranked by Value Created for Others.",
     }),
   ).toBeVisible();
-  await expect(
-    page.getByRole("columnheader", {
-      name: "Founder or joint founding team",
-    }),
-  ).toBeVisible();
+  await expect(page.locator(".research-universe-table thead")).toBeAttached();
   await expect(page.locator("tbody tr td a").first()).toBeVisible();
+  await expect(page.locator("tbody tr").first()).toHaveCSS("display", "block");
+  await expect(page.locator("tbody tr td").nth(2)).toHaveAttribute(
+    "data-label",
+    "Founder / founding team",
+  );
+  expect(
+    await page
+      .locator(".research-universe-table")
+      .evaluate((table) => table.scrollWidth <= table.clientWidth),
+  ).toBe(true);
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= window.innerWidth,
