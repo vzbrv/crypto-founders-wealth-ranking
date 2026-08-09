@@ -1,0 +1,11 @@
+rank,entry_id,workbook_project,score_before,score_after,confidence_before,confidence_after,upper_estimate_before,upper_estimate_after,high_eligible,evidence_effect,remaining_blocker
+1,bitcoin,P_BTC,65,65,Medium,Medium,true,true,false,Fair-launch and genesis context strengthened,Complete attributable founder wallet cluster and lifetime capital review remain unresolved
+2,ethereum,P_ETH,60,60,Low,Low,true,true,false,Founder identity and 2014 sale terms strengthened,Complete founder team and Foundation holdings plus crowdsale capital treatment remain unresolved
+3,bnb,P_BNB,55,55,Low,Low,true,true,false,Historical allocation and ICO context strengthened,Current beneficial ownership and complete project capital ledger remain unresolved
+4,xrp,P_XRP,65,65,Medium,Medium,true,true,false,Corporate XRP and financing subclaims strengthened,Current founder holdings and multi-project capital allocation remain unresolved
+5,solana,P_SOL,65,65,Medium,Medium,true,true,false,Historical allocations and financing subclaims strengthened,Current attributable wallets and complete non-overlapping capital ledger remain unresolved
+6,coinbase,,95,95,High,High,false,false,true,Not covered by workbook,Existing accepted inputs require normal snapshot refresh only
+7,tron,P_TRX,60,60,Low,Low,true,true,false,Founder identity and initial distribution context strengthened,Current attributable wallets and primary sale proceeds remain unresolved
+8,circle,P_USDC,91,91,Medium,Medium,true,true,false,Share ownership circulation and financing subclaims strengthened,Founder-unit snapshot alignment and multi-project capital allocation remain unresolved
+9,hyperliquid,P_HYPE,60,60,Low,Low,true,true,false,Scoped no-investor evidence narrows the capital review,Current core-contributor and Foundation wallet ownership remains unresolved
+10,dogecoin,P_DOGE,65,65,Medium,Medium,true,true,false,Creator launch and Foundation-wallet context strengthened,Founder personal wallet coverage and extended capital review remain unresolved

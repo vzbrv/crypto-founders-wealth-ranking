@@ -10,6 +10,17 @@ Research snapshot: 2026-08-09. These are candidate sources, not accepted ranking
 - Circle is now `Medium`: its score is 91, but it remains an upper estimate.
 - No researched candidate in this change promotes or reprices a ranking.
 
+## Workbook intake
+
+The 2026-08-09 top-10 workbook was reconciled to the bundled ranking rows. It contains 46 evidence claims across 10 token projects and 18 unresolved review items. Every project is explicitly marked `ineligible` in the workbook.
+
+- USDC maps to the Circle ranking row; Tether/USDT has no current bundled top-10 row.
+- Coinbase is not covered by the workbook, so its accepted inputs are unchanged.
+- Primary filings and official project sources strengthen individual ownership, supply, or financing subclaims, but none closes every required ownership and outside-capital component at one snapshot.
+- The workbook therefore changes no score, confidence label, upper-estimate flag, rank, or production input.
+
+The row-by-row result is recorded in `top10-confidence-recalculation-2026-08-09.csv`.
+
 ## Public-company candidates
 
 | Project        | Primary filing evidence                                                                                                              | Remaining work                                                                                                   |
