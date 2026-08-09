@@ -233,6 +233,8 @@ In the strict engine, a founding unit ranks only when every linked project has a
 non-null score, recent sourced market data, sufficient wallet and funding
 reviews, complete evidence, and confidence above Insufficient. Otherwise its
 rank and score are null and the exact eligibility reasons remain visible.
+Passing that calculation gate does not authorize canonical publication: the
+publication gate separately requires High confidence.
 
 ## Review states, zero, and precision
 

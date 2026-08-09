@@ -34,6 +34,10 @@ High confidence is derived from the versioned evidence policy. It cannot be set
 manually. Private equity and liabilities are required only for a separate net
 worth metric; they are not inputs to value created for others.
 
+Canonical publication requires High confidence. Medium, Low, and Insufficient
+results remain visible only as research candidates and cannot enter a published
+ranking snapshot.
+
 ## Rollback
 
 Keep the existing public contract during the shadow period. If the v2 response

@@ -107,8 +107,8 @@ const projectChecks: ReadonlyArray<{
   },
   {
     code: "CONFIDENCE_GATE_FAILED",
-    failed: (p) => p.eligible && p.confidenceStatus === "insufficient",
-    message: "An eligible project failed its confidence gate.",
+    failed: (p) => p.eligible && p.confidenceStatus !== "high",
+    message: "An eligible project is not high confidence.",
   },
   {
     code: "INDEPENDENT_REVIEW_REQUIRED",

@@ -6,6 +6,15 @@ import Decimal from "decimal.js";
 export type UnifiedValueType = "Token/network" | "Public company";
 export type UnifiedConfidenceLabel = "Low" | "Medium" | "High";
 
+export function classifyUnifiedConfidence(
+  score: number,
+  upperEstimate: boolean,
+): UnifiedConfidenceLabel {
+  if (score >= 85 && !upperEstimate) return "High";
+  if (score >= 65) return "Medium";
+  return "Low";
+}
+
 export interface UnifiedSource {
   id: string;
   category: string;
@@ -346,6 +355,17 @@ export function validateUnifiedDataset(dataset: UnifiedDataset): string[] {
       )
     )
       errors.push(`${entry.entryId} confidence does not reproduce`);
+    if (
+      calculation &&
+      entry.confidence.label !==
+        classifyUnifiedConfidence(
+          entry.confidence.score,
+          calculation.upperEstimate,
+        )
+    )
+      errors.push(
+        `${entry.entryId} confidence label does not match score and upper-estimate state`,
+      );
     if (/USDC|stablecoin supply/i.test(entry.project))
       errors.push(
         `${entry.entryId} mixes stablecoin supply with company equity`,

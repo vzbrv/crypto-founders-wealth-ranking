@@ -51,4 +51,24 @@ describe("ranking v2 publication validation", () => {
       "INPUT_HASH_MISMATCH",
     ]);
   });
+
+  it.each(["medium", "low", "insufficient"] as const)(
+    "rejects %s confidence from canonical publication",
+    (confidenceStatus) => {
+      expect(
+        validatePublication({
+          projects: [{ ...complete, confidenceStatus }],
+          expectedProjectIds: ["btc"],
+          deterministic: true,
+          inputHashesMatch: true,
+        }),
+      ).toEqual([
+        {
+          reasonCode: "CONFIDENCE_GATE_FAILED",
+          projectId: "btc",
+          publicMessage: "An eligible project is not high confidence.",
+        },
+      ]);
+    },
+  );
 });

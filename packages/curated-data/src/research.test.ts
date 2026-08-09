@@ -66,7 +66,7 @@ describe("research dataset import", () => {
     expect(data.provisionalMarketObservations).toHaveLength(25);
     expect(data.provisionalCapitalEvents).toHaveLength(13);
     expect(data.provisionalExcludedEvidence).toHaveLength(10);
-    expect(data.sources).toHaveLength(73);
+    expect(data.sources).toHaveLength(84);
     expect(
       data.candidates
         .filter(({ publicationStatus }) => publicationStatus === "Ready")

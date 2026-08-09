@@ -6,6 +6,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildUnifiedRanking,
   calculateUnifiedEntry,
+  classifyUnifiedConfidence,
   loadUnifiedData,
   loadProductionUnifiedData,
   validateUnifiedDataset,
@@ -142,6 +143,29 @@ describe("unified ranking dataset", () => {
       ),
     ).toThrow(
       "Accepted token ownership requires a calculable token supply/price model",
+    );
+  });
+
+  it("does not classify an upper estimate as High confidence", async () => {
+    const dataset = await loadUnifiedData(
+      path.join(repositoryRoot, "data/research"),
+    );
+    const coinbase = dataset.entries.find(
+      (entry) => entry.entryId === "coinbase",
+    );
+    if (!coinbase) throw new Error("test fixture must include Coinbase");
+
+    expect(classifyUnifiedConfidence(95, true)).toBe("Medium");
+    const invalidDataset = {
+      ...dataset,
+      entries: dataset.entries.map((entry) =>
+        entry.entryId === "coinbase"
+          ? { ...entry, upperEstimate: true }
+          : entry,
+      ),
+    };
+    expect(validateUnifiedDataset(invalidDataset)).toContain(
+      "coinbase confidence label does not match score and upper-estimate state",
     );
   });
 });
