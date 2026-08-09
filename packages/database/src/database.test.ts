@@ -110,6 +110,10 @@ const ownershipConfidenceRankingGateMigrationUrl = new URL(
   "../../../supabase/migrations/202608080003_ownership_confidence_ranking_gate.sql",
   import.meta.url,
 );
+const rankingV2FoundationMigrationUrl = new URL(
+  "../../../supabase/migrations/202608090001_ranking_v2_foundation.sql",
+  import.meta.url,
+);
 const sqlConfidenceEvidence = await readFile(
   sqlConfidenceEvidenceMigrationUrl,
   "utf8",
@@ -143,6 +147,7 @@ const migrationSql = [
   await readFile(unifiedHourlySourceMigrationUrl, "utf8"),
   await readFile(immutableLiveSnapshotContractMigrationUrl, "utf8"),
   await readFile(ownershipConfidenceRankingGateMigrationUrl, "utf8"),
+  await readFile(rankingV2FoundationMigrationUrl, "utf8"),
 ].join("\n");
 const seedSql = await readFile(seedUrl, "utf8");
 const productionDataDirectory = fileURLToPath(
@@ -572,6 +577,38 @@ describe("Provider quota protection", () => {
 });
 
 describe("Phase 3 database", () => {
+  it("enforces the ranking v2 score grain and append-only reviews", async () => {
+    const database = await createDatabase();
+    const tables = await database.query<{ table_name: string }>(`
+      select table_name from information_schema.tables
+      where table_schema = 'ranking_v2' order by table_name
+    `);
+
+    expect(tables.rows.map(({ table_name }) => table_name)).toEqual([
+      "economic_projects",
+      "entities",
+      "people",
+      "project_memberships",
+      "review_decisions",
+      "snapshot_project_scores",
+      "snapshots",
+    ]);
+
+    await database.exec(`
+      insert into ranking_v2.review_decisions
+        (id, subject_type, subject_id, decision, reviewer_id, reviewed_at)
+      values
+        ('10000000-0000-4000-8000-000000000001', 'project',
+         '20000000-0000-4000-8000-000000000001', 'approved', 'reviewer', now())
+    `);
+    await expect(
+      database.exec(`
+      update ranking_v2.review_decisions set decision = 'rejected'
+      where id = '10000000-0000-4000-8000-000000000001'
+    `),
+    ).rejects.toThrow("append-only");
+  });
+
   it("keeps SQL confidence weights and label boundaries aligned", () => {
     expect(
       [...sqlConfidenceEvidence.matchAll(/'maximum_score', (\d+)/g)].map(
