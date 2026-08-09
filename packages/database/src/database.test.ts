@@ -118,6 +118,10 @@ const rankingV2InputsMigrationUrl = new URL(
   "../../../supabase/migrations/202608090002_ranking_v2_inputs.sql",
   import.meta.url,
 );
+const rankingV2PublicationMigrationUrl = new URL(
+  "../../../supabase/migrations/202608090003_ranking_v2_publication.sql",
+  import.meta.url,
+);
 const sqlConfidenceEvidence = await readFile(
   sqlConfidenceEvidenceMigrationUrl,
   "utf8",
@@ -153,6 +157,7 @@ const migrationSql = [
   await readFile(ownershipConfidenceRankingGateMigrationUrl, "utf8"),
   await readFile(rankingV2FoundationMigrationUrl, "utf8"),
   await readFile(rankingV2InputsMigrationUrl, "utf8"),
+  await readFile(rankingV2PublicationMigrationUrl, "utf8"),
 ].join("\n");
 const seedSql = await readFile(seedUrl, "utf8");
 const productionDataDirectory = fileURLToPath(
@@ -596,6 +601,7 @@ describe("Phase 3 database", () => {
       "capital_event_unallocated_remainders",
       "capital_events",
       "circulating_supply_observations_raw",
+      "current_published_snapshot",
       "economic_projects",
       "entities",
       "market_cap_observations_diagnostic",
@@ -603,8 +609,11 @@ describe("Phase 3 database", () => {
       "people",
       "price_observations_raw",
       "project_memberships",
+      "publication_attempts",
+      "publication_rejection_reasons",
       "review_decisions",
       "snapshot_balance_inputs",
+      "snapshot_invalidations",
       "snapshot_price_inputs",
       "snapshot_project_scores",
       "snapshot_supply_inputs",
@@ -624,6 +633,80 @@ describe("Phase 3 database", () => {
       where id = '10000000-0000-4000-8000-000000000001'
     `),
     ).rejects.toThrow("append-only");
+  });
+
+  it("persists rejection receipts and publishes a complete cohort atomically", async () => {
+    const database = await createDatabase();
+    await database.exec(`
+      insert into ranking_v2.economic_projects (id, slug, name) values
+        ('20000000-0000-4000-8000-000000000001', 'alpha', 'Alpha');
+      insert into ranking_v2.snapshots
+        (id, economic_as_of, knowledge_cutoff, snapshot_currency, monetary_basis,
+         methodology_version_id, confidence_policy_version,
+         calculation_engine_version, calculation_engine_git_commit,
+         calculation_solver_version, solver_configuration_hash, schema_version,
+         constraint_set_hash, canonical_serialization_version, balance_inputs_hash,
+         price_inputs_hash, supply_inputs_hash, capital_inputs_hash, evidence_state_hash)
+      values
+        ('40000000-0000-4000-8000-000000000001', now(), now(), 'USD', 'nominal',
+         'v2', 'v1', 'engine', 'commit', 'solver', 'solver-hash', 'v2',
+         'constraint-hash', 'v1', 'balances', 'prices', 'supply', 'capital', 'evidence');
+    `);
+
+    const rejected = await database.query<{
+      published: boolean;
+      reason_code: string;
+    }>(`
+      select * from ranking_v2.publish_snapshot(
+        '50000000-0000-4000-8000-000000000001',
+        '40000000-0000-4000-8000-000000000001', 'engine')
+    `);
+    expect(rejected.rows[0]).toEqual({
+      published: false,
+      reason_code: "COHORT_INCOMPLETE",
+    });
+
+    await database.exec(`
+      update ranking_v2.snapshots
+      set status = 'validated', validated_at = now()
+      where id = '40000000-0000-4000-8000-000000000001';
+      insert into ranking_v2.snapshot_project_scores
+        (snapshot_id, economic_project_id, circulating_value_min,
+         circulating_value_max, affiliated_value_min, affiliated_value_max,
+         qualifying_capital_min, qualifying_capital_max, value_created_lower,
+         value_created_upper, eligibility_status, rank_min, rank_max,
+         rank_order_status, confidence_status, output_hash)
+      values
+        ('40000000-0000-4000-8000-000000000001',
+         '20000000-0000-4000-8000-000000000001', 100, 100, 10, 10, 20, 20,
+         70, 70, 'eligible', 1, 1, 'exact', 'high', 'score-hash');
+    `);
+
+    const published = await database.query<{
+      published: boolean;
+      reason_code: string | null;
+    }>(`
+      select * from ranking_v2.publish_snapshot(
+        '50000000-0000-4000-8000-000000000002',
+        '40000000-0000-4000-8000-000000000001', 'engine')
+    `);
+    expect(published.rows[0]).toEqual({ published: true, reason_code: null });
+
+    const state = await database.query<{
+      status: string;
+      snapshot_id: string;
+      attempts: number;
+    }>(`
+      select s.status::text, current.snapshot_id::text,
+        (select count(*)::int from ranking_v2.publication_attempts) attempts
+      from ranking_v2.current_published_snapshot current
+      join ranking_v2.snapshots s on s.id = current.snapshot_id
+    `);
+    expect(state.rows[0]).toEqual({
+      status: "published",
+      snapshot_id: "40000000-0000-4000-8000-000000000001",
+      attempts: 2,
+    });
   });
 
   it("rejects a reviewed capital event without a feasible conserved allocation", async () => {

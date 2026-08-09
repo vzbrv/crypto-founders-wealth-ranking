@@ -34,7 +34,9 @@ import {
 export * from "./types.js";
 export * from "./v2/confidence.js";
 export * from "./v2/inputs.js";
+export * from "./v2/publication.js";
 export * from "./v2/ranking.js";
+export * from "./v2/reproduction.js";
 export * from "./v2/solver.js";
 export { CalculationInputError } from "./decimal.js";
 
