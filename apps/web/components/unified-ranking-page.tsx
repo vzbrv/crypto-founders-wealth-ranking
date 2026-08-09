@@ -13,7 +13,7 @@ export default async function UnifiedRankingPage() {
       <SiteNav />
       <main className="content-page" id="main-content" tabIndex={-1}>
         <header className="page-header">
-          <p className="eyebrow">Crypto Founders Value Index</p>
+          <p className="eyebrow">Crypto Founders Value Created Index</p>
           <h1>Top Crypto Founders Ranked by Value Created for Others.</h1>
           <p>
             After each complete live hourly snapshot is published, the table
