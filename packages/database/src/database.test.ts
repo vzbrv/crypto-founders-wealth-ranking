@@ -126,6 +126,10 @@ const rankingV2CutoverMigrationUrl = new URL(
   "../../../supabase/migrations/202608090004_ranking_v2_cutover.sql",
   import.meta.url,
 );
+const restrictAnonRawObservationsMigrationUrl = new URL(
+  "../../../supabase/migrations/202608090005_restrict_anon_raw_observations.sql",
+  import.meta.url,
+);
 const sqlConfidenceEvidence = await readFile(
   sqlConfidenceEvidenceMigrationUrl,
   "utf8",
@@ -163,6 +167,7 @@ const migrationSql = [
   await readFile(rankingV2InputsMigrationUrl, "utf8"),
   await readFile(rankingV2PublicationMigrationUrl, "utf8"),
   await readFile(rankingV2CutoverMigrationUrl, "utf8"),
+  await readFile(restrictAnonRawObservationsMigrationUrl, "utf8"),
 ].join("\n");
 const seedSql = await readFile(seedUrl, "utf8");
 const productionDataDirectory = fileURLToPath(
@@ -1210,7 +1215,7 @@ describe("Phase 3 database", () => {
     await database.exec("set role anon");
     try {
       const wallets = await database.query<{ deduplication_key: string }>(
-        "select deduplication_key from tracked_wallets order by deduplication_key",
+        "select deduplication_key from public_wallet_evidence order by deduplication_key",
       );
       expect(wallets.rows).toEqual([
         { deduplication_key: "synthetic-horizon-team-wallet" },
@@ -1224,6 +1229,52 @@ describe("Phase 3 database", () => {
       expect(fundingRounds.rows).toEqual([
         { deduplication_key: "synthetic-horizon-seed" },
       ]);
+    } finally {
+      await database.exec("reset role");
+    }
+  });
+
+  it("keeps raw operational and wallet records private while public projections remain readable", async () => {
+    const database = await createDatabase(true);
+    const rawRelations = [
+      "calculation_runs",
+      "market_observations",
+      "tracked_wallets",
+      "wallet_asset_mappings",
+      "wallet_balance_observations",
+    ];
+
+    await database.exec("set role anon");
+    try {
+      for (const relation of rawRelations) {
+        await expect(
+          database.query(`select * from public.${relation} limit 0`),
+        ).rejects.toThrow(/permission denied/);
+      }
+
+      for (const view of [
+        "current_project_scores",
+        "current_founding_unit_scores",
+        "public_project_details",
+        "public_source_claims",
+        "public_wallet_evidence",
+      ]) {
+        await expect(
+          database.query(`select * from public.${view} limit 0`),
+        ).resolves.toBeDefined();
+      }
+    } finally {
+      await database.exec("reset role");
+    }
+
+    await database.exec("set role service_role");
+    try {
+      await expect(
+        database.query("select * from public.tracked_wallets limit 0"),
+      ).resolves.toBeDefined();
+      await expect(
+        database.query("select * from public.wallet_asset_mappings limit 0"),
+      ).resolves.toBeDefined();
     } finally {
       await database.exec("reset role");
     }
