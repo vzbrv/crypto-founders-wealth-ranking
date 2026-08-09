@@ -183,6 +183,7 @@ export function formatV2Value(row: CurrentRankingV2Row): string {
       style: "currency",
       currency: "USD",
       notation: "compact",
+      minimumFractionDigits: 0,
       maximumFractionDigits: 2,
     }).format(new Decimal(value).toNumber());
   return new Decimal(row.value_created_lower).eq(row.value_created_upper)
