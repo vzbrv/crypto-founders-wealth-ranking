@@ -8,12 +8,15 @@ import type { UnifiedCalculation } from "@crypto-founders/curated-data/unified";
 import { formatRankChange, type RankChangeStatus } from "../lib/rank-change";
 
 type LiveHeader = {
+  id: string;
   utc_hour: string;
   observation_at: string;
-  publication_at: string | null;
-  is_immutable: boolean;
+  publication_at: string;
 };
 type LiveResult = {
+  snapshot_id: string;
+  utc_hour: string;
+  publication_at: string | null;
   entry_id: string;
   rank: number;
   value_type: string;
@@ -80,6 +83,20 @@ function publicMarketLabel(market: unknown): string | null {
     .join(" · ");
 }
 
+function aggregateFreshness(
+  results: LiveResult[],
+): LiveResult["freshness_status"] {
+  if (results.some((result) => result.freshness_status === "historical"))
+    return "historical";
+  if (results.some((result) => result.freshness_status === "stale"))
+    return "stale";
+  return "current";
+}
+
+function validTimestamp(value: string | null | undefined): value is string {
+  return typeof value === "string" && Number.isFinite(Date.parse(value));
+}
+
 export function HourlyRankingTable({
   fallbackRanking,
   fallbackSnapshotDate,
@@ -108,29 +125,42 @@ export function HourlyRankingTable({
         })
         .catch(() => undefined);
 
-      void Promise.all([
-        readView<LiveHeader>(
-          "public_current_published_snapshot",
-          "select=utc_hour,observation_at,publication_at,is_immutable&limit=1",
-        ),
-        readView<LiveResult>(
-          "public_current_snapshot_results",
-          "select=*&order=rank.asc",
-        ),
-      ])
-        .then(([headers, results]) => {
+      // This view binds every result to the current published snapshot in one
+      // database statement. Reading it once avoids combining two snapshots if
+      // publication advances between requests.
+      void readView<LiveResult>(
+        "public_current_snapshot_results",
+        "select=*&order=rank.asc",
+      )
+        .then((results) => {
           const ranks = results
             .map((result) => result.rank)
             .sort((a, b) => a - b);
-          const header = headers[0];
+          const first = results[0];
+          const header = first?.publication_at
+            ? {
+                id: first.snapshot_id,
+                utc_hour: first.utc_hour,
+                observation_at: first.observation_at,
+                publication_at: first.publication_at,
+              }
+            : null;
           const valid =
             Boolean(header) &&
-            header?.is_immutable === true &&
-            results.length === 20 &&
-            new Set(results.map((result) => result.entry_id)).size === 20 &&
+            Boolean(header?.id) &&
+            validTimestamp(header?.utc_hour) &&
+            validTimestamp(header?.observation_at) &&
+            validTimestamp(header?.publication_at) &&
+            results.length === fallbackRanking.length &&
+            new Set(results.map((result) => result.entry_id)).size ===
+              fallbackRanking.length &&
             ranks.every((rank, index) => rank === index + 1) &&
             results.every(
               (result) =>
+                result.snapshot_id === header?.id &&
+                result.utc_hour === header?.utc_hour &&
+                result.observation_at === header?.observation_at &&
+                result.publication_at === header?.publication_at &&
                 result.entry_id !== "" &&
                 result.founder_team !== "" &&
                 result.project !== "" &&
@@ -151,7 +181,7 @@ export function HourlyRankingTable({
       active = false;
       window.clearInterval(interval);
     };
-  }, []);
+  }, [fallbackRanking.length]);
 
   const rows = live
     ? live.results.map((result) => {
@@ -172,6 +202,7 @@ export function HourlyRankingTable({
           rankChange: result.rank_change,
           rankChangeSource: "live" as const,
           rankChangeStatus: result.rank_change_status,
+          freshnessStatus: result.freshness_status,
           href: fallback ? `/ranking/${result.entry_id}/` : null,
         };
       })
@@ -193,6 +224,7 @@ export function HourlyRankingTable({
           rankChange: null,
           rankChangeSource: "fallback" as const,
           rankChangeStatus: "baseline" as const,
+          freshnessStatus: "historical" as const,
           href: `/ranking/${entry.entryId}/`,
         }),
       );
@@ -207,10 +239,7 @@ export function HourlyRankingTable({
           Live immutable snapshot · Published{" "}
           {dateTime(live.header.publication_at)} UTC · Observed{" "}
           {dateTime(observationDate)} UTC · Data freshness:{" "}
-          {live.results.some((row) => row.freshness_status === "stale")
-            ? "stale"
-            : "current"}
-          .
+          {aggregateFreshness(live.results)}.
         </p>
       ) : (
         <p className="notice warning">
@@ -218,19 +247,20 @@ export function HourlyRankingTable({
           complete immutable live snapshot is available.
         </p>
       )}
-      {live && latestStatus?.status === "failed" && (
-        <p className="notice warning">
-          Latest scheduled run failed. Showing the last complete immutable
-          snapshot
+      {latestStatus?.status === "failed" && (
+        <p className="notice warning" role="alert">
+          Latest scheduled run failed. Showing the{" "}
+          {live ? "last complete immutable" : "bundled"} snapshot
           {latestStatus.failure_reason
             ? `: ${latestStatus.failure_reason}`
             : "."}
         </p>
       )}
-      {endpointError && live && (
-        <p className="notice warning">
-          The latest refresh failed. The last verified immutable snapshot
-          remains displayed.
+      {endpointError && (
+        <p className="notice warning" role="alert">
+          Live endpoint refresh failed. The{" "}
+          {live ? "last verified immutable" : "bundled"} snapshot remains
+          displayed.
         </p>
       )}
       <p className="table-scroll-note">
@@ -270,6 +300,7 @@ export function HourlyRankingTable({
                 rankChange,
                 rankChangeSource,
                 rankChangeStatus,
+                freshnessStatus,
                 href,
               }) => (
                 <tr key={entryId}>
@@ -314,6 +345,7 @@ export function HourlyRankingTable({
                   </td>
                   <td>
                     {confidenceScore}/100 · {confidenceLabel}
+                    <small>Observation: {freshnessStatus}</small>
                   </td>
                 </tr>
               ),

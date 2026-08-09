@@ -13,6 +13,9 @@ function buildLiveSnapshotResults(
   return Array.from({ length: 20 }, (_, index) => {
     const rank = index + 1;
     return {
+      snapshot_id: "snapshot-current",
+      utc_hour: now,
+      publication_at: now,
       entry_id: `entry-${rank}`,
       rank,
       value_type: "Token/network",
@@ -702,6 +705,7 @@ test("shows a stale-data notice when the live snapshot reports stale freshness",
   await expect(
     page.getByText("Data freshness: stale.", { exact: false }),
   ).toBeVisible();
+  await expect(page.getByText("Observation: stale")).toBeVisible();
 });
 
 test("shows a scheduled-run-failed notice while still rendering the last good live snapshot", async ({
@@ -746,6 +750,37 @@ test("falls back to the bundled snapshot when no valid live snapshot is availabl
 
   await expect(
     page.getByText("No complete immutable live snapshot is available.", {
+      exact: false,
+    }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("Live endpoint refresh failed.", { exact: false }),
+  ).toBeVisible();
+});
+
+test("rejects a response containing rows from multiple snapshots", async ({
+  page,
+}) => {
+  const results = buildLiveSnapshotResults({
+    20: { snapshot_id: "snapshot-other" },
+  });
+  await mockLiveSnapshot(page, {
+    results,
+    latestStatus: {
+      status: "failed",
+      failure_reason: "Published snapshot failed completeness validation",
+    },
+  });
+
+  await page.goto("/");
+
+  await expect(
+    page.getByText("No complete immutable live snapshot is available.", {
+      exact: false,
+    }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("Published snapshot failed completeness validation", {
       exact: false,
     }),
   ).toBeVisible();
