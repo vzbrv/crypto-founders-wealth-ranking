@@ -324,10 +324,15 @@ export function HourlyRankingTable({
           complete immutable live snapshot is available.
         </p>
       )}
-      {latestStatus?.status === "failed" && !rankingV2 && (
+      {latestStatus?.status === "failed" && (
         <p className="notice warning" role="alert">
           Latest scheduled run failed. Showing the{" "}
-          {live ? "last complete immutable" : "bundled"} snapshot
+          {rankingV2
+            ? "last verified published v2"
+            : live
+              ? "last complete immutable"
+              : "bundled"}{" "}
+          snapshot
           {latestStatus.failure_reason
             ? `: ${latestStatus.failure_reason}`
             : "."}

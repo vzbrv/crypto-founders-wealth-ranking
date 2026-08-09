@@ -745,11 +745,21 @@ test("supports keyboard control of the mobile navigation", async ({ page }) => {
 // production data). None of these were previously covered by e2e tests —
 // see the audit notes.
 
-test("renders the atomic v2 project ranking before the legacy snapshot", async ({
+test("renders the atomic v2 ranking and reports a newer failed run", async ({
   page,
 }) => {
   await page.route("**/rest/v1/public_latest_snapshot_status**", (route) =>
-    route.fulfill({ status: 500, body: "" }),
+    route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify([
+        {
+          status: "failed",
+          publication_at: null,
+          observation_at: now,
+          failure_reason: "CoinGecko quota exhausted",
+        },
+      ]),
+    }),
   );
   await page.route("**/rest/v1/rpc/get_current_ranking_v2", (route) =>
     route.fulfill({
@@ -760,13 +770,21 @@ test("renders the atomic v2 project ranking before the legacy snapshot", async (
 
   await page.goto("/");
 
-  await expect(page.getByText("Published v2 snapshot")).toBeVisible();
+  await expect(
+    page.locator("p.notice").filter({ hasText: /^Published v2 snapshot/ }),
+  ).toBeVisible();
   await expect(
     page.getByText("Vitalik Buterin (founder); Ethereum founding team"),
   ).toBeVisible();
   await expect(page.getByText("$70M–$90M")).toBeVisible();
   await expect(page.getByText("Rank order: overlapping")).toBeVisible();
   await expect(page.getByText("Provisional interval")).toBeVisible();
+  await expect(
+    page.getByText(
+      "Latest scheduled run failed. Showing the last verified published v2 snapshot: CoinGecko quota exhausted",
+      { exact: false },
+    ),
+  ).toBeVisible();
 });
 
 test("shows a stale-data notice when the live snapshot reports stale freshness", async ({
