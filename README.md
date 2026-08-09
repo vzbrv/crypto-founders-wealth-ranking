@@ -1,4 +1,4 @@
-# Crypto Founders Wealth Ranking
+# Crypto Founders Value Created Index
 
 Monorepo foundation for a source-backed ranking of popular crypto founders and documented founding teams by estimated value created for outside holders or shareholders. The primary metric is not personal net worth, liquid wealth, or wallet balance.
 
