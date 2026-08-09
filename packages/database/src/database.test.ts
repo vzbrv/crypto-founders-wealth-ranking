@@ -114,6 +114,10 @@ const rankingV2FoundationMigrationUrl = new URL(
   "../../../supabase/migrations/202608090001_ranking_v2_foundation.sql",
   import.meta.url,
 );
+const rankingV2InputsMigrationUrl = new URL(
+  "../../../supabase/migrations/202608090002_ranking_v2_inputs.sql",
+  import.meta.url,
+);
 const sqlConfidenceEvidence = await readFile(
   sqlConfidenceEvidenceMigrationUrl,
   "utf8",
@@ -148,6 +152,7 @@ const migrationSql = [
   await readFile(immutableLiveSnapshotContractMigrationUrl, "utf8"),
   await readFile(ownershipConfidenceRankingGateMigrationUrl, "utf8"),
   await readFile(rankingV2FoundationMigrationUrl, "utf8"),
+  await readFile(rankingV2InputsMigrationUrl, "utf8"),
 ].join("\n");
 const seedSql = await readFile(seedUrl, "utf8");
 const productionDataDirectory = fileURLToPath(
@@ -585,12 +590,24 @@ describe("Phase 3 database", () => {
     `);
 
     expect(tables.rows.map(({ table_name }) => table_name)).toEqual([
+      "assets",
+      "balance_observations_raw",
+      "capital_event_project_allocations",
+      "capital_event_unallocated_remainders",
+      "capital_events",
+      "circulating_supply_observations_raw",
       "economic_projects",
       "entities",
+      "market_cap_observations_diagnostic",
+      "ownership_exposures",
       "people",
+      "price_observations_raw",
       "project_memberships",
       "review_decisions",
+      "snapshot_balance_inputs",
+      "snapshot_price_inputs",
       "snapshot_project_scores",
+      "snapshot_supply_inputs",
       "snapshots",
     ]);
 
@@ -607,6 +624,30 @@ describe("Phase 3 database", () => {
       where id = '10000000-0000-4000-8000-000000000001'
     `),
     ).rejects.toThrow("append-only");
+  });
+
+  it("rejects a reviewed capital event without a feasible conserved allocation", async () => {
+    const database = await createDatabase();
+    await database.exec(`
+      insert into ranking_v2.capital_events
+        (id, amount_min, amount_max, currency, economic_time, material)
+      values
+        ('30000000-0000-4000-8000-000000000001', 100, 100, 'USD', now(), true);
+      insert into ranking_v2.capital_event_unallocated_remainders
+        (capital_event_id, amount_min, amount_max)
+      values
+        ('30000000-0000-4000-8000-000000000001', 0, 0);
+    `);
+
+    await expect(
+      database.exec(`
+        insert into ranking_v2.review_decisions
+          (id, subject_type, subject_id, decision, reviewer_id, reviewed_at)
+        values
+          ('30000000-0000-4000-8000-000000000002', 'capital_event',
+           '30000000-0000-4000-8000-000000000001', 'approved', 'reviewer', now())
+      `),
+    ).rejects.toThrow("no feasible conserved state");
   });
 
   it("keeps SQL confidence weights and label boundaries aligned", () => {

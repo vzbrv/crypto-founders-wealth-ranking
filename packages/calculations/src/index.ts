@@ -32,6 +32,7 @@ import {
 } from "./types.js";
 
 export * from "./types.js";
+export * from "./v2/inputs.js";
 export { CalculationInputError } from "./decimal.js";
 
 export const DEFAULT_MARKET_CAP_VARIANCE_TOLERANCE = "0.05";
