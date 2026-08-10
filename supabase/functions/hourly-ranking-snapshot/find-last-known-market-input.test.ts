@@ -34,6 +34,12 @@ function stubRpcResponse(body: unknown, status = 200) {
   );
 }
 
+const carriedProvenance = {
+  source_url: "https://example.com/market-source",
+  source_name: "yahoo_finance",
+  fetched_at: "2026-08-06T14:05:00.000Z",
+};
+
 describe("findLastKnownMarketInput", () => {
   it("returns the carried-forward value when the RPC finds a prior published entry", async () => {
     stubRpcResponse([
@@ -42,6 +48,7 @@ describe("findLastKnownMarketInput", () => {
         circulating_supply: null,
         gross_value_usd: "45000000000",
         observed_at: "2026-08-06T14:00:00.000Z",
+        ...carriedProvenance,
       },
     ]);
 
@@ -58,6 +65,9 @@ describe("findLastKnownMarketInput", () => {
       circulatingSupply: null,
       grossValueUsd: 45000000000,
       observedAt: "2026-08-06T14:00:00.000Z",
+      sourceUrl: "https://example.com/market-source",
+      provider: "yahoo_finance",
+      fetchedAt: "2026-08-06T14:05:00.000Z",
     });
   });
 
@@ -113,6 +123,7 @@ describe("findLastKnownMarketInput", () => {
         circulating_supply: "500",
         gross_value_usd: null,
         observed_at: "2026-08-06T14:00:00.000Z",
+        ...carriedProvenance,
       },
     ]);
 
@@ -129,6 +140,9 @@ describe("findLastKnownMarketInput", () => {
       circulatingSupply: 500,
       grossValueUsd: null,
       observedAt: "2026-08-06T14:00:00.000Z",
+      sourceUrl: "https://example.com/market-source",
+      provider: "yahoo_finance",
+      fetchedAt: "2026-08-06T14:05:00.000Z",
     });
   });
 
@@ -139,6 +153,7 @@ describe("findLastKnownMarketInput", () => {
         circulating_supply: null,
         gross_value_usd: "45000000000",
         observed_at: "2026-08-06T14:00:00.000Z",
+        ...carriedProvenance,
       },
     ]);
 
@@ -175,6 +190,7 @@ describe("findLastKnownMarketInput", () => {
           circulating_supply: null,
           gross_value_usd: "45000000000",
           observed_at: observedAt,
+          ...carriedProvenance,
         },
       ]);
 
@@ -189,6 +205,30 @@ describe("findLastKnownMarketInput", () => {
       expect(result).toBeNull();
     },
   );
+
+  it("rejects a carried-forward value without source provenance", async () => {
+    stubRpcResponse([
+      {
+        price_usd: "10",
+        circulating_supply: "500",
+        gross_value_usd: "5000",
+        observed_at: "2026-08-06T14:00:00.000Z",
+        source_url: null,
+        source_name: null,
+        fetched_at: null,
+      },
+    ]);
+
+    const result = await findLastKnownMarketInput(
+      "some-entry",
+      "https://example.supabase.co",
+      { "content-type": "application/json" },
+      7 * 24 * 60 * 60,
+      new Date("2026-08-06T15:00:00.000Z"),
+    );
+
+    expect(result).toBeNull();
+  });
 
   it("orders close Decimal values exactly, then uses entry ID as the tie-break", () => {
     const rows = [
