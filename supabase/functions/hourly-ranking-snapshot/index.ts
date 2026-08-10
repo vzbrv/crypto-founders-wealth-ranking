@@ -732,6 +732,10 @@ Deno.serve(async (request) => {
     const resultRows: Record<string, unknown>[] = [];
     const inputRows: Record<string, unknown>[] = [];
     const sourceRows = new Map<string, Record<string, unknown>>();
+    let coingeckoDegraded = false;
+    let coingeckoStale = false;
+    let yahooFinanceDegraded = false;
+    let yahooFinanceStale = false;
 
     for (const entry of document.entries) {
       let observationAt: string;
@@ -886,6 +890,14 @@ Deno.serve(async (request) => {
           ? publicMarketMaxStalenessSeconds
           : tokenMaxStalenessSeconds;
       const dataAge = ageSeconds(observationAt, now);
+      if (entry.market.type === "token") {
+        coingeckoDegraded ||= carriedForward;
+        coingeckoStale ||= dataAge > 90 * 60;
+      } else {
+        yahooFinanceDegraded ||=
+          carriedForward || marketProvider !== "yahoo_finance";
+        yahooFinanceStale ||= dataAge > 90 * 60;
+      }
       inputRows.push({
         entry_id: entry.entryId,
         value_type: entry.valueType,
@@ -958,6 +970,19 @@ Deno.serve(async (request) => {
       throw new Error("ranking is not a complete top 20");
     }
 
+    const checkedAt = now.toISOString();
+    const providerHealth = {
+      coingecko: {
+        checkedAt,
+        status: coingeckoDegraded ? "degraded" : "healthy",
+        freshness: coingeckoStale ? "stale" : "current",
+      },
+      yahoo_finance: {
+        checkedAt,
+        status: yahooFinanceDegraded ? "degraded" : "healthy",
+        freshness: yahooFinanceStale ? "stale" : "current",
+      },
+    };
     const snapshotId = await rpc<string>(
       supabaseUrl,
       headers,
@@ -969,31 +994,20 @@ Deno.serve(async (request) => {
           observation_at: now.toISOString(),
           calculation_version: calculationVersion,
           ranking_mode: rankingMode,
-          provider_health: {
-            coingecko: {
-              checkedAt: now.toISOString(),
-              status: "healthy",
-              freshness: "current",
-            },
-            yahoo_finance: {
-              checkedAt: now.toISOString(),
-              status: "healthy",
-              freshness: "current",
-            },
-          },
+          provider_health: providerHealth,
           provider_health_records: [
             {
               provider: "coingecko",
-              checked_at: now.toISOString(),
-              status: "healthy",
-              freshness: "current",
+              checked_at: providerHealth.coingecko.checkedAt,
+              status: providerHealth.coingecko.status,
+              freshness: providerHealth.coingecko.freshness,
               safe_message: "Batched token market response validated",
             },
             {
               provider: "yahoo_finance",
-              checked_at: now.toISOString(),
-              status: "healthy",
-              freshness: "current",
+              checked_at: providerHealth.yahoo_finance.checkedAt,
+              status: providerHealth.yahoo_finance.status,
+              freshness: providerHealth.yahoo_finance.freshness,
               safe_message: "Batched public-market response validated",
             },
           ],

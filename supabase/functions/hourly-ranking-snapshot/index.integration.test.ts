@@ -223,6 +223,7 @@ describe("hourly ranking snapshot integration", () => {
       results: Array<Record<string, unknown>>;
       inputs: Array<Record<string, unknown>>;
       sources: Array<Record<string, unknown>>;
+      provider_health: Record<string, { status: string; freshness: string }>;
     };
     expect(payload.results).toHaveLength(20);
 
@@ -236,6 +237,9 @@ describe("hourly ranking snapshot integration", () => {
     );
     expect(coinbaseSource?.source_name).toBe("nasdaq");
     expect(coinbaseSource?.source_url).toContain("api.nasdaq.com");
+    expect(payload.provider_health.yahoo_finance).toMatchObject({
+      status: "degraded",
+    });
 
     const coinbaseResult = payload.results.find(
       (row) => row.entry_id === "coinbase",
