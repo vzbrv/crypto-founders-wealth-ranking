@@ -38,13 +38,13 @@ function buildLiveSnapshotResults(
   });
 }
 
-function buildV2SnapshotResults(): Record<string, unknown>[] {
+function buildV2SnapshotResults(publishedAt = now): Record<string, unknown>[] {
   return [
     {
       snapshot_id: "snapshot-v2",
       economic_as_of: now,
       knowledge_cutoff: now,
-      published_at: now,
+      published_at: publishedAt,
       economic_project_id: "project-ethereum",
       project_slug: "ethereum",
       project_name: "Ethereum",
@@ -65,7 +65,7 @@ function buildV2SnapshotResults(): Record<string, unknown>[] {
       snapshot_id: "snapshot-v2",
       economic_as_of: now,
       knowledge_cutoff: now,
-      published_at: now,
+      published_at: publishedAt,
       economic_project_id: "project-solana",
       project_slug: "solana",
       project_name: "Solana",
@@ -785,6 +785,55 @@ test("renders the atomic v2 ranking and reports a newer failed run", async ({
       { exact: false },
     ),
   ).toBeVisible();
+});
+
+test("renders a newer published hourly snapshot instead of stale v2 data", async ({
+  page,
+}) => {
+  const v2PublishedAt = "2026-08-09T01:00:00.000Z";
+  const hourlyPublishedAt = "2026-08-09T02:00:00.000Z";
+  const results = buildLiveSnapshotResults().map((result) => ({
+    ...result,
+    utc_hour: hourlyPublishedAt,
+    observation_at: hourlyPublishedAt,
+    publication_at: hourlyPublishedAt,
+  }));
+
+  await page.route("**/rest/v1/public_latest_snapshot_status**", (route) =>
+    route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify([
+        {
+          status: "published",
+          publication_at: hourlyPublishedAt,
+          observation_at: hourlyPublishedAt,
+          failure_reason: null,
+        },
+      ]),
+    }),
+  );
+  await page.route("**/rest/v1/rpc/get_current_ranking_v2", (route) =>
+    route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify(buildV2SnapshotResults(v2PublishedAt)),
+    }),
+  );
+  await page.route("**/rest/v1/public_current_snapshot_results**", (route) =>
+    route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify(results),
+    }),
+  );
+
+  await page.goto("/");
+
+  await expect(
+    page.getByText("Live immutable snapshot", { exact: false }),
+  ).toBeVisible();
+  await expect(page.getByText("Founder 1", { exact: true })).toBeVisible();
+  await expect(
+    page.getByText("Vitalik Buterin (founder); Ethereum founding team"),
+  ).not.toBeVisible();
 });
 
 test("shows a stale-data notice when the live snapshot reports stale freshness", async ({

@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   formatV2Rank,
   formatV2Value,
+  isNewerPublishedSnapshot,
   validateCurrentRankingV2,
 } from "../../lib/ranking-v2";
 
@@ -38,6 +39,33 @@ const second = {
 };
 
 describe("ranking v2 public snapshot", () => {
+  it("prefers only a strictly newer published snapshot", () => {
+    expect(
+      isNewerPublishedSnapshot(
+        "published",
+        "2026-08-09T02:00:00.000Z",
+        "2026-08-09T01:00:00.000Z",
+      ),
+    ).toBe(true);
+    expect(
+      isNewerPublishedSnapshot(
+        "published",
+        "2026-08-09T01:00:00.000Z",
+        "2026-08-09T01:00:00.000Z",
+      ),
+    ).toBe(false);
+    expect(
+      isNewerPublishedSnapshot(
+        "failed",
+        "2026-08-09T02:00:00.000Z",
+        "2026-08-09T01:00:00.000Z",
+      ),
+    ).toBe(false);
+    expect(
+      isNewerPublishedSnapshot("published", null, "2026-08-09T01:00:00.000Z"),
+    ).toBe(false);
+  });
+
   it("accepts one coherent immutable snapshot without re-sorting it", () => {
     expect(validateCurrentRankingV2([row, second])?.rows).toEqual([
       row,
