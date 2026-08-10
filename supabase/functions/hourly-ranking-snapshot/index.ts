@@ -657,12 +657,18 @@ export async function findLastKnownMarketInput(
   circulatingSupply: number | null;
   grossValueUsd: number | null;
   observedAt: string;
+  sourceUrl: string;
+  provider: string;
+  fetchedAt: string;
 } | null> {
   let rows: Array<{
     price_usd: string | number | null;
     circulating_supply: string | number | null;
     gross_value_usd: string | number | null;
     observed_at: string | null;
+    source_url: string | null;
+    source_name: string | null;
+    fetched_at: string | null;
   }>;
   try {
     rows = await rpc(supabaseUrl, headers, "get_last_known_market_input", {
@@ -675,7 +681,15 @@ export async function findLastKnownMarketInput(
     return null;
   }
   const row = rows[0];
-  if (!row || row.price_usd === null || !row.observed_at) return null;
+  if (
+    !row ||
+    row.price_usd === null ||
+    !row.observed_at ||
+    !row.source_url?.startsWith("https://") ||
+    !row.source_name ||
+    !row.fetched_at
+  )
+    return null;
   if (ageSeconds(row.observed_at, now) > maxStalenessSeconds) return null;
   return {
     priceUsd: asNumber(row.price_usd, `${entryId} carried-forward price`),
@@ -691,6 +705,9 @@ export async function findLastKnownMarketInput(
             `${entryId} carried-forward gross value`,
           ),
     observedAt: row.observed_at,
+    sourceUrl: row.source_url,
+    provider: row.source_name,
+    fetchedAt: row.fetched_at,
   };
 }
 
@@ -741,6 +758,7 @@ Deno.serve(async (request) => {
       let observationAt: string;
       let marketProvider: string;
       let marketSourceUrl: string;
+      let marketFetchedAt: string;
       let marketPrice: number | null = null;
       let circulatingSupply: number | null = null;
       let tokenMarketCap: number | null = null;
@@ -758,6 +776,7 @@ Deno.serve(async (request) => {
           observationAt = market.observedAt;
           marketProvider = tokens.provider;
           marketSourceUrl = market.sourceUrl;
+          marketFetchedAt = now.toISOString();
         } else {
           const carried = await findLastKnownMarketInput(
             entry.entryId,
@@ -775,8 +794,9 @@ Deno.serve(async (request) => {
           circulatingSupply = carried.circulatingSupply;
           tokenMarketCap = carried.grossValueUsd ?? carried.priceUsd;
           observationAt = carried.observedAt;
-          marketProvider = tokens.provider;
-          marketSourceUrl = tokens.sourceUrl;
+          marketProvider = carried.provider;
+          marketSourceUrl = carried.sourceUrl;
+          marketFetchedAt = carried.fetchedAt;
           carriedForward = true;
           log("warn", "carried_forward_market_data", {
             entryId: entry.entryId,
@@ -791,6 +811,7 @@ Deno.serve(async (request) => {
           observationAt = quote.observedAt;
           marketProvider = quote.provider;
           marketSourceUrl = quote.sourceUrl;
+          marketFetchedAt = now.toISOString();
         } else {
           const carried = await findLastKnownMarketInput(
             entry.entryId,
@@ -806,8 +827,9 @@ Deno.serve(async (request) => {
           }
           marketPrice = carried.priceUsd;
           observationAt = carried.observedAt;
-          marketProvider = publicMarkets.provider;
-          marketSourceUrl = publicMarkets.sourceUrl;
+          marketProvider = carried.provider;
+          marketSourceUrl = carried.sourceUrl;
+          marketFetchedAt = carried.fetchedAt;
           carriedForward = true;
           log("warn", "carried_forward_market_data", {
             entryId: entry.entryId,
@@ -850,8 +872,12 @@ Deno.serve(async (request) => {
         source_url: marketSourceUrl,
         source_name: marketProvider,
         observed_at: observationAt,
-        fetched_at: now.toISOString(),
-        metadata: { entryId: entry.entryId, provider: marketProvider },
+        fetched_at: marketFetchedAt,
+        metadata: {
+          entryId: entry.entryId,
+          provider: marketProvider,
+          carriedForwardMarketData: carriedForward,
+        },
       });
       const sourceIds = [marketSourceId];
       const evidenceIds = new Set<string>();
