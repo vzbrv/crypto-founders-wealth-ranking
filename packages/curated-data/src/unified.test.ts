@@ -146,7 +146,7 @@ describe("unified ranking dataset", () => {
     );
   });
 
-  it("does not classify an upper estimate as High confidence", async () => {
+  it("requires rank-invariant reviewed bounds for an upper estimate to be High", async () => {
     const dataset = await loadUnifiedData(
       path.join(repositoryRoot, "data/research"),
     );
@@ -166,6 +166,53 @@ describe("unified ranking dataset", () => {
     };
     expect(validateUnifiedDataset(invalidDataset)).toContain(
       "coinbase confidence label does not match score and upper-estimate state",
+    );
+
+    const boundedDataset = {
+      ...dataset,
+      entries: dataset.entries.map((entry) =>
+        entry.entryId === "coinbase"
+          ? {
+              ...entry,
+              upperEstimate: true,
+              uncertaintyReview: {
+                evidenceState: "not_publicly_verifiable" as const,
+                lowerValueCreatedUsd: "35000000000",
+                upperValueCreatedUsd: "40000000000",
+                bestRank: 6,
+                worstRank: 6,
+                independentlyReviewed: true,
+                contradictionFree: true,
+                deduplicated: true,
+                sourceIds: ["COIN-PROXY-2026"],
+                notes: "Test-only bounded review.",
+              },
+            }
+          : entry,
+      ),
+    };
+    const boundedCoinbase = boundedDataset.entries.find(
+      (entry) => entry.entryId === "coinbase",
+    )!;
+    expect(
+      classifyUnifiedConfidence(
+        boundedCoinbase.confidence.score,
+        true,
+        boundedCoinbase.uncertaintyReview,
+        boundedCoinbase.rank,
+      ),
+    ).toBe("High");
+    expect(validateUnifiedDataset(boundedDataset)).not.toContain(
+      "coinbase confidence label does not match score and upper-estimate state",
+    );
+
+    const overstatedDataset = structuredClone(boundedDataset);
+    const overstatedCoinbase = overstatedDataset.entries.find(
+      (entry) => entry.entryId === "coinbase",
+    )!;
+    overstatedCoinbase.uncertaintyReview!.upperValueCreatedUsd = "100000000000";
+    expect(validateUnifiedDataset(overstatedDataset)).toContain(
+      "coinbase uncertainty ranks do not reproduce from bounds",
     );
   });
 });

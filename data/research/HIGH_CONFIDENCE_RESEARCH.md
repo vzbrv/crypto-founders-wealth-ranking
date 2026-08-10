@@ -5,10 +5,12 @@ Research snapshot: 2026-08-09. These are candidate sources, not accepted ranking
 ## Enforcement result
 
 - Canonical v2 publication now requires computed `high` confidence.
-- A bundled row cannot display `High` while `upperEstimate` is true.
+- An upper estimate is capped at `Medium` unless a sourced, independently
+  reviewed uncertainty range proves that its best- and worst-case ranks match.
 - Coinbase is the only current bundled row that satisfies both conditions.
 - Circle is now `Medium`: its score is 91, but it remains an upper estimate.
 - No researched candidate in this change promotes or reprices a ranking.
+- No current row uses the bounded rank-invariance exception.
 
 ## Workbook intake
 
@@ -20,6 +22,8 @@ The 2026-08-09 top-10 workbook was reconciled to the bundled ranking rows. It co
 - The workbook therefore changes no score, confidence label, upper-estimate flag, rank, or production input.
 
 The row-by-row result is recorded in `top10-confidence-recalculation-2026-08-09.csv`.
+The public-evidence limits are classified in
+`top10-public-verifiability-review-2026-08-09.csv`.
 
 ## Public-company candidates
 
@@ -32,17 +36,23 @@ The row-by-row result is recorded in `top10-confidence-recalculation-2026-08-09.
 
 ## Token-project candidates
 
-Official Sui, Avalanche, and Hedera materials establish supply or historical allocation context. They do not establish a complete current founder-controlled wallet inventory. Hyperliquid's self-funded claim can support a capital review only after the complete financing history is reconciled. None is sufficient by itself to remove an upper-estimate flag.
+Official Sui, Avalanche, and Hedera materials establish supply or historical allocation context. They do not establish a complete current founder-controlled wallet inventory. Hyperliquid's self-funded claim supports the narrower conclusion that no external financing or investor token allocation is publicly disclosed; it does not prove that no outside capital ever entered an affiliated legal entity. None is sufficient by itself to remove an upper-estimate flag.
 
 The project-by-project work queue is in `high-confidence-evidence-gaps.csv`.
 
 ## Promotion checklist
 
-A ranking may move to high-confidence publication only when all of the following are snapshot-aligned and independently reviewed:
+A ranking may move to high-confidence publication only when all of the following are snapshot-aligned:
 
-1. Complete founder, team, foundation, and affiliated-wallet or beneficial-ownership inventory.
-2. Primary attribution for each included holding, with exclusions documented.
-3. Current balances or share counts, circulation treatment, derivative treatment, and deduplication.
-4. Complete lifetime outside-capital ledger with USD-at-event values and accepted/excluded decisions.
-5. Fresh market inputs, no critical unknowns, no unresolved double counting, and no upper-estimate flag.
-6. Computed score of at least 85 and a passing strict publication gate.
+1. Every publicly resolvable ownership and capital input has strong primary evidence.
+2. Primary attribution, exclusions, current balances or share counts, circulation,
+   derivatives, and deduplication are documented.
+3. Capital events have USD-at-event values and explicit accepted/excluded decisions;
+   financing is not assigned to a project when public filings do not support it.
+4. Any `not_publicly_verifiable` input has sourced conservative numeric bounds.
+5. Both bounds produce the same rank, with no unresolved contradiction or double
+   counting, and an independent reviewer approves the analysis.
+6. The computed score is at least 85 and the strict publication gate passes.
+
+`missing_research` and `disputed` inputs cannot use the bounded exception. Publicly
+unverifiable facts are retained as limits rather than represented as complete or zero.
