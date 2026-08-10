@@ -9,6 +9,7 @@ import { formatRankChange, type RankChangeStatus } from "../lib/rank-change";
 import {
   formatV2Rank,
   formatV2Value,
+  isNewerPublishedSnapshot,
   validateCurrentRankingV2,
   type CurrentRankingV2,
 } from "../lib/ranking-v2";
@@ -171,32 +172,39 @@ export function HourlyRankingTable({
 
   useEffect(() => {
     let active = true;
-    let hasVerifiedV2 = false;
     const refresh = async () => {
-      void readView<LatestStatus>(
+      const nextLatestStatus = await readView<LatestStatus>(
         "public_latest_snapshot_status",
         "select=status,publication_at,observation_at,failure_reason&limit=1",
       )
-        .then((statuses) => {
-          if (active) setLatestStatus(statuses[0] ?? null);
-        })
-        .catch(() => undefined);
+        .then((statuses) => statuses[0] ?? null)
+        .catch(() => null);
+
+      if (!active) return;
+      setLatestStatus(nextLatestStatus);
+
+      let nextV2: CurrentRankingV2 | null = null;
 
       try {
         const response = await readRpc<unknown>("get_current_ranking_v2");
-        const nextV2 = validateCurrentRankingV2(response);
-        if (!nextV2) throw new Error("invalid v2 snapshot");
-        if (!active) return;
-        hasVerifiedV2 = true;
+        nextV2 = validateCurrentRankingV2(response);
+      } catch {
+        // A verified legacy snapshot may still be available.
+      }
+
+      const shouldCheckLegacy =
+        !nextV2 ||
+        isNewerPublishedSnapshot(
+          nextLatestStatus?.status,
+          nextLatestStatus?.publication_at,
+          nextV2.publishedAt,
+        );
+
+      if (nextV2 && !shouldCheckLegacy) {
         setRankingV2(nextV2);
         setLive(null);
         setEndpointError(false);
         return;
-      } catch {
-        if (hasVerifiedV2) {
-          if (active) setEndpointError(true);
-          return;
-        }
       }
 
       try {
@@ -210,11 +218,28 @@ export function HourlyRankingTable({
         );
         if (!nextLegacy) throw new Error("invalid legacy snapshot");
         if (!active) return;
-        setRankingV2(null);
-        setLive(nextLegacy);
+        if (
+          nextV2 &&
+          !isNewerPublishedSnapshot(
+            "published",
+            nextLegacy.header.publication_at,
+            nextV2.publishedAt,
+          )
+        ) {
+          setRankingV2(nextV2);
+          setLive(null);
+        } else {
+          setRankingV2(null);
+          setLive(nextLegacy);
+        }
         setEndpointError(false);
       } catch {
-        if (active) setEndpointError(true);
+        if (!active) return;
+        if (nextV2) {
+          setRankingV2(nextV2);
+          setLive(null);
+        }
+        setEndpointError(true);
       }
     };
     void refresh();

@@ -233,6 +233,20 @@ In the strict engine, a founding unit ranks only when every linked project has a
 non-null score, recent sourced market data, sufficient wallet and funding
 reviews, complete evidence, and confidence above Insufficient. Otherwise its
 rank and score are null and the exact eligibility reasons remain visible.
+Passing that calculation gate does not authorize canonical publication: the
+publication gate separately requires High confidence.
+
+Evidence gaps are classified as `resolved`, `not_publicly_verifiable`,
+`missing_research`, or `disputed`. `not_publicly_verifiable` is reserved for an
+input that cannot be exhaustively proven from public records; it is not a
+substitute for unfinished research or conflicting evidence.
+
+An upper estimate can qualify as High only through a rank-invariance review.
+That review must provide sourced numeric lower and upper values, place the
+provisional value inside those bounds, show that both bounds produce the stored
+rank, document deduplication and contradiction checks, and be independently
+reviewed. The evidence score must still be at least 85. Without that complete
+review, an upper estimate is capped at Medium.
 
 ## Review states, zero, and precision
 

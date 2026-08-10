@@ -6,6 +6,67 @@ import Decimal from "decimal.js";
 export type UnifiedValueType = "Token/network" | "Public company";
 export type UnifiedConfidenceLabel = "Low" | "Medium" | "High";
 
+export type UnifiedEvidenceState =
+  "resolved" | "not_publicly_verifiable" | "missing_research" | "disputed";
+
+export interface UnifiedUncertaintyReview {
+  evidenceState: UnifiedEvidenceState;
+  lowerValueCreatedUsd: string;
+  upperValueCreatedUsd: string;
+  bestRank: number;
+  worstRank: number;
+  independentlyReviewed: boolean;
+  contradictionFree: boolean;
+  deduplicated: boolean;
+  sourceIds: string[];
+  notes: string;
+}
+
+export function hasRankInvariantUncertainty(
+  review: UnifiedUncertaintyReview | undefined,
+  storedRank: number,
+): boolean {
+  if (!review || review.evidenceState !== "not_publicly_verifiable")
+    return false;
+  try {
+    const lower = new Decimal(review.lowerValueCreatedUsd);
+    const upper = new Decimal(review.upperValueCreatedUsd);
+    return (
+      lower.isFinite() &&
+      upper.isFinite() &&
+      lower.gte(0) &&
+      lower.lte(upper) &&
+      Number.isInteger(review.bestRank) &&
+      Number.isInteger(review.worstRank) &&
+      review.bestRank === storedRank &&
+      review.worstRank === storedRank &&
+      review.independentlyReviewed &&
+      review.contradictionFree &&
+      review.deduplicated &&
+      review.sourceIds.length > 0 &&
+      review.notes.trim().length > 0
+    );
+  } catch {
+    return false;
+  }
+}
+
+export function classifyUnifiedConfidence(
+  score: number,
+  upperEstimate: boolean,
+  uncertaintyReview?: UnifiedUncertaintyReview,
+  storedRank = 0,
+): UnifiedConfidenceLabel {
+  if (
+    score >= 85 &&
+    (!upperEstimate ||
+      hasRankInvariantUncertainty(uncertaintyReview, storedRank))
+  )
+    return "High";
+  if (score >= 65) return "Medium";
+  return "Low";
+}
+
 export interface UnifiedSource {
   id: string;
   category: string;
@@ -106,6 +167,7 @@ export interface UnifiedEntry {
   disputedEvidence: string[];
   unknowns: string[];
   upperEstimate: boolean;
+  uncertaintyReview?: UnifiedUncertaintyReview;
   comparability: string;
 }
 
@@ -238,6 +300,30 @@ export function buildUnifiedRanking(
   });
 }
 
+function rankAtBound(
+  ranking: UnifiedCalculation[],
+  entryId: string,
+  valueCreatedUsd: Decimal,
+): number {
+  return (
+    ranking
+      .map((calculation) => ({
+        entryId: calculation.entry.entryId,
+        valueCreatedUsd:
+          calculation.entry.entryId === entryId
+            ? valueCreatedUsd
+            : new Decimal(calculation.provisionalValueCreatedUsd),
+      }))
+      .sort((left, right) => {
+        const valueOrder = right.valueCreatedUsd.cmp(left.valueCreatedUsd);
+        return valueOrder === 0
+          ? left.entryId.localeCompare(right.entryId)
+          : valueOrder;
+      })
+      .findIndex((candidate) => candidate.entryId === entryId) + 1
+  );
+}
+
 export function validateUnifiedDataset(dataset: UnifiedDataset): string[] {
   const errors: string[] = [];
   const sourceIds = new Set(dataset.sources.map((source) => source.id));
@@ -346,6 +432,83 @@ export function validateUnifiedDataset(dataset: UnifiedDataset): string[] {
       )
     )
       errors.push(`${entry.entryId} confidence does not reproduce`);
+    if (
+      calculation &&
+      entry.confidence.label !==
+        classifyUnifiedConfidence(
+          entry.confidence.score,
+          calculation.upperEstimate,
+          entry.uncertaintyReview,
+          entry.rank,
+        )
+    )
+      errors.push(
+        `${entry.entryId} confidence label does not match score and upper-estimate state`,
+      );
+    if (entry.uncertaintyReview) {
+      const review = entry.uncertaintyReview;
+      if (
+        ![
+          "resolved",
+          "not_publicly_verifiable",
+          "missing_research",
+          "disputed",
+        ].includes(review.evidenceState)
+      )
+        errors.push(`${entry.entryId} uncertainty evidence state is invalid`);
+      let lower: Decimal | null = null;
+      let upper: Decimal | null = null;
+      try {
+        lower = new Decimal(review.lowerValueCreatedUsd);
+        upper = new Decimal(review.upperValueCreatedUsd);
+      } catch {
+        errors.push(`${entry.entryId} uncertainty bounds are invalid`);
+      }
+      if (
+        lower &&
+        upper &&
+        (!lower.isFinite() ||
+          !upper.isFinite() ||
+          lower.lt(0) ||
+          lower.gt(upper))
+      )
+        errors.push(`${entry.entryId} uncertainty bounds are invalid`);
+      if (
+        calculation &&
+        lower &&
+        upper &&
+        (new Decimal(calculation.provisionalValueCreatedUsd).lt(lower) ||
+          new Decimal(calculation.provisionalValueCreatedUsd).gt(upper))
+      )
+        errors.push(
+          `${entry.entryId} provisional value falls outside uncertainty bounds`,
+        );
+      if (
+        !Number.isInteger(review.bestRank) ||
+        !Number.isInteger(review.worstRank) ||
+        review.bestRank < 1 ||
+        review.worstRank < review.bestRank ||
+        review.worstRank > dataset.entries.length
+      )
+        errors.push(`${entry.entryId} uncertainty rank range is invalid`);
+      if (
+        ranking.length > 0 &&
+        lower &&
+        upper &&
+        (review.bestRank !== rankAtBound(ranking, entry.entryId, upper) ||
+          review.worstRank !== rankAtBound(ranking, entry.entryId, lower))
+      )
+        errors.push(
+          `${entry.entryId} uncertainty ranks do not reproduce from bounds`,
+        );
+      if (review.sourceIds.length === 0 || review.notes.trim().length === 0)
+        errors.push(`${entry.entryId} uncertainty review evidence is missing`);
+      for (const sourceId of review.sourceIds)
+        if (!sourceIds.has(sourceId))
+          errors.push(
+            `${entry.entryId} uncertainty review source ${sourceId} is missing`,
+          );
+    }
     if (/USDC|stablecoin supply/i.test(entry.project))
       errors.push(
         `${entry.entryId} mixes stablecoin supply with company equity`,

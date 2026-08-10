@@ -57,3 +57,6 @@ A row is publication-ready only when:
 - external capital is fully reconciled;
 - every included wallet has a public attribution source;
 - every material excluded balance has a documented reason.
+
+Canonical publication additionally requires a computed High confidence label.
+Medium, Low, Insufficient, and any upper estimate stay research-only.

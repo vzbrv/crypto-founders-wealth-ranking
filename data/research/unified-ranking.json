@@ -1054,7 +1054,7 @@
       },
       "confidence": {
         "score": 91,
-        "label": "High",
+        "label": "Medium",
         "components": [
           {
             "key": "founderAttribution",

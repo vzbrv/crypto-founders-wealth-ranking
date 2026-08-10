@@ -53,6 +53,19 @@ function isTimestamp(value: unknown): value is string {
   return isText(value) && Number.isFinite(Date.parse(value));
 }
 
+export function isNewerPublishedSnapshot(
+  status: string | undefined,
+  candidatePublishedAt: string | null | undefined,
+  currentPublishedAt: string,
+): boolean {
+  return (
+    status === "published" &&
+    isTimestamp(candidatePublishedAt) &&
+    isTimestamp(currentPublishedAt) &&
+    Date.parse(candidatePublishedAt) > Date.parse(currentPublishedAt)
+  );
+}
+
 function isRank(value: unknown): value is number {
   return Number.isInteger(value) && Number(value) > 0;
 }
