@@ -17,6 +17,13 @@ describe("formatValueChange", () => {
     });
   });
 
+  it("retains significant compact-value decimals", () => {
+    expect(formatValueChange("12340000", "live")).toEqual({
+      text: "+$12.34M",
+      label: "Value increased by $12.34M since previous snapshot",
+    });
+  });
+
   it("marks unchanged live values", () => {
     expect(formatValueChange("0", "live")).toEqual({
       text: "—",
