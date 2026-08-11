@@ -39,6 +39,7 @@ export const expectedMigrationVersions = [
   "202608090004",
   "202608090005",
   "202608100001",
+  "202608110001",
 ] as const;
 
 export const requiredCronJobs = [

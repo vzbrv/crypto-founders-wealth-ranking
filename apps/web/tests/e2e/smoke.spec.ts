@@ -21,6 +21,8 @@ function buildLiveSnapshotResults(
       value_type: "Token/network",
       gross_value_usd: "1000000000.00",
       final_value_usd: "800000000.00",
+      previous_final_value_usd: "700000000.00",
+      value_change_usd: "100000000.00",
       confidence_score: 90,
       confidence_label: "high",
       source_ids: [`market:entry-${rank}`],
@@ -625,6 +627,9 @@ test("publishes unified founder calculations and sources separately", async ({
     page.getByRole("columnheader", { name: "Value created for others" }),
   ).toBeVisible();
   await expect(
+    page.getByRole("columnheader", { name: "Value change" }),
+  ).toBeVisible();
+  await expect(
     page.getByRole("columnheader", { name: "Confidence" }),
   ).toBeVisible();
   await expect(
@@ -831,6 +836,9 @@ test("renders a newer published hourly snapshot instead of stale v2 data", async
     page.getByText("Live immutable snapshot", { exact: false }),
   ).toBeVisible();
   await expect(page.getByText("Founder 1", { exact: true })).toBeVisible();
+  await expect(
+    page.getByLabel("Value increased by $100M since previous snapshot").first(),
+  ).toBeVisible();
   await expect(
     page.getByText("Vitalik Buterin (founder); Ethereum founding team"),
   ).not.toBeVisible();

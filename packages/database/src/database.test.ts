@@ -130,6 +130,10 @@ const restrictAnonRawObservationsMigrationUrl = new URL(
   "../../../supabase/migrations/202608090005_restrict_anon_raw_observations.sql",
   import.meta.url,
 );
+const snapshotValueChangesMigrationUrl = new URL(
+  "../../../supabase/migrations/202608110001_snapshot_value_changes.sql",
+  import.meta.url,
+);
 const sqlConfidenceEvidence = await readFile(
   sqlConfidenceEvidenceMigrationUrl,
   "utf8",
@@ -168,6 +172,7 @@ const migrationSql = [
   await readFile(rankingV2PublicationMigrationUrl, "utf8"),
   await readFile(rankingV2CutoverMigrationUrl, "utf8"),
   await readFile(restrictAnonRawObservationsMigrationUrl, "utf8"),
+  await readFile(snapshotValueChangesMigrationUrl, "utf8"),
 ].join("\n");
 const seedSql = await readFile(seedUrl, "utf8");
 const productionDataDirectory = fileURLToPath(
@@ -402,9 +407,9 @@ describe("Hourly ranking snapshots", () => {
       observation_at: "2026-08-01T02:05:00Z",
       results: payload.results.map((result, index) =>
         index === 0
-          ? { ...result, rank: 2 }
+          ? { ...result, rank: 2, final_value_usd: 80 }
           : index === 1
-            ? { ...result, rank: 1 }
+            ? { ...result, rank: 1, final_value_usd: 111 }
             : result,
       ),
     };
@@ -435,6 +440,32 @@ describe("Hourly ranking snapshots", () => {
         previous_rank: 2,
         rank_change: 1,
         rank_change_status: "continued",
+      },
+    ]);
+
+    const valueMovement = await database.query<{
+      entry_id: string;
+      previous_final_value_usd: number;
+      value_change_usd: number;
+    }>(
+      `select
+         entry_id,
+         previous_final_value_usd::float8 as previous_final_value_usd,
+         value_change_usd::float8 as value_change_usd
+       from public_current_snapshot_results
+       where entry_id in ('entry-1', 'entry-2')
+       order by entry_id`,
+    );
+    expect(valueMovement.rows).toEqual([
+      {
+        entry_id: "entry-1",
+        previous_final_value_usd: 90,
+        value_change_usd: -10,
+      },
+      {
+        entry_id: "entry-2",
+        previous_final_value_usd: 91,
+        value_change_usd: 20,
       },
     ]);
 

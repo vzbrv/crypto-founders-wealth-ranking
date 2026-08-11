@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import type { UnifiedCalculation } from "@crypto-founders/curated-data/unified";
 
 import { formatRankChange, type RankChangeStatus } from "../lib/rank-change";
+import { formatValueChange } from "../lib/value-change";
 import {
   formatV2Rank,
   formatV2Value,
@@ -29,6 +30,8 @@ type LiveResult = {
   value_type: string;
   gross_value_usd: string | null;
   final_value_usd: string | null;
+  previous_final_value_usd: string | null;
+  value_change_usd: string | null;
   confidence_score: number;
   confidence_label: string;
   source_ids: string[];
@@ -277,6 +280,7 @@ export function HourlyRankingTable({
             text: "—",
             label: "Rank movement is not published for v2 snapshots",
           },
+          valueMovement: formatValueChange(null, "v2"),
           href: fallback ? `/ranking/${fallback.entry.entryId}/` : null,
         };
       })
@@ -302,6 +306,7 @@ export function HourlyRankingTable({
             confidenceText: `${result.confidence_score}/100 · ${result.confidence_label}`,
             confidenceNote: `Observation: ${result.freshness_status}`,
             movement,
+            valueMovement: formatValueChange(result.value_change_usd, "live"),
             href: fallback ? `/ranking/${result.entry_id}/` : null,
           };
         })
@@ -321,6 +326,7 @@ export function HourlyRankingTable({
             confidenceText: `${entry.confidence.score}/100 · ${entry.confidence.label}`,
             confidenceNote: "Observation: historical",
             movement: formatRankChange(null, "fallback", "baseline"),
+            valueMovement: formatValueChange(null, "fallback"),
             href: `/ranking/${entry.entryId}/`,
           }),
         );
@@ -387,6 +393,7 @@ export function HourlyRankingTable({
               <th>Project or company</th>
               <th>Value type</th>
               <th className="number primary-value">Value created for others</th>
+              <th className="number value-move">Value change</th>
               <th>Confidence</th>
             </tr>
           </thead>
@@ -404,6 +411,7 @@ export function HourlyRankingTable({
                 confidenceText,
                 confidenceNote,
                 movement,
+                valueMovement,
                 href,
               }) => (
                 <tr key={entryId}>
@@ -441,6 +449,11 @@ export function HourlyRankingTable({
                   >
                     <strong>{formattedValue}</strong>
                     {valueNote && <small>{valueNote}</small>}
+                  </td>
+                  <td className="number value-move" data-label="Value change">
+                    <span aria-label={valueMovement.label}>
+                      {valueMovement.text}
+                    </span>
                   </td>
                   <td data-label="Confidence">
                     {confidenceText}
