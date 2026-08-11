@@ -319,8 +319,14 @@ td small {
   display: inline-block;
   min-width: 2.5rem;
 }
+.value-move {
+  width: 8rem;
+  color: var(--text);
+  font-weight: 800;
+  white-space: nowrap;
+}
 .research-universe-table {
-  min-width: 1000px;
+  min-width: 1120px;
 }
 .research-universe-table .founder-column {
   min-width: 13rem;
