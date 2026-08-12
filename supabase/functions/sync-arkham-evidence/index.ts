@@ -164,8 +164,7 @@ function selectEntityCandidate(
     const name = entityName(candidate);
     return name && normalizedName(name) === normalizedName(searchedAlias);
   });
-  if (exactMatches.length === 1) return exactMatches[0];
-  return candidates.length === 1 ? candidates[0] : null;
+  return exactMatches.length === 1 ? exactMatches[0] : null;
 }
 
 function sourceIds(response: ArkhamResponse<unknown>): string[] {
@@ -478,6 +477,8 @@ Deno.serve(async (request) => {
     );
     let failed = 0;
     let evidenceCount = 0;
+    const failureStages: Record<string, number> = {};
+    const failureStatuses: Record<string, number> = {};
     for (const original of mappings) {
       const projectSlug = (
         await rest<{ slug: string }[]>(
@@ -491,6 +492,7 @@ Deno.serve(async (request) => {
       const projectToken = projectSlug ? projectTokens[projectSlug] : undefined;
       if (!projectToken) continue;
       let mapping = original;
+      let stage = "search";
       try {
         if (!mapping.entity_id) {
           const search = await client.search(mapping.searched_alias);
@@ -508,14 +510,14 @@ Deno.serve(async (request) => {
               headers,
               "arkham_entity_mappings",
               {
-                entity_found: candidates.length > 1 ? null : false,
+                entity_found: candidates.length > 0 ? null : false,
                 discovery_status:
-                  candidates.length > 1 ? "ambiguous" : "not_found",
+                  candidates.length > 0 ? "ambiguous" : "not_found",
                 review_status: "candidate",
                 score_affecting: false,
                 exclusion_reason:
-                  candidates.length > 1
-                    ? "Ambiguous entity mapping"
+                  candidates.length > 0
+                    ? "No exact Arkham entity-name match"
                     : "Arkham entity not found",
                 observed_at: search.observedAt,
                 raw_response_hash: search.rawResponseHash,
@@ -548,8 +550,10 @@ Deno.serve(async (request) => {
             entity_name: entityName(candidate) ?? mapping.searched_alias,
           };
         }
+        stage = "entity";
         const entity = await client.getEntity(mapping.entity_id!);
         await saveRaw(supabaseUrl, headers, entity, mapping.searched_alias);
+        stage = "balances";
         const balances = await client.getEntityBalances(mapping.entity_id!);
         await saveRaw(supabaseUrl, headers, balances, mapping.searched_alias);
         evidenceCount += await ingestEvidence(
@@ -597,6 +601,7 @@ Deno.serve(async (request) => {
           }
         }
 
+        stage = "predictions";
         try {
           const predictions = await client.getEntityPredictions(
             mapping.entity_id!,
@@ -617,12 +622,13 @@ Deno.serve(async (request) => {
             records(predictions.data),
           );
         } catch (error) {
-          if (!(
-            error instanceof ArkhamApiError &&
-            [401, 403].includes(error.status ?? 0)
-          ))
-            throw error;
+          const status = error instanceof ArkhamApiError ? error.status : null;
+          log("warn", "predictions_unavailable", {
+            mappingId: mapping.id,
+            status,
+          });
         }
+        stage = "persistence";
         await patch(
           supabaseUrl,
           headers,
@@ -640,7 +646,14 @@ Deno.serve(async (request) => {
       } catch (error) {
         failed += 1;
         const status = error instanceof ArkhamApiError ? error.status : null;
-        log("error", "mapping_failed", { mappingId: mapping.id, status });
+        const statusKey = status === null ? "unknown" : String(status);
+        failureStages[stage] = (failureStages[stage] ?? 0) + 1;
+        failureStatuses[statusKey] = (failureStatuses[statusKey] ?? 0) + 1;
+        log("error", "mapping_failed", {
+          mappingId: mapping.id,
+          stage,
+          status,
+        });
       }
     }
     const completedAt = new Date().toISOString();
@@ -661,6 +674,8 @@ Deno.serve(async (request) => {
       mappings: mappings.length,
       failed,
       evidenceCount,
+      failureStages,
+      failureStatuses,
     });
     return json(
       {
@@ -669,6 +684,8 @@ Deno.serve(async (request) => {
         mappings: mappings.length,
         failed,
         evidenceCount,
+        failureStages,
+        failureStatuses,
       },
       failed === 0 ? 200 : 502,
     );
