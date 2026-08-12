@@ -65,9 +65,9 @@ jobs:
           psql "$DATABASE_URL" --no-psqlrc --set ON_ERROR_STOP=1 --command \
             "select last_run_status, last_run_completed_at, last_success_at from public.arkham_provider_control where id = true;"
           psql "$DATABASE_URL" --no-psqlrc --set ON_ERROR_STOP=1 --command \
-            "select searched_alias, entity_id, discovery_status, evidence_status, eligible_for_ranking, last_success_at, updated_at from public.arkham_entity_mappings order by searched_alias;"
+            "select searched_alias, entity_id, discovery_status, review_status, ownership_confidence, score_affecting, exclusion_reason, last_success_at, updated_at from public.arkham_entity_mappings order by searched_alias;"
           psql "$DATABASE_URL" --no-psqlrc --set ON_ERROR_STOP=1 --command \
-            "select count(*) as evidence_rows, count(*) filter (where eligible_for_ranking) as ranking_eligible_rows from public.arkham_evidence;"
+            "select count(*) as evidence_rows, count(*) filter (where score_affecting) as ranking_eligible_rows from public.arkham_evidence;"
 
       - name: Verify production HTTP contracts
         id: http
