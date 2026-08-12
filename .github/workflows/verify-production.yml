@@ -8,6 +8,11 @@ on:
         required: false
         default: false
         type: boolean
+      rerun_hourly_snapshot:
+        description: Publish an hourly ranking snapshot before verification
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: read
@@ -69,6 +74,28 @@ jobs:
           psql "$DATABASE_URL" --no-psqlrc --set ON_ERROR_STOP=1 --command \
             "select count(*) as evidence_rows, count(*) filter (where score_affecting) as ranking_eligible_rows from public.arkham_evidence;"
 
+      - name: Run hourly ranking snapshot
+        id: hourly
+        if: inputs.rerun_hourly_snapshot
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          http_status="$(curl --silent --show-error \
+            --request POST \
+            --header "x-cron-secret: $CRON_SECRET" \
+            --header "content-type: application/json" \
+            --data '{}' \
+            "${SUPABASE_URL%/}/functions/v1/hourly-ranking-snapshot" \
+            --output hourly-snapshot-result.json \
+            --write-out '%{http_code}')"
+          jq '.' hourly-snapshot-result.json
+          test "$http_status" -ge 200
+          test "$http_status" -lt 300
+          jq --exit-status \
+            '.status == "published" and (.snapshotId | type == "string" and length > 0) and .entryCount == 20' \
+            hourly-snapshot-result.json
+
       - name: Verify production HTTP contracts
         id: http
         continue-on-error: true
@@ -89,12 +116,19 @@ jobs:
 
       - name: Report final result
         if: always()
+        env:
+          RERUN_HOURLY_SNAPSHOT: ${{ inputs.rerun_hourly_snapshot }}
+          HOURLY_SNAPSHOT_OUTCOME: ${{ steps.hourly.outcome }}
         run: |
           echo "## Overall result" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
+          if [[ "$RERUN_HOURLY_SNAPSHOT" == "true" ]]; then
+            echo "- Hourly snapshot rerun: $HOURLY_SNAPSHOT_OUTCOME" >> "$GITHUB_STEP_SUMMARY"
+          fi
           echo "- HTTP verification: ${{ steps.http.outcome }}" >> "$GITHUB_STEP_SUMMARY"
           echo "- Database verification: ${{ steps.database.outcome }}" >> "$GITHUB_STEP_SUMMARY"
-          if [[ "${{ steps.http.outcome }}" != "success" || "${{ steps.database.outcome }}" != "success" ]]; then
+          if [[ "$RERUN_HOURLY_SNAPSHOT" == "true" && "$HOURLY_SNAPSHOT_OUTCOME" != "success" ]] || \
+            [[ "${{ steps.http.outcome }}" != "success" || "${{ steps.database.outcome }}" != "success" ]]; then
             echo "Production verification failed. Review the safe check summaries above and configure missing production environment secrets manually." >&2
             exit 1
           fi
