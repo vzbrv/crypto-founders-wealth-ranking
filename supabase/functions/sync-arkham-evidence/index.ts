@@ -164,8 +164,7 @@ function selectEntityCandidate(
     const name = entityName(candidate);
     return name && normalizedName(name) === normalizedName(searchedAlias);
   });
-  if (exactMatches.length === 1) return exactMatches[0];
-  return candidates.length === 1 ? candidates[0] : null;
+  return exactMatches.length === 1 ? exactMatches[0] : null;
 }
 
 function sourceIds(response: ArkhamResponse<unknown>): string[] {
@@ -508,14 +507,14 @@ Deno.serve(async (request) => {
               headers,
               "arkham_entity_mappings",
               {
-                entity_found: candidates.length > 1 ? null : false,
+                entity_found: candidates.length > 0 ? null : false,
                 discovery_status:
-                  candidates.length > 1 ? "ambiguous" : "not_found",
+                  candidates.length > 0 ? "ambiguous" : "not_found",
                 review_status: "candidate",
                 score_affecting: false,
                 exclusion_reason:
-                  candidates.length > 1
-                    ? "Ambiguous entity mapping"
+                  candidates.length > 0
+                    ? "No exact Arkham entity-name match"
                     : "Arkham entity not found",
                 observed_at: search.observedAt,
                 raw_response_hash: search.rawResponseHash,
