@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.hourly-ranking-snapshot]
 verify_jwt = false
+
+[functions.sync-arkham-evidence]
+verify_jwt = false

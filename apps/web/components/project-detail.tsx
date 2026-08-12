@@ -67,6 +67,47 @@ interface ApiWalletEvidence {
   market_freshness_status?: "current" | "stale" | "unknown" | null;
 }
 
+interface ApiArkhamEvidence {
+  id: string;
+  entity_name?: string | null;
+  searched_alias?: string | null;
+  chain_code?: string | null;
+  address?: string | null;
+  owner_class?: string | null;
+  attribution_class?: string | null;
+  expected_project_token_symbol?: string | null;
+  token_quantity?: number | string | null;
+  arkham_quote_time?: string | null;
+  ingested_at?: string | null;
+  review_status?: string | null;
+  ownership_confidence?: string | null;
+  circulating_inclusion_fraction?: number | string | null;
+  score_affecting?: boolean | null;
+  evidence_status?: string | null;
+  exclusion_reason?: string | null;
+  source_endpoint?: string | null;
+}
+
+interface ApiArkhamCoverage {
+  id: string;
+  searched_alias: string;
+  entity_found?: boolean | null;
+  discovery_status?: string | null;
+  entity_id?: string | null;
+  entity_name?: string | null;
+  chain_code?: string | null;
+  owner_class?: string | null;
+  attribution_class?: string | null;
+  review_status?: string | null;
+  ownership_confidence?: string | null;
+  score_affecting?: boolean | null;
+  exclusion_reason?: string | null;
+  observed_at?: string | null;
+  last_success_at?: string | null;
+  source_endpoint?: string | null;
+  notes?: string | null;
+}
+
 interface ReviewEvidence {
   id: string;
   title: string;
@@ -226,6 +267,12 @@ function leaderboardMatch(
 export function ProjectDetail({ evidence }: { evidence: ProjectEvidence }) {
   const [detail, setDetail] = useState<ApiProjectDetail | null>(null);
   const [apiWallets, setApiWallets] = useState<ApiWalletEvidence[]>([]);
+  const [apiArkhamEvidence, setApiArkhamEvidence] = useState<
+    ApiArkhamEvidence[]
+  >([]);
+  const [apiArkhamCoverage, setApiArkhamCoverage] = useState<
+    ApiArkhamCoverage[]
+  >([]);
   const [apiWarning, setApiWarning] = useState<string | null>(() =>
     process.env.NEXT_PUBLIC_SUPABASE_URL &&
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
@@ -260,32 +307,56 @@ export function ProjectDetail({ evidence }: { evidence: ProjectEvidence }) {
         if (!response.ok) throw new Error("Leaderboard unavailable");
         return response.json() as Promise<ApiLeaderboardRow[]>;
       }),
+      fetch(
+        `${baseUrl}/rest/v1/public_arkham_evidence?select=*&project_slug=eq.${slug}`,
+        { headers },
+      ).then((response) => {
+        if (!response.ok) throw new Error("Arkham evidence unavailable");
+        return response.json() as Promise<ApiArkhamEvidence[]>;
+      }),
+      fetch(
+        `${baseUrl}/rest/v1/public_arkham_coverage?select=*&project_slug=eq.${slug}`,
+        { headers },
+      ).then((response) => {
+        if (!response.ok) throw new Error("Arkham coverage unavailable");
+        return response.json() as Promise<ApiArkhamCoverage[]>;
+      }),
     ])
-      .then(([details, walletRows, leaderboard]) => {
-        const ranking = leaderboardMatch(leaderboard, evidence.project.id);
-        const calculatedConfidenceLabel =
-          details[0]?.calculated_confidence_label ??
-          details[0]?.confidence_label ??
-          ranking?.confidence_label ??
-          "insufficient";
-        setDetail({
-          ...(details[0] ?? {}),
-          rank: ranking?.rank ?? null,
-          score_usd: ranking?.score_usd ?? details[0]?.score_usd ?? null,
-          confidence_label: calculatedConfidenceLabel,
-          calculated_confidence_label: calculatedConfidenceLabel,
-          reviewed_confidence: calculatedConfidenceLabel,
-          eligibility_status:
-            ranking?.eligibility_status ??
-            details[0]?.eligibility_status ??
-            null,
-          ineligibility_reasons:
-            ranking?.ineligibility_reasons ??
-            details[0]?.ineligibility_reasons ??
-            [],
-        });
-        setApiWallets(walletRows);
-      })
+      .then(
+        ([
+          details,
+          walletRows,
+          leaderboard,
+          arkhamEvidence,
+          arkhamCoverage,
+        ]) => {
+          const ranking = leaderboardMatch(leaderboard, evidence.project.id);
+          const calculatedConfidenceLabel =
+            details[0]?.calculated_confidence_label ??
+            details[0]?.confidence_label ??
+            ranking?.confidence_label ??
+            "insufficient";
+          setDetail({
+            ...(details[0] ?? {}),
+            rank: ranking?.rank ?? null,
+            score_usd: ranking?.score_usd ?? details[0]?.score_usd ?? null,
+            confidence_label: calculatedConfidenceLabel,
+            calculated_confidence_label: calculatedConfidenceLabel,
+            reviewed_confidence: calculatedConfidenceLabel,
+            eligibility_status:
+              ranking?.eligibility_status ??
+              details[0]?.eligibility_status ??
+              null,
+            ineligibility_reasons:
+              ranking?.ineligibility_reasons ??
+              details[0]?.ineligibility_reasons ??
+              [],
+          });
+          setApiWallets(walletRows);
+          setApiArkhamEvidence(arkhamEvidence);
+          setApiArkhamCoverage(arkhamCoverage);
+        },
+      )
       .catch((error: unknown) => {
         setApiWarning(
           error instanceof Error
@@ -351,6 +422,22 @@ export function ProjectDetail({ evidence }: { evidence: ProjectEvidence }) {
     detail?.calculated_confidence_label ??
     detail?.confidence_label ??
     "insufficient";
+  const acceptedArkham = apiArkhamEvidence.filter(
+    (row) => row.score_affecting === true,
+  );
+  const predictedArkham = apiArkhamEvidence.filter(
+    (row) => row.attribution_class === "predicted",
+  );
+  const custodialArkham = apiArkhamEvidence.filter(
+    (row) => row.evidence_status === "custodial_excluded",
+  );
+  const lastArkhamVerified = [
+    ...apiArkhamEvidence.map((row) => row.ingested_at),
+    ...apiArkhamCoverage.map((row) => row.last_success_at),
+  ]
+    .filter((value): value is string => Boolean(value))
+    .sort()
+    .at(-1);
 
   return (
     <main className="detail-page" id="main-content" tabIndex={-1}>
@@ -657,6 +744,93 @@ export function ProjectDetail({ evidence }: { evidence: ProjectEvidence }) {
             </tbody>
           </table>
         </div>
+      </section>
+
+      <section
+        className="panel"
+        id="arkham-evidence"
+        aria-labelledby="arkham-heading"
+      >
+        <div className="section-heading">
+          <div>
+            <p className="eyebrow">Server-side research evidence</p>
+            <h2 id="arkham-heading">Arkham affiliated holdings</h2>
+            <p>
+              Accepted Arkham holdings are known-entity subtotals only. Coverage
+              is incomplete; predicted wallets, custodial assets, unrelated
+              tokens and unreviewed mappings do not affect the rank. Last
+              verified {date(lastArkhamVerified)}.
+            </p>
+          </div>
+        </div>
+        <div className="formula-grid">
+          <div>
+            <span>Accepted holdings</span>
+            <strong>{acceptedArkham.length}</strong>
+            <small>Approved score-affecting rows</small>
+          </div>
+          <div>
+            <span>Predictions excluded</span>
+            <strong>{predictedArkham.length}</strong>
+            <small>Research only</small>
+          </div>
+          <div>
+            <span>Custodial assets excluded</span>
+            <strong>{custodialArkham.length}</strong>
+            <small>No affiliated deduction</small>
+          </div>
+          <div>
+            <span>Coverage rows</span>
+            <strong>{apiArkhamCoverage.length}</strong>
+            <small>Missing remains Unknown</small>
+          </div>
+        </div>
+        {apiArkhamEvidence.length > 0 ? (
+          <div className="table-shell evidence-shell">
+            <table className="evidence-table">
+              <thead>
+                <tr>
+                  <th>Alias / entity</th>
+                  <th>Chain</th>
+                  <th>Project token quantity</th>
+                  <th>Treatment</th>
+                  <th>Review</th>
+                  <th>Observed</th>
+                </tr>
+              </thead>
+              <tbody>
+                {apiArkhamEvidence.map((row) => (
+                  <tr key={row.id}>
+                    <td>
+                      <strong>{row.searched_alias ?? "Unknown"}</strong>
+                      <small>
+                        {row.entity_name ?? "Entity name unavailable"}
+                      </small>
+                    </td>
+                    <td>{row.chain_code ?? "Unknown"}</td>
+                    <td>{amount(numberOrNull(row.token_quantity))}</td>
+                    <td>
+                      {row.evidence_status ?? "review_required"}
+                      {row.exclusion_reason ? (
+                        <small>{row.exclusion_reason}</small>
+                      ) : null}
+                    </td>
+                    <td>
+                      {row.review_status ?? "Unknown"} ·{" "}
+                      {row.ownership_confidence ?? "Unknown"}
+                    </td>
+                    <td>{date(row.arkham_quote_time ?? row.ingested_at)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p className="warning-text">
+            No Arkham balance has passed the review gate for this project.
+            Unknown remains null; absence of Arkham data is not zero.
+          </p>
+        )}
       </section>
 
       <section className="panel" id="funding" aria-labelledby="funding-heading">

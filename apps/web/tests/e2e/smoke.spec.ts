@@ -489,6 +489,18 @@ test("shows a reproducible project score and its evidence", async ({
       ]),
     }),
   );
+  await page.route("**/rest/v1/public_arkham_evidence**", (route) =>
+    route.fulfill({
+      contentType: "application/json",
+      body: "[]",
+    }),
+  );
+  await page.route("**/rest/v1/public_arkham_coverage**", (route) =>
+    route.fulfill({
+      contentType: "application/json",
+      body: "[]",
+    }),
+  );
 
   await page.goto("/project/synthetic-horizon/");
 

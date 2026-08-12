@@ -8,6 +8,16 @@ interface ProviderStatus {
   latency_ms: number | null;
 }
 
+interface ArkhamProviderStatus {
+  enabled: boolean;
+  status:
+    "paused" | "failed" | "partial" | "running" | "unverified" | "healthy";
+  last_success_at: string | null;
+  last_run_status: string;
+  last_run_completed_at: string | null;
+  updated_at: string;
+}
+
 const functionName = "provider-health";
 const jsonHeaders = { "content-type": "application/json" };
 
@@ -67,6 +77,54 @@ Deno.serve(async (request) => {
     }
 
     const providers = (await response.json()) as ProviderStatus[];
+    const arkhamUrl = new URL(
+      "/rest/v1/public_arkham_provider_status",
+      supabaseUrl,
+    );
+    arkhamUrl.searchParams.set(
+      "select",
+      "enabled,status,last_success_at,last_run_status,last_run_completed_at,updated_at",
+    );
+    const arkhamResponse = await fetch(arkhamUrl, {
+      headers: {
+        apikey: serviceRoleKey,
+        authorization: `Bearer ${serviceRoleKey}`,
+      },
+    });
+    if (!arkhamResponse.ok) {
+      log("error", "arkham_health_read_failed", {
+        upstreamStatus: arkhamResponse.status,
+        durationMs: Date.now() - startedAt,
+      });
+      return json({ error: "Provider health read failed" }, 502);
+    }
+    const arkhamRows = (await arkhamResponse.json()) as ArkhamProviderStatus[];
+    const arkham = arkhamRows[0];
+    if (!arkham) {
+      log("error", "arkham_health_missing", {
+        durationMs: Date.now() - startedAt,
+      });
+      return json({ error: "Provider health read failed" }, 502);
+    }
+    const arkhamProvider: ProviderStatus = {
+      provider: "arkham",
+      status:
+        arkham.status === "healthy" || !arkham.enabled
+          ? "healthy"
+          : arkham.status === "failed"
+            ? "failed"
+            : "degraded",
+      freshness:
+        !arkham.enabled ||
+        (arkham.last_success_at !== null &&
+          Date.parse(arkham.last_success_at) >=
+            Date.now() - 2 * 24 * 60 * 60 * 1_000)
+          ? "current"
+          : "stale",
+      checked_at: arkham.updated_at,
+      latency_ms: null,
+    };
+    providers.push(arkhamProvider);
     const status = providers.some(
       ({ status: providerStatus, freshness }) =>
         providerStatus === "failed" || freshness === "stale",

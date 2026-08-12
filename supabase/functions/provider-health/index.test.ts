@@ -57,22 +57,43 @@ describe("provider-health", () => {
 
   it("reports healthy when every provider is current", async () => {
     baseEnv();
+    const arkhamNow = new Date().toISOString();
     vi.stubGlobal(
       "fetch",
-      vi.fn().mockResolvedValue(
-        new Response(
-          JSON.stringify([
-            {
-              provider: "coingecko",
-              status: "healthy",
-              freshness: "current",
-              checked_at: "2026-08-04T00:00:00Z",
-              latency_ms: 120,
-            },
-          ]),
-          { status: 200 },
-        ),
-      ),
+      vi.fn().mockImplementation((input: URL | string) => {
+        const url = new URL(String(input));
+        if (url.pathname === "/rest/v1/public_arkham_provider_status") {
+          return Promise.resolve(
+            new Response(
+              JSON.stringify([
+                {
+                  enabled: true,
+                  status: "healthy",
+                  last_success_at: arkhamNow,
+                  last_run_status: "success",
+                  last_run_completed_at: arkhamNow,
+                  updated_at: arkhamNow,
+                },
+              ]),
+              { status: 200 },
+            ),
+          );
+        }
+        return Promise.resolve(
+          new Response(
+            JSON.stringify([
+              {
+                provider: "coingecko",
+                status: "healthy",
+                freshness: "current",
+                checked_at: "2026-08-04T00:00:00Z",
+                latency_ms: 120,
+              },
+            ]),
+            { status: 200 },
+          ),
+        );
+      }),
     );
 
     const response = await denoStub.handler(
@@ -88,27 +109,47 @@ describe("provider-health", () => {
     baseEnv();
     vi.stubGlobal(
       "fetch",
-      vi.fn().mockResolvedValue(
-        new Response(
-          JSON.stringify([
-            {
-              provider: "coingecko",
-              status: "healthy",
-              freshness: "current",
-              checked_at: "2026-08-04T00:00:00Z",
-              latency_ms: 120,
-            },
-            {
-              provider: "yahoo_finance",
-              status: "failed",
-              freshness: "stale",
-              checked_at: "2026-08-03T00:00:00Z",
-              latency_ms: null,
-            },
-          ]),
-          { status: 200 },
-        ),
-      ),
+      vi.fn().mockImplementation((input: URL | string) => {
+        const url = new URL(String(input));
+        if (url.pathname === "/rest/v1/public_arkham_provider_status") {
+          return Promise.resolve(
+            new Response(
+              JSON.stringify([
+                {
+                  enabled: true,
+                  status: "healthy",
+                  last_success_at: "2026-08-04T00:00:00Z",
+                  last_run_status: "success",
+                  last_run_completed_at: "2026-08-04T00:00:00Z",
+                  updated_at: "2026-08-04T00:00:00Z",
+                },
+              ]),
+              { status: 200 },
+            ),
+          );
+        }
+        return Promise.resolve(
+          new Response(
+            JSON.stringify([
+              {
+                provider: "coingecko",
+                status: "healthy",
+                freshness: "current",
+                checked_at: "2026-08-04T00:00:00Z",
+                latency_ms: 120,
+              },
+              {
+                provider: "yahoo_finance",
+                status: "failed",
+                freshness: "stale",
+                checked_at: "2026-08-03T00:00:00Z",
+                latency_ms: null,
+              },
+            ]),
+            { status: 200 },
+          ),
+        );
+      }),
     );
 
     const response = await denoStub.handler(
