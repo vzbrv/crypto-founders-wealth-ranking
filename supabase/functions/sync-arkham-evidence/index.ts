@@ -602,17 +602,10 @@ Deno.serve(async (request) => {
         }
 
         stage = "predictions";
-        let predictions = null;
         try {
-          predictions = await client.getEntityPredictions(mapping.entity_id!);
-        } catch (error) {
-          const status = error instanceof ArkhamApiError ? error.status : null;
-          log("warn", "predictions_unavailable", {
-            mappingId: mapping.id,
-            status,
-          });
-        }
-        if (predictions) {
+          const predictions = await client.getEntityPredictions(
+            mapping.entity_id!,
+          );
           await saveRaw(
             supabaseUrl,
             headers,
@@ -628,6 +621,12 @@ Deno.serve(async (request) => {
             "predicted",
             records(predictions.data),
           );
+        } catch (error) {
+          const status = error instanceof ArkhamApiError ? error.status : null;
+          log("warn", "predictions_unavailable", {
+            mappingId: mapping.id,
+            status,
+          });
         }
         stage = "persistence";
         await patch(
