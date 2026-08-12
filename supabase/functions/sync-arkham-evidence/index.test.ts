@@ -123,6 +123,8 @@ describe("sync-arkham-evidence", () => {
       mappings: 1,
       failed: 1,
       evidenceCount: 0,
+      failureStages: { entity: 1 },
+      failureStatuses: { "401": 1 },
     });
     expect(evidenceBodies).toHaveLength(0);
     expect(controlUpdates).toContainEqual(

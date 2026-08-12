@@ -477,6 +477,8 @@ Deno.serve(async (request) => {
     );
     let failed = 0;
     let evidenceCount = 0;
+    const failureStages: Record<string, number> = {};
+    const failureStatuses: Record<string, number> = {};
     for (const original of mappings) {
       const projectSlug = (
         await rest<{ slug: string }[]>(
@@ -490,6 +492,7 @@ Deno.serve(async (request) => {
       const projectToken = projectSlug ? projectTokens[projectSlug] : undefined;
       if (!projectToken) continue;
       let mapping = original;
+      let stage = "search";
       try {
         if (!mapping.entity_id) {
           const search = await client.search(mapping.searched_alias);
@@ -547,8 +550,10 @@ Deno.serve(async (request) => {
             entity_name: entityName(candidate) ?? mapping.searched_alias,
           };
         }
+        stage = "entity";
         const entity = await client.getEntity(mapping.entity_id!);
         await saveRaw(supabaseUrl, headers, entity, mapping.searched_alias);
+        stage = "balances";
         const balances = await client.getEntityBalances(mapping.entity_id!);
         await saveRaw(supabaseUrl, headers, balances, mapping.searched_alias);
         evidenceCount += await ingestEvidence(
@@ -597,6 +602,7 @@ Deno.serve(async (request) => {
         }
 
         try {
+          stage = "predictions";
           const predictions = await client.getEntityPredictions(
             mapping.entity_id!,
           );
@@ -622,6 +628,7 @@ Deno.serve(async (request) => {
           ))
             throw error;
         }
+        stage = "persistence";
         await patch(
           supabaseUrl,
           headers,
@@ -639,7 +646,14 @@ Deno.serve(async (request) => {
       } catch (error) {
         failed += 1;
         const status = error instanceof ArkhamApiError ? error.status : null;
-        log("error", "mapping_failed", { mappingId: mapping.id, status });
+        const statusKey = status === null ? "unknown" : String(status);
+        failureStages[stage] = (failureStages[stage] ?? 0) + 1;
+        failureStatuses[statusKey] = (failureStatuses[statusKey] ?? 0) + 1;
+        log("error", "mapping_failed", {
+          mappingId: mapping.id,
+          stage,
+          status,
+        });
       }
     }
     const completedAt = new Date().toISOString();
@@ -660,6 +674,8 @@ Deno.serve(async (request) => {
       mappings: mappings.length,
       failed,
       evidenceCount,
+      failureStages,
+      failureStatuses,
     });
     return json(
       {
@@ -668,6 +684,8 @@ Deno.serve(async (request) => {
         mappings: mappings.length,
         failed,
         evidenceCount,
+        failureStages,
+        failureStatuses,
       },
       failed === 0 ? 200 : 502,
     );

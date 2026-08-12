@@ -44,25 +44,28 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
-          curl --fail-with-body --silent --show-error \
+          http_status="$(curl --silent --show-error \
             --request POST \
             --header "x-cron-secret: $CRON_SECRET" \
             --header "content-type: application/json" \
             --data '{}' \
             "${SUPABASE_URL%/}/functions/v1/sync-arkham-evidence" \
-            --output arkham-sync-result.json
+            --output arkham-sync-result.json \
+            --write-out '%{http_code}')"
           jq '.' arkham-sync-result.json
+          test "$http_status" -ge 200
+          test "$http_status" -lt 300
           jq --exit-status '.ok == true and .status == "success"' arkham-sync-result.json
 
       - name: Check Arkham persistence
-        if: inputs.rerun_arkham
+        if: inputs.rerun_arkham && always()
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
           psql "$DATABASE_URL" --no-psqlrc --set ON_ERROR_STOP=1 --command \
             "select last_run_status, last_run_completed_at, last_success_at from public.arkham_provider_control where id = true;"
           psql "$DATABASE_URL" --no-psqlrc --set ON_ERROR_STOP=1 --command \
-            "select searched_alias, entity_id, discovery_status, evidence_status, eligible_for_ranking from public.arkham_entity_mappings order by searched_alias;"
+            "select searched_alias, entity_id, discovery_status, evidence_status, eligible_for_ranking, last_success_at, updated_at from public.arkham_entity_mappings order by searched_alias;"
           psql "$DATABASE_URL" --no-psqlrc --set ON_ERROR_STOP=1 --command \
             "select count(*) as evidence_rows, count(*) filter (where eligible_for_ranking) as ranking_eligible_rows from public.arkham_evidence;"
 
