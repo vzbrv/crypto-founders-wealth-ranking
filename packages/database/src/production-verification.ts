@@ -40,6 +40,9 @@ export const expectedMigrationVersions = [
   "202608090005",
   "202608100001",
   "202608110001",
+  "202608110002",
+  "202608110003",
+  "202608110004",
 ] as const;
 
 export const requiredCronJobs = [
@@ -47,6 +50,7 @@ export const requiredCronJobs = [
   "sync-wallet-balances",
   "hourly-ranking-snapshot",
   "provider-health",
+  "sync-arkham-evidence-daily",
 ] as const;
 
 export const requiredPublicViews = [
@@ -55,6 +59,9 @@ export const requiredPublicViews = [
   "public_provider_status",
   "public_project_details",
   "public_latest_snapshot_status",
+  "public_arkham_evidence",
+  "public_arkham_coverage",
+  "public_arkham_provider_status",
 ] as const;
 
 export const latestSnapshotFreshnessMs = 2 * 60 * 60 * 1_000;

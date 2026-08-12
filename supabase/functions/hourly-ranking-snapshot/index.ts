@@ -208,6 +208,32 @@ async function restJson<T>(
   return (await response.json()) as T;
 }
 
+async function assertArkhamRunHealthy(
+  supabaseUrl: string,
+  headers: Record<string, string>,
+): Promise<void> {
+  const url = new URL("/rest/v1/arkham_provider_control", supabaseUrl);
+  url.searchParams.set("select", "enabled,last_run_status,last_success_at");
+  url.searchParams.set("id", "eq.true");
+  const rows = await restJson<
+    Array<{
+      enabled: boolean;
+      last_run_status: string;
+      last_success_at: string | null;
+    }>
+  >(url, headers);
+  const control = rows[0];
+  if (!control) throw new Error("arkham provider control unavailable");
+  if (
+    control.enabled &&
+    ["running", "failed", "partial", "quota_paused"].includes(
+      control.last_run_status,
+    )
+  ) {
+    throw new Error("arkham provider run incomplete");
+  }
+}
+
 async function rpc<T>(
   supabaseUrl: string,
   headers: Record<string, string>,
@@ -738,6 +764,7 @@ Deno.serve(async (request) => {
   const hour = utcHour(now);
 
   try {
+    await assertArkhamRunHealthy(supabaseUrl, headers);
     const document = await readUnifiedDocument(supabaseUrl, headers);
     const sourceById = new Map(
       document.sources.map((source) => [source.id, source]),

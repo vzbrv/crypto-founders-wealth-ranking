@@ -124,6 +124,21 @@ describe("hourly ranking snapshot integration", () => {
           );
         }
 
+        if (url.pathname === "/rest/v1/arkham_provider_control") {
+          return Promise.resolve(
+            new Response(
+              JSON.stringify([
+                {
+                  enabled: true,
+                  last_success_at: "2026-08-06T03:30:00Z",
+                  last_run_status: "success",
+                },
+              ]),
+              { status: 200 },
+            ),
+          );
+        }
+
         if (url.pathname === "/rest/v1/rpc/reserve_provider_request") {
           return Promise.resolve(
             new Response(JSON.stringify({ allowed: true }), { status: 200 }),

@@ -32,6 +32,7 @@ import {
 } from "./types.js";
 
 export * from "./types.js";
+export * from "./arkham.js";
 export * from "./v2/confidence.js";
 export * from "./v2/inputs.js";
 export * from "./v2/publication.js";

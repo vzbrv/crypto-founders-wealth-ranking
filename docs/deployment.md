@@ -21,6 +21,7 @@ Create one high-entropy `CRON_SECRET`. Set it both in Edge Function secrets and 
 ```bash
 supabase secrets set --project-ref "$SUPABASE_PROJECT_REF" \
   CRON_SECRET="$CRON_SECRET" \
+  ARKHAM_API_KEY="$ARKHAM_API_KEY" \
   EVM_ETHEREUM_RPC_URL="$EVM_ETHEREUM_RPC_URL" \
   SOLANA_RPC_URL="$SOLANA_RPC_URL" \
   COINGECKO_DEMO_API_KEY="$COINGECKO_DEMO_API_KEY"
@@ -30,7 +31,7 @@ psql "$DATABASE_URL" --set=ON_ERROR_STOP=1 \
   --set=cron_secret="$CRON_SECRET" \
   --file supabase/scripts/configure-vault.sql
 
-for function_name in sync-market-data sync-wallet-balances calculate-rankings provider-health; do
+for function_name in sync-market-data sync-wallet-balances calculate-rankings provider-health hourly-ranking-snapshot sync-arkham-evidence; do
   supabase functions deploy "$function_name" \
     --project-ref "$SUPABASE_PROJECT_REF" --no-verify-jwt
 done
@@ -57,7 +58,7 @@ After applying it in an authorized release, sync reviewed production data, run t
 
 ## GitHub Actions
 
-The manually dispatched `deploy-supabase.yml` workflow validates, tests, builds, applies migrations, configures secrets, deploys all four functions, and synchronizes production data. The separate `Verify production` workflow is read-only except for its deliberate anonymous-write rejection check.
+The manually dispatched `deploy-supabase.yml` workflow validates, tests, builds, applies migrations, configures secrets, deploys the scheduled functions, and synchronizes production data. The separate `Verify production` workflow is read-only except for its deliberate anonymous-write rejection check.
 
 Required GitHub production-environment secrets:
 
@@ -69,6 +70,7 @@ Required GitHub production-environment secrets:
 - `PUBLIC_SITE_URL`
 - `DATABASE_URL` (direct PostgreSQL connection)
 - `CRON_SECRET`
+- `ARKHAM_API_KEY`
 - `EVM_ETHEREUM_RPC_URL`
 - `SOLANA_RPC_URL`
 - `COINGECKO_DEMO_API_KEY` (may be empty when unused)
