@@ -134,6 +134,10 @@ const snapshotValueChangesMigrationUrl = new URL(
   "../../../supabase/migrations/202608110001_snapshot_value_changes.sql",
   import.meta.url,
 );
+const arkhamProjectLookupGrantMigrationUrl = new URL(
+  "../../../supabase/migrations/202608120003_arkham_project_lookup_grant.sql",
+  import.meta.url,
+);
 const sqlConfidenceEvidence = await readFile(
   sqlConfidenceEvidenceMigrationUrl,
   "utf8",
@@ -173,6 +177,7 @@ const migrationSql = [
   await readFile(rankingV2CutoverMigrationUrl, "utf8"),
   await readFile(restrictAnonRawObservationsMigrationUrl, "utf8"),
   await readFile(snapshotValueChangesMigrationUrl, "utf8"),
+  await readFile(arkhamProjectLookupGrantMigrationUrl, "utf8"),
 ].join("\n");
 const seedSql = await readFile(seedUrl, "utf8");
 const productionDataDirectory = fileURLToPath(
@@ -1306,6 +1311,22 @@ describe("Phase 3 database", () => {
       await expect(
         database.query("select * from public.wallet_asset_mappings limit 0"),
       ).resolves.toBeDefined();
+    } finally {
+      await database.exec("reset role");
+    }
+  });
+
+  it("limits the Arkham project lookup grant to id and slug", async () => {
+    const database = await createDatabase();
+
+    await database.exec("set role service_role");
+    try {
+      await expect(
+        database.query("select id, slug from public.projects limit 0"),
+      ).resolves.toBeDefined();
+      await expect(
+        database.query("select name from public.projects limit 0"),
+      ).rejects.toThrow(/permission denied/);
     } finally {
       await database.exec("reset role");
     }
