@@ -39,6 +39,8 @@ done
 
 Functions deliberately disable platform JWT verification because Supabase Cron authenticates with the server-only `x-cron-secret` header. Never expose `CRON_SECRET` to the browser.
 
+The daily Arkham refresh runs at `18:00 UTC` (2:00 PM Toronto time during daylight saving time). The schedule is managed by a forward-only migration.
+
 ## Curated production data
 
 Populate `data/production` only with researched, source-backed records. The production marker and loader reject the repository's synthetic fixture directory.
