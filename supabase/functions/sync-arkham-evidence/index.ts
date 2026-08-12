@@ -67,6 +67,7 @@ function records(value: unknown): JsonRecord[] {
     "data",
     "results",
     "entities",
+    "arkhamEntities",
     "balances",
     "tokens",
     "addresses",
@@ -149,6 +150,22 @@ function entityId(record: JsonRecord): string | null {
 
 function entityName(record: JsonRecord): string | null {
   return firstString(record, ["name", "entityName", "entity_name", "label"]);
+}
+
+function normalizedName(value: string): string {
+  return value.trim().replace(/\s+/g, " ").toLocaleLowerCase("en-US");
+}
+
+function selectEntityCandidate(
+  candidates: JsonRecord[],
+  searchedAlias: string,
+): JsonRecord | null {
+  const exactMatches = candidates.filter((candidate) => {
+    const name = entityName(candidate);
+    return name && normalizedName(name) === normalizedName(searchedAlias);
+  });
+  if (exactMatches.length === 1) return exactMatches[0];
+  return candidates.length === 1 ? candidates[0] : null;
 }
 
 function sourceIds(response: ArkhamResponse<unknown>): string[] {
@@ -481,7 +498,11 @@ Deno.serve(async (request) => {
           const candidates = records(search.data).filter((candidate) =>
             entityId(candidate),
           );
-          if (candidates.length !== 1) {
+          const candidate = selectEntityCandidate(
+            candidates,
+            mapping.searched_alias,
+          );
+          if (!candidate) {
             await patch(
               supabaseUrl,
               headers,
@@ -504,7 +525,6 @@ Deno.serve(async (request) => {
             );
             continue;
           }
-          const candidate = candidates[0];
           const foundId = entityId(candidate)!;
           await patch(
             supabaseUrl,

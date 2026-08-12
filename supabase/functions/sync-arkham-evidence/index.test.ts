@@ -170,4 +170,85 @@ describe("sync-arkham-evidence", () => {
       expect.objectContaining({ last_run_status: "quota_paused" }),
     );
   });
+
+  it("selects the exact Arkham entity from the search response", async () => {
+    setEnvironment(true);
+    const mapping = {
+      id: "mapping-1",
+      project_id: "project-ethereum",
+      founding_unit_id: "ethereum:vitalik-buterin",
+      searched_alias: "  Vitalik   Buterin ",
+      entity_id: null,
+      entity_name: null,
+      discovery_status: "pending",
+      chain_code: "ethereum",
+      owner_class: "founder",
+      attribution_class: "confirmed_entity",
+      review_status: "candidate",
+      ownership_confidence: "medium",
+      score_affecting: false,
+      stable_deduplication_key: "ethereum:vitalik-buterin:arkham",
+    };
+    const mappingUpdates: Record<string, unknown>[] = [];
+    const fetchMock = vi.fn<typeof fetch>(async (input, init) => {
+      const url = String(input);
+      if (url.includes("/intelligence/search?")) {
+        return new Response(
+          JSON.stringify({
+            arkhamEntities: [
+              { id: "wrong-entity", name: "Vitalik Holdings" },
+              { id: "vitalik-buterin", name: "Vitalik Buterin" },
+            ],
+          }),
+          { status: 200 },
+        );
+      }
+      if (url.startsWith("https://api.arkm.com/")) {
+        return new Response(JSON.stringify({}), { status: 200 });
+      }
+      if (url.includes("/rest/v1/arkham_provider_control")) {
+        if (init?.method === "PATCH")
+          return new Response(null, { status: 204 });
+        return new Response(
+          JSON.stringify([
+            {
+              enabled: true,
+              monthly_credit_limit: null,
+              credits_used: 0,
+              last_run_status: "success",
+            },
+          ]),
+          { status: 200 },
+        );
+      }
+      if (url.includes("/rest/v1/arkham_entity_mappings")) {
+        if (init?.method === "PATCH") {
+          mappingUpdates.push(JSON.parse(String(init.body)));
+          return new Response(null, { status: 204 });
+        }
+        return new Response(JSON.stringify([mapping]), { status: 200 });
+      }
+      if (url.includes("/rest/v1/projects")) {
+        return new Response(JSON.stringify([{ slug: "ethereum" }]), {
+          status: 200,
+        });
+      }
+      if (init?.method === "POST") return new Response(null, { status: 201 });
+      throw new Error(`Unexpected fixture request: ${url}`);
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const response = await denoStub.handler!(request());
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body).toMatchObject({ ok: true, failed: 0, mappings: 1 });
+    expect(mappingUpdates).toContainEqual(
+      expect.objectContaining({
+        discovery_status: "found",
+        entity_id: "vitalik-buterin",
+        entity_name: "Vitalik Buterin",
+      }),
+    );
+  });
 });
