@@ -10,11 +10,24 @@ committed; the audit rows remain candidates with null observations.
 
 The review matrix is [arkham-entity-audit.json](../data/production/arkham-entity-audit.json).
 
-| Result               | Count | Treatment                                                        |
-| -------------------- | ----: | ---------------------------------------------------------------- |
-| Research-only, unrun |    40 | Non-scoring candidate; live discovery and manual review required |
-| Binance              |     1 | Excluded as custodial/customer assets by default                 |
-| Score-affecting rows |     0 | No reviewer-approved evidence was available                      |
+| Result               | Count | Treatment                                                |
+| -------------------- | ----: | -------------------------------------------------------- |
+| Candidate rows       |    41 | Non-scoring; live discovery and manual review required   |
+| Default treatment    |     1 | Binance excluded as custodial/customer assets by default |
+| Score-affecting rows |     0 | No reviewer-approved evidence was available              |
+
+## Approval decision
+
+Do not approve any seeded row for ranking use. All 41 rows have null Arkham
+entity, chain, quantity, confirmation, owner-class, and observation fields.
+The Binance exclusion is a safe default, not positive ownership evidence. The
+acceptance gate therefore cannot be satisfied by this audit seed.
+
+Approval can be considered only row by row after a server-side Arkham run
+returns a unique mapping and reconciled project-token quantity, followed by
+explicit review of ownership, custodial status, circulation treatment,
+deduplication, source evidence, and completeness. There is no blanket approval
+path.
 
 ## Ranking impact
 
@@ -48,8 +61,8 @@ completeness. Approval is explicit and cannot promote a row automatically.
 
 ## Operational blockers
 
-1. Set `ARKHAM_API_KEY` only as a Supabase Edge Function secret and run the
-   documented one-time audit command.
+1. Run the one-time audit through the deployed Supabase Edge Function. Keep
+   `ARKHAM_API_KEY` server-side; this local audit makes no live Arkham claim.
 2. Review the resulting candidate matrix before any approval.
 3. Establish independent circulation and completeness evidence for any
    deduction that should affect ranking.
