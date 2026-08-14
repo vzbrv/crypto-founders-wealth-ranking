@@ -68,9 +68,9 @@ describe("unified ranking dataset", () => {
     expect(coinbase).toBeDefined();
     const calculation = calculateUnifiedEntry(coinbase!);
     expect(calculation.grossMarketValueUsd).toBe("43184827556.64");
-    expect(calculation.acceptedAffiliatedOwnershipUsd).toBe("6437750293.92");
+    expect(calculation.acceptedAffiliatedOwnershipUsd).toBe("5101090964.64");
     expect(calculation.acceptedOutsideCapitalUsd).toBe("578750000.00");
-    expect(calculation.provisionalValueCreatedUsd).toBe("36168327262.72");
+    expect(calculation.provisionalValueCreatedUsd).toBe("37504986592.00");
   });
 
   it("keeps missing accepted ownership inputs null instead of treating them as zero", async () => {
