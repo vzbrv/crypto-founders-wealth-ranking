@@ -107,13 +107,13 @@ describe("ranking route contract", () => {
     expect(styles).toContain("@media (prefers-reduced-motion: reduce)");
     expect(readAppFile("app/manifest.ts")).toContain('short_name: "IQ.wiki"');
     expect(readAppFile("app/layout.tsx")).toContain(
-      "IQ.wiki Value Created Index — Value Created for Others",
+      "IQ.wiki Estimated Value Created Ranking — Crypto Founders",
     );
     expect(readAppFile("app/opengraph-image.tsx")).toContain(
-      "IQ.wiki Value Created Index — Value Created for Others",
+      "IQ.wiki Estimated Value Created Ranking — Crypto Founders",
     );
     expect(homepage).toContain(
-      "IQ.wiki Value Created Index — Value Created for Others",
+      "IQ.wiki Estimated Value Created Ranking — Crypto Founders",
     );
   });
 

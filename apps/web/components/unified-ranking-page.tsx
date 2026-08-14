@@ -13,13 +13,14 @@ export default async function UnifiedRankingPage() {
       <SiteNav />
       <main className="content-page" id="main-content" tabIndex={-1}>
         <header className="page-header">
-          <p className="eyebrow">Crypto Founders Value Created Index</p>
-          <h1>Top Crypto Founders Ranked by Value Created for Others.</h1>
+          <p className="eyebrow">
+            Crypto Founders Estimated Value Created Ranking
+          </p>
+          <h1>Top Crypto Founders Ranked by Estimated Value Created.</h1>
           <p>
-            This index ranks crypto founders and founding teams by estimated
-            value created for outside token holders and public-company
-            shareholders. It is not founder net worth, personal wealth, or
-            investment advice.
+            This ranking estimates the value crypto founders and founding teams
+            created for outside token holders and public-company shareholders.
+            It is not founder net worth, personal wealth, or investment advice.
           </p>
         </header>
 
@@ -28,7 +29,9 @@ export default async function UnifiedRankingPage() {
           <p>
             Unknown deductions remain Unknown and do not reduce the score.
             Incomplete deductions are upper estimates. Disputed, excluded and
-            scenario-only evidence does not affect this primary ranking.
+            scenario-only evidence does not affect this primary ranking. A rank
+            remains provisional when an unknown deduction could materially
+            change placement.
           </p>
         </section>
 

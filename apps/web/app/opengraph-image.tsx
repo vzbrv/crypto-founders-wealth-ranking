@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 
 export const dynamic = "force-static";
-export const alt = "IQ.wiki Value Created Index — Value Created for Others";
+export const alt = "IQ.wiki Estimated Value Created Ranking — Crypto Founders";
 export const size = { height: 630, width: 1200 };
 export const contentType = "image/png";
 
@@ -22,7 +22,7 @@ export default function OpenGraphImage() {
       }}
     >
       <div style={{ color: "#FF5CAA", fontSize: 30, letterSpacing: 4 }}>
-        IQ.WIKI VALUE CREATED INDEX
+        IQ.WIKI ESTIMATED VALUE CREATED RANKING
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
         <div style={{ fontSize: 82, letterSpacing: -4 }}>Crypto Founders</div>

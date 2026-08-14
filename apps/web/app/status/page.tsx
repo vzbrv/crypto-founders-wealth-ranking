@@ -13,7 +13,7 @@ import { getUnifiedDataset } from "../../lib/production-data";
 export const metadata: Metadata = {
   alternates: { canonical: "/status/" },
   description:
-    "Current data-provider monitoring state for the Crypto Founders Value Created Index.",
+    "Current data-provider monitoring state for the Crypto Founders Estimated Value Created Ranking.",
   title: "System status",
 };
 

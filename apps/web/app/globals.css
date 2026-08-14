@@ -359,6 +359,15 @@ td small {
 .detail-hero .badge {
   margin-top: 0.75rem;
 }
+.badge-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+.detail-hero .badge-row .badge {
+  margin-top: 0;
+}
 .detail-page .panel {
   margin-top: 1.25rem;
 }
@@ -467,6 +476,9 @@ td small {
   color: var(--text);
 }
 .badge.confidence-low,
+.badge.confidence-insufficient,
+.badge.estimate-upper,
+.badge.rank-provisional,
 .status-label.degraded {
   color: var(--danger);
 }

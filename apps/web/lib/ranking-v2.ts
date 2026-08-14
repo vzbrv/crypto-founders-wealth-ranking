@@ -190,6 +190,18 @@ export function formatV2Rank(row: CurrentRankingV2Row): string {
     : `${row.rank_min}–${row.rank_max}`;
 }
 
+export function hasV2ValueRange(row: CurrentRankingV2Row): boolean {
+  return !new Decimal(row.value_created_lower).eq(row.value_created_upper);
+}
+
+export function isV2RankProvisional(row: CurrentRankingV2Row): boolean {
+  return (
+    row.eligibility_status === "provisional" ||
+    row.rank_order_status === "overlapping" ||
+    row.rank_order_status === "indeterminate"
+  );
+}
+
 export function formatV2Value(row: CurrentRankingV2Row): string {
   const money = (value: string) =>
     new Intl.NumberFormat("en-US", {
@@ -199,7 +211,7 @@ export function formatV2Value(row: CurrentRankingV2Row): string {
       minimumFractionDigits: 0,
       maximumFractionDigits: 2,
     }).format(new Decimal(value).toNumber());
-  return new Decimal(row.value_created_lower).eq(row.value_created_upper)
+  return !hasV2ValueRange(row)
     ? money(row.value_created_lower)
     : `${money(row.value_created_lower)}–${money(row.value_created_upper)}`;
 }

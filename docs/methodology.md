@@ -29,10 +29,9 @@ The published calculation is:
 `V = G - A* - C*`
 
 where `A* = A` when the affiliated-ownership review is accepted and `C* = C`
-when the outside-capital review is accepted. A pending or unknown deduction is
-left `Unknown` in the record and temporarily contributes `0` only to the
-provisional calculation. That placeholder is not a factual claim that the
-deduction is zero.
+when the outside-capital review is accepted. A pending or unknown deduction
+stays `Unknown` (`null`) in the record and is not applied to the provisional
+calculation. It is never stored or presented as zero.
 
 Consequently:
 
@@ -115,14 +114,6 @@ Observation age is:
 The publisher requires all 20 calculations, ranks them as one set, and publishes
 the snapshot header, results, inputs, and sources atomically. A failed run does
 not replace the last complete snapshot.
-
-For an entry present in the previous complete live snapshot:
-
-`rank_change = previous_rank - current_rank`
-
-A positive value means the entry moved up, a negative value means it moved down,
-and zero means no movement. The first complete snapshot is a baseline; a newly
-appearing entry has no rank change.
 
 ## Individuals, teams, and attribution
 

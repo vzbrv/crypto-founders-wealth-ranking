@@ -98,9 +98,10 @@ export function computeEntryValuation(
 
   const founderAffiliateDeduction =
     input.market.type === "public" &&
-    input.affiliatedOwnership.status === "Accepted"
+    input.affiliatedOwnership.status === "Accepted" &&
+    input.affiliatedOwnership.totalShares !== undefined
       ? parseNonNegativeDecimal(
-          input.affiliatedOwnership.totalShares ?? "0",
+          input.affiliatedOwnership.totalShares,
           `affiliate shares for ${input.entryId}`,
         ).times(marketPrice!)
       : null;
@@ -121,9 +122,13 @@ export function computeEntryValuation(
           )
       : null;
 
-  const finalValue = gross
-    .minus(founderAffiliateDeduction ?? 0)
-    .minus(outsideCapitalDeduction ?? 0);
+  let finalValue = gross;
+  if (founderAffiliateDeduction !== null) {
+    finalValue = finalValue.minus(founderAffiliateDeduction);
+  }
+  if (outsideCapitalDeduction !== null) {
+    finalValue = finalValue.minus(outsideCapitalDeduction);
+  }
 
   if (!finalValue.isFinite() || finalValue.lt(0)) {
     throw new Error(`invalid final value for ${input.entryId}`);

@@ -5,7 +5,7 @@ import { SiteFooter, SiteNav } from "../../components/site-nav";
 export const metadata: Metadata = {
   title: "Methodology",
   description:
-    "How the unified Crypto Founders Value Created Index is calculated and sourced.",
+    "How the Crypto Founders Estimated Value Created Ranking is calculated and sourced.",
   alternates: { canonical: "/methodology/" },
 };
 
@@ -32,7 +32,7 @@ const sections = [
   ],
   [
     "Snapshot alignment",
-    "Each published hourly snapshot recalculates the live rank from the latest eligible observations and compares it with the previous published hour. When no live snapshot is available, the site shows the historical bundled fallback dated July 30, 2026. Price, market-value, share-count, ownership, and capital observations retain their own dates, with date differences and staleness disclosed.",
+    "Each published hourly snapshot recalculates the ranking from the latest eligible observations. Price, market-value, share-count, ownership, and capital observations retain their own dates, with date differences and staleness disclosed.",
   ],
   [
     "Confidence scoring",
@@ -40,7 +40,11 @@ const sections = [
   ],
   [
     "Eligibility and upper estimates",
-    "Only supported, validated entries can rank. Unknown values never become zero. An entry with an unknown accepted deduction may remain eligible but is labelled an upper estimate. Published ranking entries remain distinct from research candidates; validation failures remove an entry from the primary table.",
+    "Only supported, validated entries can rank. Unknown values remain null and never become zero. An entry with an unknown accepted deduction may remain eligible but is labelled an upper estimate. Its rank is provisional unless reviewed bounds prove the placement cannot materially change. Published ranking entries remain distinct from research candidates; validation failures remove an entry from the primary table.",
+  ],
+  [
+    "Research priority and provisional rank",
+    "The evidence queue is ordered by rank sensitivity. Unresolved ownership or capital inputs capable of moving a project across the nearest ranking boundary are reviewed first. Until cited evidence resolves the input, or defensible reviewed bounds prove the rank invariant, the rank remains provisional.",
   ],
 ];
 
@@ -57,7 +61,7 @@ export default function MethodologyPage() {
           <p className="eyebrow">Product methodology</p>
           <h1>Methodology</h1>
           <p>
-            One transparent framework for comparing liquid value created for
+            One transparent framework for estimating liquid value created for
             outside token holders and public-company shareholders.
           </p>
         </header>
