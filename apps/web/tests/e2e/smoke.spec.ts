@@ -146,7 +146,7 @@ test("fits the founder ranking on a mobile viewport", async ({ page }) => {
   await expect(page.locator(".research-universe-table thead")).toBeAttached();
   await expect(page.locator("tbody tr td a").first()).toBeVisible();
   await expect(page.locator("tbody tr").first()).toHaveCSS("display", "block");
-  await expect(page.locator("tbody tr td").nth(2)).toHaveAttribute(
+  await expect(page.locator("tbody tr td").nth(1)).toHaveAttribute(
     "data-label",
     "Founder / founding team",
   );
@@ -413,7 +413,7 @@ test("publishes unified founder calculations and sources separately", async ({
   ).toBeVisible();
   await expect(
     page.getByRole("columnheader", { name: "Rank change" }),
-  ).toBeVisible();
+  ).toHaveCount(0);
   await expect(
     page.getByRole("columnheader", { name: "Value type" }),
   ).toBeVisible();
@@ -422,7 +422,7 @@ test("publishes unified founder calculations and sources separately", async ({
   ).toBeVisible();
   await expect(
     page.getByRole("columnheader", { name: "Value change" }),
-  ).toBeVisible();
+  ).toHaveCount(0);
   await expect(
     page.getByRole("columnheader", { name: "Confidence" }),
   ).toBeVisible();
@@ -452,7 +452,7 @@ test("publishes unified founder calculations and sources separately", async ({
   await expect(page.getByText("Coinbase", { exact: true })).toHaveCount(1);
 
   const rankedProjects = await rankingTable
-    .locator("tbody tr td:nth-child(4)")
+    .locator("tbody tr td:nth-child(3)")
     .allTextContents();
   expect(rankedProjects.indexOf("Chainlink")).toBeLessThan(
     rankedProjects.indexOf("Cardano"),
@@ -630,9 +630,6 @@ test("renders a newer published hourly snapshot instead of stale v2 data", async
     page.getByText("Live immutable snapshot", { exact: false }),
   ).toBeVisible();
   await expect(page.getByText("Founder 1", { exact: true })).toBeVisible();
-  await expect(
-    page.getByLabel("Value increased by $100M since previous snapshot").first(),
-  ).toBeVisible();
   await expect(
     page.getByText("Vitalik Buterin (founder); Ethereum founding team"),
   ).not.toBeVisible();

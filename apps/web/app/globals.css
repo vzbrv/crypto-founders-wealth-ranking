@@ -309,24 +309,8 @@ td small {
   font-weight: 800;
   font-variant-numeric: tabular-nums;
 }
-.rank-move {
-  width: 6.5rem;
-  color: var(--text);
-  font-weight: 800;
-  white-space: nowrap;
-}
-.rank-move span {
-  display: inline-block;
-  min-width: 2.5rem;
-}
-.value-move {
-  width: 8rem;
-  color: var(--text);
-  font-weight: 800;
-  white-space: nowrap;
-}
 .research-universe-table {
-  min-width: 1120px;
+  min-width: 900px;
 }
 .research-universe-table .founder-column {
   min-width: 13rem;
