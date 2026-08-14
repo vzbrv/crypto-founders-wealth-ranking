@@ -20,7 +20,8 @@ Ethereum, Uniswap, and Solana have wallet and funding reviews marked
 The seven normalized JSON files and the unified provisional document are validated
 by `packages/curated-data`. Source links cover material claims and required
 calculation inputs. The unresolved evidence and manually reviewed assumptions are
-recorded in project methodology notes and `docs/initial-production-candidates.md`.
+recorded in project methodology notes and
+`archive/2026-08-research/docs/initial-production-candidates.md`.
 
 The production validator and synchronizer reject the synthetic `data/` fixtures and
 require the production marker in this directory.

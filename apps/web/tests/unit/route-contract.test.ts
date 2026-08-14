@@ -3,12 +3,12 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import {
-  getProvisionalProjectIds,
   getUnifiedCalculation,
   getUnifiedDataset,
   getUnifiedProjectIds,
   getUnifiedRanking,
-} from "../../lib/research-data";
+} from "../../lib/production-data";
+import { getProvisionalProjectIds } from "../../lib/research-data";
 
 const webRoot = resolve(process.cwd());
 const readAppFile = (relativePath: string) =>
@@ -64,9 +64,6 @@ describe("ranking route contract", () => {
       "getResearchProjectIds",
     );
     expect(readAppFile("components/site-nav.tsx")).not.toMatch(
-      /["'`]\/research(?:["'`]|\/)/,
-    );
-    expect(readAppFile("components/ranking-dashboard.tsx")).not.toMatch(
       /["'`]\/research(?:["'`]|\/)/,
     );
   });

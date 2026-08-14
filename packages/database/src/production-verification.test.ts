@@ -157,6 +157,14 @@ describe("production database verification", () => {
     expect([...expectedMigrationVersions].sort()).toEqual(versionsOnDisk);
   });
 
+  it("keeps migration SQL files directly under the canonical directory", () => {
+    const nestedDirectories = readdirSync(migrationsDir, {
+      withFileTypes: true,
+    }).filter((entry) => entry.isDirectory());
+
+    expect(nestedDirectories).toEqual([]);
+  });
+
   it("expects the current hourly snapshot scheduler", () => {
     expect(requiredCronJobs).toContain("hourly-ranking-snapshot");
     expect(requiredCronJobs).not.toContain("calculate-rankings");

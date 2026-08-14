@@ -1,14 +1,23 @@
 {
   "name": "crypto-founders-wealth-ranking",
-  "version": "0.0.0",
+  "version": "1.0.0",
+  "description": "Source-backed index of value created by crypto founders and founding teams.",
   "private": true,
+  "license": "Apache-2.0",
+  "homepage": "https://github.com/vzbrv/crypto-founders-wealth-ranking#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vzbrv/crypto-founders-wealth-ranking.git"
+  },
   "packageManager": "pnpm@11.9.0",
   "engines": {
-    "node": ">=22"
+    "node": "22.x"
   },
   "scripts": {
     "prebuild": "pnpm validate:production-data",
     "build": "turbo run build",
+    "prebuild:web:production": "node scripts/validate-public-web-env.mjs",
+    "build:web:production": "pnpm --filter @crypto-founders/web build",
     "dev": "turbo run dev",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
@@ -18,6 +27,7 @@
     "test:unit": "turbo run test",
     "e2e": "pnpm test:e2e",
     "test:e2e": "pnpm --filter @crypto-founders/web test:e2e",
+    "e2e:install": "pnpm --filter @crypto-founders/web exec playwright install chromium",
     "sync:curated-data": "pnpm --filter @crypto-founders/database sync:curated-data",
     "validate:data": "pnpm --filter @crypto-founders/curated-data validate",
     "validate:production-data": "CURATED_DATA_DIR=data/production pnpm --filter @crypto-founders/curated-data validate:production",

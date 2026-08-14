@@ -55,6 +55,7 @@ type ProviderHealth = {
 
 const apiBase = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const apiKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+const endpointConfigured = Boolean(apiBase && apiKey);
 const LIVE_REFRESH_INTERVAL_MS = 60_000;
 
 async function readView<T>(view: string, query = ""): Promise<T[]> {
@@ -104,9 +105,12 @@ export function HourlySnapshotStatus({
   const [input, setInput] = useState<SnapshotInput | null>(null);
   const [sources, setSources] = useState<SnapshotSource[]>([]);
   const [health, setHealth] = useState<ProviderHealth[]>([]);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(
+    endpointConfigured ? null : "public data endpoint unavailable",
+  );
 
   useEffect(() => {
+    if (!endpointConfigured) return;
     let active = true;
     const loadStatus = async () => {
       try {
@@ -181,16 +185,18 @@ export function HourlySnapshotStatus({
         <strong>
           {header
             ? "Live rank from the latest published hourly snapshot"
-            : "No live hourly snapshot available"}
+            : "Live data unavailable"}
         </strong>
         <p>
           {header
             ? `Published ${formatTimestamp(header.publication_at)}. UTC snapshot: ${formatTimestamp(snapshotDate)}. Market observation: ${formatTimestamp(observationDate)}. Status: ${stateLabel(freshness)}.`
-            : `Showing the historical bundled fallback dated ${formatTimestamp(fallbackSnapshotDate)}. Rank changes populate after the first complete live hourly snapshot is published.`}
+            : `Showing the bundled snapshot published ${formatTimestamp(fallbackSnapshotDate)} from market observations at ${formatTimestamp(fallbackObservationDate)}. Rank changes populate after the first complete live hourly snapshot is published.`}
         </p>
         {error && (
           <small>
-            Live snapshot read failed; showing the historical fallback.
+            {endpointConfigured
+              ? "Live snapshot read failed; showing the bundled snapshot."
+              : "This build has no public live-data endpoint configured."}
           </small>
         )}
       </div>
@@ -213,12 +219,12 @@ export function HourlySnapshotStatus({
         <strong>
           {header
             ? `${stateLabel(status)} live hourly snapshot`
-            : "Historical bundled baseline (not live)"}
+            : "Live data unavailable — bundled baseline"}
         </strong>
         <p>
           {header
             ? `Snapshot: ${formatTimestamp(header.utc_hour)}. Market observation: ${formatTimestamp(input?.original_observation_at ?? result?.observation_at ?? fallbackObservationDate)}. Publication: ${formatTimestamp(header.publication_at)}.`
-            : `Showing the historical bundled fallback dated ${formatTimestamp(fallbackSnapshotDate)}. Rank changes populate after the first complete live hourly snapshot is published.`}
+            : `Published ${formatTimestamp(fallbackSnapshotDate)} from market observations at ${formatTimestamp(fallbackObservationDate)}. Rank changes populate after the first complete live hourly snapshot is published.`}
         </p>
         <p>
           Evidence version:{" "}
@@ -253,8 +259,10 @@ export function HourlySnapshotStatus({
   }
 
   const failed =
+    Boolean(error) ||
     latestStatus?.status === "failed" ||
     health.some((item) => item.status !== "healthy" && item.status !== "ok");
+  const degraded = failed || !header;
   return (
     <section
       className="status-panel"
@@ -265,8 +273,8 @@ export function HourlySnapshotStatus({
           <p className="eyebrow">Hourly publication</p>
           <h2 id="hourly-snapshot-status-heading">Snapshot freshness</h2>
         </div>
-        <p className={`status-label ${failed ? "degraded" : "operational"}`}>
-          {failed ? "Degraded" : header ? "Operational" : "Fallback"}
+        <p className={`status-label ${degraded ? "degraded" : "operational"}`}>
+          {degraded ? "Degraded" : "Operational"}
         </p>
       </div>
       <dl className="status-grid">
@@ -326,7 +334,9 @@ export function HourlySnapshotStatus({
       )}
       {error && (
         <p className="notice" role="status">
-          Live snapshot read failed; showing the historical fallback.
+          {endpointConfigured
+            ? "Live snapshot read failed; showing the bundled snapshot."
+            : "This build has no public live-data endpoint configured; showing the bundled snapshot."}
         </p>
       )}
     </section>

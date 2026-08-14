@@ -1,6 +1,6 @@
 import { SiteFooter, SiteNav } from "./site-nav";
 import { HourlyRankingTable } from "./hourly-ranking-table";
-import { getUnifiedDataset, getUnifiedRanking } from "../lib/research-data";
+import { getUnifiedDataset, getUnifiedRanking } from "../lib/production-data";
 
 export default async function UnifiedRankingPage() {
   const [dataset, ranking] = await Promise.all([

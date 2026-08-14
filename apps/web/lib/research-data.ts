@@ -11,13 +11,6 @@ import {
   type ResearchCandidate,
   type ResearchDataset,
 } from "@crypto-founders/curated-data/research";
-import {
-  buildUnifiedRanking,
-  loadUnifiedData,
-  type UnifiedCalculation,
-  type UnifiedDataset,
-} from "@crypto-founders/curated-data/unified";
-
 const RESEARCH_DIRECTORY = resolve(process.cwd(), "../..", "data/research");
 
 export type ResearchCandidateSummary = Pick<
@@ -45,32 +38,10 @@ export interface ResearchSnapshot {
 }
 
 let datasetPromise: Promise<ResearchDataset> | undefined;
-let unifiedDatasetPromise: Promise<UnifiedDataset> | undefined;
 
 export function getResearchDataset(): Promise<ResearchDataset> {
   datasetPromise ??= loadResearchData(RESEARCH_DIRECTORY);
   return datasetPromise;
-}
-
-export function getUnifiedDataset(): Promise<UnifiedDataset> {
-  unifiedDatasetPromise ??= loadUnifiedData(RESEARCH_DIRECTORY);
-  return unifiedDatasetPromise;
-}
-
-export async function getUnifiedRanking(): Promise<UnifiedCalculation[]> {
-  return buildUnifiedRanking(await getUnifiedDataset());
-}
-
-export async function getUnifiedProjectIds(): Promise<string[]> {
-  return (await getUnifiedDataset()).entries.map(({ entryId }) => entryId);
-}
-
-export async function getUnifiedCalculation(
-  projectId: string,
-): Promise<UnifiedCalculation | undefined> {
-  return (await getUnifiedRanking()).find(
-    ({ entry }) => entry.entryId === projectId,
-  );
 }
 
 export async function getResearchProjectIds(): Promise<string[]> {
