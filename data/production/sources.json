@@ -161,9 +161,9 @@
   },
   {
     "id": "755a3a1f-9e04-4a66-8468-35defcb5b168",
-    "title": "Crypto Founders Wealth Ranking Methodology",
+    "title": "Crypto Founders Estimated Value Created Ranking Methodology",
     "url": "https://github.com/vzbrv/crypto-founders-wealth-ranking/blob/main/docs/methodology.md",
-    "publisher": "Crypto Founders Wealth Ranking",
+    "publisher": "Crypto Founders Estimated Value Created Ranking",
     "sourceType": "official_documentation",
     "accessedAt": "2026-07-30T16:00:00Z",
     "description": "Repository methodology governing founding-unit aggregation, confidence, missing data, and ranking eligibility.",

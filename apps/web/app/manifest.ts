@@ -8,7 +8,7 @@ export default function manifest(): MetadataRoute.Manifest {
     description:
       "A transparent, time-stamped ranking of crypto founders and founding teams by estimated value created for outside holders and shareholders—not personal wealth.",
     display: "standalone",
-    name: "IQ.wiki Value Created Index",
+    name: "IQ.wiki Estimated Value Created Ranking",
     short_name: "IQ.wiki",
     start_url: "/",
     theme_color: "#FF5CAA",

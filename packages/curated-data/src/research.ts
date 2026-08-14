@@ -525,8 +525,9 @@ function parseCandidates(
   const grossOrder = [...candidates]
     .filter((candidate) => candidate.grossValueUsd !== null)
     .sort((left, right) => {
-      const valueOrder = new Decimal(right.grossValueUsd ?? 0).cmp(
-        left.grossValueUsd ?? 0,
+      if (left.grossValueUsd === null || right.grossValueUsd === null) return 0;
+      const valueOrder = new Decimal(right.grossValueUsd).cmp(
+        left.grossValueUsd,
       );
       return valueOrder === 0
         ? left.projectId.localeCompare(right.projectId)
@@ -538,8 +539,14 @@ function parseCandidates(
   const canonicalOrder = [...candidates]
     .filter((candidate) => candidate.canonicalOutsideWealthUsd !== null)
     .sort((left, right) => {
-      const valueOrder = new Decimal(right.canonicalOutsideWealthUsd ?? 0).cmp(
-        left.canonicalOutsideWealthUsd ?? 0,
+      if (
+        left.canonicalOutsideWealthUsd === null ||
+        right.canonicalOutsideWealthUsd === null
+      ) {
+        return 0;
+      }
+      const valueOrder = new Decimal(right.canonicalOutsideWealthUsd).cmp(
+        left.canonicalOutsideWealthUsd,
       );
       return valueOrder === 0
         ? left.projectId.localeCompare(right.projectId)

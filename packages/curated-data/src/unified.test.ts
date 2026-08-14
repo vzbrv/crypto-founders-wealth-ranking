@@ -7,6 +7,7 @@ import {
   buildUnifiedRanking,
   calculateUnifiedEntry,
   classifyUnifiedConfidence,
+  isUnifiedRankProvisional,
   loadUnifiedData,
   loadProductionUnifiedData,
   validateUnifiedDataset,
@@ -67,9 +68,31 @@ describe("unified ranking dataset", () => {
     expect(coinbase).toBeDefined();
     const calculation = calculateUnifiedEntry(coinbase!);
     expect(calculation.grossMarketValueUsd).toBe("43184827556.64");
-    expect(calculation.acceptedAffiliatedOwnershipUsd).toBe("6437750293.92");
+    expect(calculation.acceptedAffiliatedOwnershipUsd).toBe("5101090964.64");
     expect(calculation.acceptedOutsideCapitalUsd).toBe("578750000.00");
-    expect(calculation.provisionalValueCreatedUsd).toBe("36168327262.72");
+    expect(calculation.provisionalValueCreatedUsd).toBe("37504986592.00");
+  });
+
+  it("keeps missing accepted ownership inputs null instead of treating them as zero", async () => {
+    const dataset = await loadUnifiedData(
+      path.join(repositoryRoot, "data/research"),
+    );
+    const invalidDataset = structuredClone(dataset);
+    const coinbase = invalidDataset.entries.find(
+      (entry) => entry.entryId === "coinbase",
+    );
+    if (!coinbase || coinbase.market.type !== "public") {
+      throw new Error("test fixture must include public-company Coinbase");
+    }
+    delete coinbase.affiliatedOwnership.totalShares;
+
+    const calculation = calculateUnifiedEntry(coinbase);
+    expect(calculation.acceptedAffiliatedOwnershipUsd).toBeNull();
+    expect(calculation.formula).toContain("Unknown");
+    expect(calculation.provisionalValueCreatedUsd).toBe("42606077556.64");
+    expect(validateUnifiedDataset(invalidDataset)).toContain(
+      "coinbase accepted ownership lacks total shares",
+    );
   });
 
   it("keeps the two calculation tracks and unknown deductions distinct", async () => {
@@ -167,6 +190,13 @@ describe("unified ranking dataset", () => {
     expect(validateUnifiedDataset(invalidDataset)).toContain(
       "coinbase confidence label does not match score and upper-estimate state",
     );
+    const invalidCoinbase = invalidDataset.entries.find(
+      (entry) => entry.entryId === "coinbase",
+    );
+    if (!invalidCoinbase) throw new Error("test fixture must include Coinbase");
+    expect(
+      isUnifiedRankProvisional(calculateUnifiedEntry(invalidCoinbase)),
+    ).toBe(true);
 
     const boundedDataset = {
       ...dataset,
@@ -205,6 +235,9 @@ describe("unified ranking dataset", () => {
     expect(validateUnifiedDataset(boundedDataset)).not.toContain(
       "coinbase confidence label does not match score and upper-estimate state",
     );
+    expect(
+      isUnifiedRankProvisional(calculateUnifiedEntry(boundedCoinbase)),
+    ).toBe(false);
 
     const overstatedDataset = structuredClone(boundedDataset);
     const overstatedCoinbase = overstatedDataset.entries.find(

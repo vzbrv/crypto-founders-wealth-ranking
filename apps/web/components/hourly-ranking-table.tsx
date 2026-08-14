@@ -8,7 +8,9 @@ import type { UnifiedCalculation } from "@crypto-founders/curated-data/unified";
 import {
   formatV2Rank,
   formatV2Value,
+  hasV2ValueRange,
   isNewerPublishedSnapshot,
+  isV2RankProvisional,
   validateCurrentRankingV2,
   type CurrentRankingV2,
 } from "../lib/ranking-v2";
@@ -89,6 +91,27 @@ function dateTime(value: string | null): string {
     timeStyle: "short",
     timeZone: "UTC",
   }).format(new Date(value));
+}
+
+function titleCase(value: string): string {
+  return value.charAt(0).toUpperCase() + value.slice(1).replace(/_/g, " ");
+}
+
+function isFallbackRankProvisional(calculation: UnifiedCalculation): boolean {
+  const review = calculation.entry.uncertaintyReview;
+  return (
+    calculation.upperEstimate &&
+    !(
+      review?.evidenceState === "not_publicly_verifiable" &&
+      review.bestRank === calculation.entry.rank &&
+      review.worstRank === calculation.entry.rank &&
+      review.independentlyReviewed &&
+      review.contradictionFree &&
+      review.deduplicated &&
+      review.sourceIds.length > 0 &&
+      review.notes.trim().length > 0
+    )
+  );
 }
 
 function publicMarketLabel(market: unknown): string | null {
@@ -258,18 +281,20 @@ export function HourlyRankingTable({
         return {
           entryId: result.economic_project_id,
           rank: formatV2Rank(result),
+          rankNote: isV2RankProvisional(result) ? "Provisional rank" : null,
           founderTeam: result.founder_team,
           project: result.project_name,
           marketLabel: null,
-          valueType: "Value created for others",
+          valueType: "Estimated value created",
           formattedValue: formatV2Value(result),
           valueNote:
             result.eligibility_status === "ineligible"
               ? "Not eligible for official rank"
-              : result.eligibility_status === "provisional"
-                ? "Provisional interval"
+              : hasV2ValueRange(result)
+                ? "Estimated range"
                 : null,
-          confidenceText: result.confidence_status,
+          confidenceLevel: result.confidence_status,
+          confidenceText: `${titleCase(result.confidence_status)} confidence`,
           confidenceNote: `Rank order: ${result.rank_order_status.replace(/_/g, " ")}`,
           href: fallback ? `/ranking/${fallback.entry.entryId}/` : null,
         };
@@ -282,21 +307,28 @@ export function HourlyRankingTable({
           return {
             entryId: result.entry_id,
             rank: result.rank,
+            rankNote: result.upper_estimate ? "Provisional rank" : null,
             founderTeam: result.founder_team,
             project: result.project,
             marketLabel: publicMarketLabel(result.market),
             valueType: result.value_type,
             formattedValue: money(result.final_value_usd),
             valueNote: result.upper_estimate ? "Upper estimate" : null,
-            confidenceText: `${result.confidence_score}/100 · ${result.confidence_label}`,
+            confidenceLevel: result.confidence_label.toLowerCase(),
+            confidenceText: `${result.confidence_score}/100 · ${titleCase(result.confidence_label)} confidence`,
             confidenceNote: `Observation: ${result.freshness_status}`,
             href: fallback ? `/ranking/${result.entry_id}/` : null,
           };
         })
-      : fallbackRanking.map(
-          ({ entry, provisionalValueCreatedUsd, upperEstimate }) => ({
+      : fallbackRanking.map((calculation) => {
+          const { entry, provisionalValueCreatedUsd, upperEstimate } =
+            calculation;
+          return {
             entryId: entry.entryId,
             rank: entry.rank,
+            rankNote: isFallbackRankProvisional(calculation)
+              ? "Provisional rank"
+              : null,
             founderTeam: entry.founderTeam,
             project: entry.project,
             marketLabel:
@@ -306,11 +338,12 @@ export function HourlyRankingTable({
             valueType: entry.valueType,
             formattedValue: money(provisionalValueCreatedUsd),
             valueNote: upperEstimate ? "Upper estimate" : null,
-            confidenceText: `${entry.confidence.score}/100 · ${entry.confidence.label}`,
+            confidenceLevel: entry.confidence.label.toLowerCase(),
+            confidenceText: `${entry.confidence.score}/100 · ${titleCase(entry.confidence.label)} confidence`,
             confidenceNote: "Observation: historical",
             href: `/ranking/${entry.entryId}/`,
-          }),
-        );
+          };
+        });
   const snapshotDate = live?.header.utc_hour ?? fallbackSnapshotDate;
   const observationDate =
     live?.header.observation_at ?? fallbackObservationDate;
@@ -368,15 +401,15 @@ export function HourlyRankingTable({
       <div className="table-shell evidence-shell">
         <table className="evidence-table research-universe-table">
           <caption className="sr-only">
-            Current economic projects ranked by value created for others.
+            Current economic projects ranked by estimated value created.
           </caption>
           <thead>
             <tr>
-              <th>Rank</th>
+              <th>Estimated rank</th>
               <th>Founder or joint founding team</th>
               <th>Project or company</th>
               <th>Value type</th>
-              <th className="number primary-value">Value created for others</th>
+              <th className="number primary-value">Estimated value created</th>
               <th>Confidence</th>
             </tr>
           </thead>
@@ -385,6 +418,7 @@ export function HourlyRankingTable({
               ({
                 entryId,
                 rank,
+                rankNote,
                 founderTeam,
                 project,
                 marketLabel,
@@ -392,12 +426,20 @@ export function HourlyRankingTable({
                 formattedValue,
                 valueNote,
                 confidenceText,
+                confidenceLevel,
                 confidenceNote,
                 href,
               }) => (
                 <tr key={entryId}>
-                  <td className="rank" data-label="Rank">
+                  <td className="rank" data-label="Estimated rank">
                     {rank}
+                    {rankNote && (
+                      <small>
+                        <span className="badge rank-provisional">
+                          {rankNote}
+                        </span>
+                      </small>
+                    )}
                   </td>
                   <td data-label="Founder / founding team">
                     {href ? (
@@ -423,13 +465,21 @@ export function HourlyRankingTable({
                   <td data-label="Value type">{valueType}</td>
                   <td
                     className="number primary-value"
-                    data-label="Value created for others"
+                    data-label="Estimated value created"
                   >
                     <strong>{formattedValue}</strong>
-                    {valueNote && <small>{valueNote}</small>}
+                    {valueNote && (
+                      <small>
+                        <span className="badge estimate-upper">
+                          {valueNote}
+                        </span>
+                      </small>
+                    )}
                   </td>
                   <td data-label="Confidence">
-                    {confidenceText}
+                    <span className={`badge confidence-${confidenceLevel}`}>
+                      {confidenceText}
+                    </span>
                     <small>{confidenceNote}</small>
                   </td>
                 </tr>

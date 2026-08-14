@@ -8,6 +8,6 @@ You may share and adapt this material for any purpose, including commercially, p
 
 License deed and legal code: https://creativecommons.org/licenses/by/4.0/
 
-Suggested attribution: “Crypto Founders Value Created Index contributors, CC BY 4.0,” with a link to this repository, the cited snapshot or data version, and this license.
+Suggested attribution: “Crypto Founders Estimated Value Created Ranking contributors, CC BY 4.0,” with a link to this repository, the cited snapshot or data version, and this license.
 
 The license does not grant rights in third-party material beyond those the applicable rightsholder has authorized. Source links and quotations remain subject to their respective terms.

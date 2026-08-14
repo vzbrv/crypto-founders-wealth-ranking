@@ -1,12 +1,13 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 
-import type {
-  UnifiedCalculation,
-  UnifiedDataset,
-  UnifiedMarketCompany,
-  UnifiedMarketToken,
-  UnifiedSource,
+import {
+  isUnifiedRankProvisional,
+  type UnifiedCalculation,
+  type UnifiedDataset,
+  type UnifiedMarketCompany,
+  type UnifiedMarketToken,
+  type UnifiedSource,
 } from "@crypto-founders/curated-data/unified";
 
 import { HourlySnapshotStatus } from "./hourly-snapshot-status";
@@ -48,19 +49,34 @@ export function UnifiedCalculationPage({
     : source(tokenMarket?.sourceId);
   const ownershipSource = source(entry.affiliatedOwnership.sourceId);
   const capitalEvents = entry.outsideCapital.events;
+  const rankProvisional = isUnifiedRankProvisional(calculation);
 
   return (
     <>
       <header className="detail-hero">
         <p className="eyebrow">
-          Unified calculation · {entry.valueType} · {entry.snapshotDate}
+          Estimated value-created calculation · {entry.valueType} ·{" "}
+          {entry.snapshotDate}
         </p>
         <h1>{entry.founderTeam}</h1>
         <p>
           Project/company: <strong>{entry.project}</strong>. This published
-          index estimate is not founder net worth, personal wealth,
+          ranking estimate is not founder net worth, personal wealth,
           founder-retained value, or investment advice.
         </p>
+        <div className="badge-row">
+          <span
+            className={`badge confidence-${entry.confidence.label.toLowerCase()}`}
+          >
+            {entry.confidence.score}/100 · {entry.confidence.label} confidence
+          </span>
+          {calculation.upperEstimate && (
+            <span className="badge estimate-upper">Upper estimate</span>
+          )}
+          {rankProvisional && (
+            <span className="badge rank-provisional">Provisional rank</span>
+          )}
+        </div>
       </header>
 
       <HourlySnapshotStatus
@@ -107,8 +123,9 @@ export function UnifiedCalculationPage({
         </p>
         {calculation.upperEstimate && (
           <p className="warning-text">
-            Upper estimate: one or more ownership or capital deductions remain
-            Unknown or incomplete. Unknown is not treated as $0.
+            Upper estimate{rankProvisional ? " and provisional rank" : ""}: one
+            or more ownership or capital deductions remain Unknown or
+            incomplete. Unknown stays null and is not treated as $0.
           </p>
         )}
       </section>
@@ -191,7 +208,10 @@ export function UnifiedCalculationPage({
             </ul>
           </>
         ) : (
-          <p>Affiliated ownership deduction: Unknown; no deduction applied.</p>
+          <p>
+            Affiliated ownership deduction: Unknown. The input remains null, so
+            the displayed result is an upper estimate.
+          </p>
         )}
         {entry.outsideCapital.status === "Accepted" ? (
           <ul>
@@ -205,7 +225,10 @@ export function UnifiedCalculationPage({
               ))}
           </ul>
         ) : (
-          <p>Outside capital deduction: Unknown; no deduction applied.</p>
+          <p>
+            Outside capital deduction: Unknown. The input remains null, so the
+            displayed result is an upper estimate.
+          </p>
         )}
       </section>
 

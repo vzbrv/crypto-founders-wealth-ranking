@@ -80,6 +80,23 @@ describe("computeEntryValuation", () => {
     expect(result.finalValueUsd).toBe("8000");
   });
 
+  it("keeps missing accepted ownership null instead of coercing it to zero", () => {
+    const result = computeEntryValuation({
+      entryId: "public-missing-ownership",
+      market: {
+        type: "public",
+        price: 10,
+        shareClasses: [{ sharesOutstanding: "1000" }],
+      },
+      affiliatedOwnership: { status: "Accepted" },
+      outsideCapital: { status: "Unknown", events: [] },
+    });
+
+    expect(result.founderAffiliateDeductionUsd).toBeNull();
+    expect(result.outsideCapitalDeductionUsd).toBeNull();
+    expect(result.finalValueUsd).toBe("10000");
+  });
+
   it("rejects Accepted ownership for a token entry without a calculable model", () => {
     expect(() =>
       computeEntryValuation({

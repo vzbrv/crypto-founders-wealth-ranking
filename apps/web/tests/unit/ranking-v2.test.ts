@@ -3,11 +3,14 @@ import { describe, expect, it } from "vitest";
 import {
   formatV2Rank,
   formatV2Value,
+  hasV2ValueRange,
   isNewerPublishedSnapshot,
+  isV2RankProvisional,
   validateCurrentRankingV2,
 } from "../../lib/ranking-v2";
+import type { CurrentRankingV2Row } from "../../lib/ranking-v2";
 
-const row = {
+const row: CurrentRankingV2Row = {
   snapshot_id: "snapshot-1",
   economic_as_of: "2026-08-09T00:00:00.000Z",
   knowledge_cutoff: "2026-08-09T01:00:00.000Z",
@@ -28,7 +31,7 @@ const row = {
   methodology_version_id: "v2",
   confidence_policy_version: "v1",
 };
-const second = {
+const second: CurrentRankingV2Row = {
   ...row,
   economic_project_id: "project-2",
   project_slug: "beta",
@@ -71,6 +74,23 @@ describe("ranking v2 public snapshot", () => {
       row,
       second,
     ]);
+  });
+
+  it("exposes value ranges and provisional rank states", () => {
+    expect(hasV2ValueRange(row)).toBe(true);
+    expect(isV2RankProvisional(row)).toBe(true);
+    expect(
+      hasV2ValueRange({ ...row, value_created_upper: row.value_created_lower }),
+    ).toBe(false);
+    expect(
+      isV2RankProvisional({
+        ...row,
+        eligibility_status: "eligible",
+        rank_min: 1,
+        rank_max: 1,
+        rank_order_status: "exact",
+      }),
+    ).toBe(false);
   });
 
   it("rejects invalidated, mixed, duplicate, and out-of-order snapshots", () => {

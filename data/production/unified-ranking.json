@@ -226,34 +226,61 @@
       "date": "2026-03-31",
       "url": "https://www.sec.gov/Archives/edgar/data/1679788/000167978826000045/coin-20260424.htm",
       "quality": "SEC filing",
-      "notes": "Armstrong and Ehrsam shares summed once: 39,331,319."
+      "notes": "Armstrong-controlled issued shares at March 31: 25,640,144. Includes 2,958,393 shares held as trustee, excludes options and independently administered trusts."
+    },
+    {
+      "id": "OWN-COINBASE-EHRSAM",
+      "category": "SEC ownership",
+      "name": "Coinbase Fred Ehrsam ownership update",
+      "date": "2026-06-16",
+      "url": "https://www.sec.gov/Archives/edgar/data/1679788/000167978826000072/wk-form4_1781816531.xml",
+      "quality": "SEC filing",
+      "notes": "Ehrsam-controlled issued shares: 5,524,879. Excludes 2,303 unvested RSUs."
     },
     {
       "id": "OWN-CIRCLE",
       "category": "SEC ownership",
-      "name": "Circle founder ownership",
-      "date": "2026-03-16",
-      "url": "https://www.sec.gov/Archives/edgar/data/1876042/000187604226000112/crcl-20260401.htm",
+      "name": "Circle Jeremy Allaire ownership update",
+      "date": "2026-07-06",
+      "url": "https://www.sec.gov/Archives/edgar/data/1876042/000187604226000217/wk-form4_1783544406.xml",
       "quality": "SEC filing",
-      "notes": "Allaire and Neville shares summed once: 22,253,321; later changes are unknown."
+      "notes": "Allaire-controlled issued shares: 16,173,264. Excludes unvested RSUs and child trusts for which he disclaims beneficial ownership."
+    },
+    {
+      "id": "OWN-CIRCLE-NEVILLE",
+      "category": "SEC ownership",
+      "name": "Circle Sean Neville ownership update",
+      "date": "2026-07-01",
+      "url": "https://www.sec.gov/Archives/edgar/data/1876042/000187604226000210/wk-form4_1783026720.xml",
+      "quality": "SEC filing",
+      "notes": "Neville-controlled issued shares: 3,264,912. Includes 16,037 direct Class A shares; excludes unvested RSUs and the Calico Trust, for which he disclaims beneficial ownership."
     },
     {
       "id": "OWN-FIGURE",
       "category": "SEC ownership",
       "name": "Figure founder ownership",
       "date": "2026-04-24",
-      "url": "https://www.sec.gov/Archives/edgar/data/2064124/000162828026000020/figr-20260424.htm",
+      "url": "https://www.sec.gov/Archives/edgar/data/2064124/000206412426000020/figr-20260424.htm",
       "quality": "SEC filing",
-      "notes": "Cagney and Ou shares summed once, spouse overlap removed: 49,266,468."
+      "notes": "Issued shares controlled by Cagney and Ou at the 2026-04-09 record date, counted once: 44,039,701. Unissued RSUs and options are excluded."
     },
     {
-      "id": "OWN-GALAXY",
+      "id": "OWN-GALAXY-GGI",
       "category": "SEC ownership",
-      "name": "Galaxy founder and controlled affiliate ownership",
-      "date": "2026-06-01",
-      "url": "https://www.sec.gov/Archives/edgar/data/1859392/000162828026032968/galaxy-resalesx3.htm",
+      "name": "Galaxy Group Investments ownership",
+      "date": "2026-05-14",
+      "url": "https://www.sec.gov/Archives/edgar/data/1859392/000162828026035221/wk-form4_1778793846.xml",
       "quality": "SEC filing",
-      "notes": "Novogratz and Galaxy Group Investments counted once: 202,346,000 exchangeable shares."
+      "notes": "Galaxy Group Investments held 190,465,103 Class B economic share-equivalents after the 2026-05-13 transaction; Novogratz controls the reporting person."
+    },
+    {
+      "id": "OWN-GALAXY-NOVOGRATZ",
+      "category": "SEC ownership",
+      "name": "Michael Novogratz direct ownership",
+      "date": "2026-06-02",
+      "url": "https://www.sec.gov/Archives/edgar/data/1859392/000138061526000006/wk-form4_1780434854.xml",
+      "quality": "SEC filing",
+      "notes": "Novogratz directly held 109,488 issued Class A shares after the 2026-06-01 transaction; 335,533 undelivered RSUs are excluded."
     },
     {
       "id": "CAP-COINBASE",
@@ -824,22 +851,22 @@
       },
       "affiliatedOwnership": {
         "status": "Accepted",
-        "totalShares": "39331319",
-        "ownershipDate": "2026-03-31",
+        "totalShares": "31165023",
+        "ownershipDate": "2026-06-16",
         "sourceId": "OWN-COINBASE",
         "holders": [
           {
             "name": "Brian Armstrong",
-            "shares": "37424750",
+            "shares": "25640144",
             "sourceId": "OWN-COINBASE"
           },
           {
             "name": "Fred Ehrsam",
-            "shares": "1906569",
-            "sourceId": "OWN-COINBASE"
+            "shares": "5524879",
+            "sourceId": "OWN-COINBASE-EHRSAM"
           }
         ],
-        "notes": "Founders counted once; independent trust shares excluded."
+        "notes": "Founder-controlled issued shares counted once. Armstrong's trustee-controlled shares are included; options, unvested RSUs and independently administered trusts are excluded."
       },
       "outsideCapital": {
         "status": "Accepted",
@@ -857,7 +884,7 @@
         "notes": "Reviewed aggregate pre-listing preferred proceeds."
       },
       "confidence": {
-        "score": 95,
+        "score": 98,
         "label": "High",
         "components": [
           {
@@ -877,9 +904,9 @@
           {
             "key": "ownershipCompleteness",
             "label": "Founder/affiliate ownership completeness",
-            "score": 22,
+            "score": 25,
             "maxScore": 25,
-            "detail": "Founder ownership reconstructed; filing dates precede snapshot."
+            "detail": "Founder-controlled issued shares reconciled through June 16 SEC filings."
           },
           {
             "key": "outsideCapitalCompleteness",
@@ -900,7 +927,7 @@
             "label": "Snapshot alignment",
             "score": 3,
             "maxScore": 3,
-            "detail": "Price July 30; shares July 23; ownership March 31."
+            "detail": "Price July 30; shares July 23; ownership reviewed through June 16."
           },
           {
             "key": "doubleCountingRisk",
@@ -920,9 +947,7 @@
         "Post-listing financing and secondary transactions from pre-listing capital deduction."
       ],
       "disputedEvidence": [],
-      "unknowns": [
-        "Changes in founder ownership after the latest ownership filing."
-      ],
+      "unknowns": [],
       "upperEstimate": false,
       "comparability": "Uses reconstructed public equity market capitalization, then deducts founder equity and reviewed pre-listing outside capital."
     },
@@ -1047,22 +1072,22 @@
       },
       "affiliatedOwnership": {
         "status": "Accepted",
-        "totalShares": "22253321",
-        "ownershipDate": "2026-03-16",
+        "totalShares": "19438176",
+        "ownershipDate": "2026-07-06",
         "sourceId": "OWN-CIRCLE",
         "holders": [
           {
             "name": "Jeremy Allaire",
-            "shares": "21114321",
+            "shares": "16173264",
             "sourceId": "OWN-CIRCLE"
           },
           {
             "name": "Sean Neville",
-            "shares": "1139000",
-            "sourceId": "OWN-CIRCLE"
+            "shares": "3264912",
+            "sourceId": "OWN-CIRCLE-NEVILLE"
           }
         ],
-        "notes": "Verified founding unit; later changes remain unknown."
+        "notes": "Founder-controlled issued shares reconciled through the July 1 and July 6 SEC filings. Unvested RSUs and trusts for which the founders disclaim beneficial ownership are excluded."
       },
       "outsideCapital": {
         "status": "Accepted",
@@ -1080,8 +1105,8 @@
         "notes": "Aggregate accepted amount from SEC disclosures."
       },
       "confidence": {
-        "score": 91,
-        "label": "Medium",
+        "score": 98,
+        "label": "High",
         "components": [
           {
             "key": "founderAttribution",
@@ -1100,9 +1125,9 @@
           {
             "key": "ownershipCompleteness",
             "label": "Founder/affiliate ownership completeness",
-            "score": 18,
+            "score": 25,
             "maxScore": 25,
-            "detail": "Founder ownership is from an earlier filing."
+            "detail": "Founder-controlled issued shares reconciled through July SEC filings."
           },
           {
             "key": "outsideCapitalCompleteness",
@@ -1123,7 +1148,7 @@
             "label": "Snapshot alignment",
             "score": 3,
             "maxScore": 3,
-            "detail": "Share and ownership observations are earlier than price."
+            "detail": "Price July 30; shares May 6; ownership reviewed through July 6."
           },
           {
             "key": "doubleCountingRisk",
@@ -1141,8 +1166,8 @@
         "USDC supply as company equity; post-listing financing as pre-listing capital."
       ],
       "disputedEvidence": [],
-      "unknowns": ["Ownership changes after March 16, 2026."],
-      "upperEstimate": true,
+      "unknowns": [],
+      "upperEstimate": false,
       "comparability": "Uses company equity value and explicitly excludes USDC market capitalization from the shareholder calculation."
     },
     {
@@ -1705,18 +1730,17 @@
       },
       "affiliatedOwnership": {
         "status": "Accepted",
-        "totalShares": "49266468",
-        "ownershipDate": "2026-04-24",
+        "totalShares": "44039701",
+        "ownershipDate": "2026-04-09",
         "sourceId": "OWN-FIGURE",
         "holders": [
           {
-            "name": "Mike Cagney",
-            "shares": "46679517",
+            "name": "Cagney/Ou controlled issued-share pool",
+            "shares": "44039701",
             "sourceId": "OWN-FIGURE"
-          },
-          { "name": "June Ou", "shares": "2586951", "sourceId": "OWN-FIGURE" }
+          }
         ],
-        "notes": "Spouse overlap removed and counted once."
+        "notes": "Founding-household issued shares counted once; unissued RSUs and options excluded."
       },
       "outsideCapital": {
         "status": "Unknown",
@@ -1826,22 +1850,22 @@
       },
       "affiliatedOwnership": {
         "status": "Accepted",
-        "totalShares": "202346000",
+        "totalShares": "190574591",
         "ownershipDate": "2026-06-01",
-        "sourceId": "OWN-GALAXY",
+        "sourceId": "OWN-GALAXY-NOVOGRATZ",
         "holders": [
           {
-            "name": "Michael Novogratz",
-            "shares": "112346000",
-            "sourceId": "OWN-GALAXY"
+            "name": "Galaxy Group Investments",
+            "shares": "190465103",
+            "sourceId": "OWN-GALAXY-GGI"
           },
           {
-            "name": "Galaxy Group Investments",
-            "shares": "90000000",
-            "sourceId": "OWN-GALAXY"
+            "name": "Michael Novogratz",
+            "shares": "109488",
+            "sourceId": "OWN-GALAXY-NOVOGRATZ"
           }
         ],
-        "notes": "Controlled affiliate counted once; exchangeable LP units included consistently with share reconstruction."
+        "notes": "Controlled affiliate and direct issued shares counted once. Exchangeable Class B units are included consistently with the share reconstruction; undelivered RSUs are excluded."
       },
       "outsideCapital": {
         "status": "Unknown",

@@ -189,6 +189,18 @@ export interface UnifiedCalculation {
   formula: string;
 }
 
+export function isUnifiedRankProvisional(
+  calculation: UnifiedCalculation,
+): boolean {
+  return (
+    calculation.upperEstimate &&
+    !hasRankInvariantUncertainty(
+      calculation.entry.uncertaintyReview,
+      calculation.entry.rank,
+    )
+  );
+}
+
 const defaultDirectory = path.resolve(process.cwd(), "data/research");
 
 const productionMarker = ".curated-data-production.json";
@@ -264,13 +276,17 @@ export function calculateUnifiedEntry(entry: UnifiedEntry): UnifiedCalculation {
       )
     : new Decimal(entry.grossMarketValueUsd);
   const ownership =
-    publicMarket && entry.affiliatedOwnership.status === "Accepted"
-      ? new Decimal(entry.affiliatedOwnership.totalShares ?? "0").times(
+    publicMarket &&
+    entry.affiliatedOwnership.status === "Accepted" &&
+    typeof entry.affiliatedOwnership.totalShares === "string"
+      ? new Decimal(entry.affiliatedOwnership.totalShares).times(
           publicMarket.priceUsd,
         )
       : null;
   const capital = acceptedCapital(entry);
-  const result = gross.minus(ownership ?? 0).minus(capital ?? 0);
+  let result = gross;
+  if (ownership !== null) result = result.minus(ownership);
+  if (capital !== null) result = result.minus(capital);
   const grossText = gross.toFixed(2);
   const ownershipText = ownership?.toFixed(2) ?? null;
   const capitalText = capital?.toFixed(2) ?? null;
@@ -380,13 +396,16 @@ export function validateUnifiedDataset(dataset: UnifiedDataset): string[] {
         entry.valueType === "Public company" &&
         entry.market.type === "public"
       ) {
+        if (typeof entry.affiliatedOwnership.totalShares !== "string")
+          errors.push(`${entry.entryId} accepted ownership lacks total shares`);
         const holderShares = (entry.affiliatedOwnership.holders ?? []).reduce(
           (sum, holder) => sum.plus(holder.shares),
           new Decimal(0),
         );
         if (
           holderShares.isZero() ||
-          !holderShares.eq(entry.affiliatedOwnership.totalShares ?? "0")
+          (typeof entry.affiliatedOwnership.totalShares === "string" &&
+            !holderShares.eq(entry.affiliatedOwnership.totalShares))
         )
           errors.push(
             `${entry.entryId} founder/affiliate shares do not reproduce`,

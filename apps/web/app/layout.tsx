@@ -7,12 +7,12 @@ import "./globals.css";
 export const metadata: Metadata = {
   metadataBase: getSiteUrl(),
   title: {
-    default: "IQ.wiki Value Created Index — Value Created for Others",
-    template: "%s · IQ.wiki Value Created Index",
+    default: "IQ.wiki Estimated Value Created Ranking — Crypto Founders",
+    template: "%s · IQ.wiki Estimated Value Created Ranking",
   },
   description:
     "A transparent, time-stamped ranking of crypto founders and founding teams by estimated value created for outside holders and shareholders—not personal wealth.",
-  applicationName: "IQ.wiki Value Created Index",
+  applicationName: "IQ.wiki Estimated Value Created Ranking",
   alternates: { canonical: "/" },
   category: "finance",
   openGraph: {
@@ -20,12 +20,12 @@ export const metadata: Metadata = {
       "A transparent, time-stamped ranking of crypto founders and founding teams by estimated value created for outside holders and shareholders—not personal wealth.",
     images: [
       {
-        alt: "IQ.wiki Value Created Index — Value Created for Others",
+        alt: "IQ.wiki Estimated Value Created Ranking — Crypto Founders",
         url: "/opengraph-image",
       },
     ],
-    siteName: "IQ.wiki Value Created Index",
-    title: "IQ.wiki Value Created Index — Value Created for Others",
+    siteName: "IQ.wiki Estimated Value Created Ranking",
+    title: "IQ.wiki Estimated Value Created Ranking — Crypto Founders",
     type: "website",
     url: "/",
   },
@@ -35,7 +35,7 @@ export const metadata: Metadata = {
     description:
       "A transparent, time-stamped ranking of crypto founders and founding teams by estimated value created for outside holders and shareholders—not personal wealth.",
     images: ["/opengraph-image"],
-    title: "IQ.wiki Value Created Index — Value Created for Others",
+    title: "IQ.wiki Estimated Value Created Ranking — Crypto Founders",
   },
 };
 

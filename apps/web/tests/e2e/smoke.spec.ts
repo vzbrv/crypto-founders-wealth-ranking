@@ -140,7 +140,7 @@ test("fits the founder ranking on a mobile viewport", async ({ page }) => {
   await page.goto("/");
   await expect(
     page.getByRole("heading", {
-      name: "Top Crypto Founders Ranked by Value Created for Others.",
+      name: "Top Crypto Founders Ranked by Estimated Value Created.",
     }),
   ).toBeVisible();
   await expect(page.locator(".research-universe-table thead")).toBeAttached();
@@ -392,7 +392,7 @@ test("publishes unified founder calculations and sources separately", async ({
 
   await expect(
     page.getByRole("heading", {
-      name: "Top Crypto Founders Ranked by Value Created for Others.",
+      name: "Top Crypto Founders Ranked by Estimated Value Created.",
     }),
   ).toBeVisible();
   await expect(
@@ -410,7 +410,7 @@ test("publishes unified founder calculations and sources separately", async ({
     page.getByRole("columnheader", { name: "Value type" }),
   ).toBeVisible();
   await expect(
-    page.getByRole("columnheader", { name: "Value created for others" }),
+    page.getByRole("columnheader", { name: "Estimated value created" }),
   ).toBeVisible();
   await expect(
     page.getByRole("columnheader", { name: "Value change" }),
@@ -569,7 +569,7 @@ test("renders the atomic v2 ranking and reports a newer failed run", async ({
   ).toBeVisible();
   await expect(page.getByText("$70M–$90M")).toBeVisible();
   await expect(page.getByText("Rank order: overlapping")).toBeVisible();
-  await expect(page.getByText("Provisional interval")).toBeVisible();
+  await expect(page.getByText("Provisional rank")).toBeVisible();
   await expect(
     page.getByText(
       "Latest scheduled run failed. Showing the last verified published v2 snapshot: CoinGecko quota exhausted",

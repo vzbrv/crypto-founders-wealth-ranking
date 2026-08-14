@@ -53,7 +53,7 @@ export function SiteNav() {
         <Link
           className="brand-lockup"
           href="/"
-          aria-label="IQ.wiki value created index home"
+          aria-label="IQ.wiki estimated value created ranking home"
           onClick={() => setOpen(false)}
         >
           <Image
