@@ -242,18 +242,27 @@
       "category": "SEC ownership",
       "name": "Figure founder ownership",
       "date": "2026-04-24",
-      "url": "https://www.sec.gov/Archives/edgar/data/2064124/000162828026000020/figr-20260424.htm",
+      "url": "https://www.sec.gov/Archives/edgar/data/2064124/000206412426000020/figr-20260424.htm",
       "quality": "SEC filing",
-      "notes": "Cagney and Ou shares summed once, spouse overlap removed: 49,266,468."
+      "notes": "Issued shares controlled by Cagney and Ou at the 2026-04-09 record date, counted once: 44,039,701. Unissued RSUs and options are excluded."
     },
     {
-      "id": "OWN-GALAXY",
+      "id": "OWN-GALAXY-GGI",
       "category": "SEC ownership",
-      "name": "Galaxy founder and controlled affiliate ownership",
-      "date": "2026-06-01",
-      "url": "https://www.sec.gov/Archives/edgar/data/1859392/000162828026032968/galaxy-resalesx3.htm",
+      "name": "Galaxy Group Investments ownership",
+      "date": "2026-05-14",
+      "url": "https://www.sec.gov/Archives/edgar/data/1859392/000162828026035221/wk-form4_1778793846.xml",
       "quality": "SEC filing",
-      "notes": "Novogratz and Galaxy Group Investments counted once: 202,346,000 exchangeable shares."
+      "notes": "Galaxy Group Investments held 190,465,103 Class B economic share-equivalents after the 2026-05-13 transaction; Novogratz controls the reporting person."
+    },
+    {
+      "id": "OWN-GALAXY-NOVOGRATZ",
+      "category": "SEC ownership",
+      "name": "Michael Novogratz direct ownership",
+      "date": "2026-06-02",
+      "url": "https://www.sec.gov/Archives/edgar/data/1859392/000138061526000006/wk-form4_1780434854.xml",
+      "quality": "SEC filing",
+      "notes": "Novogratz directly held 109,488 issued Class A shares after the 2026-06-01 transaction; 335,533 undelivered RSUs are excluded."
     },
     {
       "id": "CAP-COINBASE",
@@ -1705,18 +1714,17 @@
       },
       "affiliatedOwnership": {
         "status": "Accepted",
-        "totalShares": "49266468",
-        "ownershipDate": "2026-04-24",
+        "totalShares": "44039701",
+        "ownershipDate": "2026-04-09",
         "sourceId": "OWN-FIGURE",
         "holders": [
           {
-            "name": "Mike Cagney",
-            "shares": "46679517",
+            "name": "Cagney/Ou controlled issued-share pool",
+            "shares": "44039701",
             "sourceId": "OWN-FIGURE"
-          },
-          { "name": "June Ou", "shares": "2586951", "sourceId": "OWN-FIGURE" }
+          }
         ],
-        "notes": "Spouse overlap removed and counted once."
+        "notes": "Founding-household issued shares counted once; unissued RSUs and options excluded."
       },
       "outsideCapital": {
         "status": "Unknown",
@@ -1826,22 +1834,22 @@
       },
       "affiliatedOwnership": {
         "status": "Accepted",
-        "totalShares": "202346000",
+        "totalShares": "190574591",
         "ownershipDate": "2026-06-01",
-        "sourceId": "OWN-GALAXY",
+        "sourceId": "OWN-GALAXY-NOVOGRATZ",
         "holders": [
           {
-            "name": "Michael Novogratz",
-            "shares": "112346000",
-            "sourceId": "OWN-GALAXY"
+            "name": "Galaxy Group Investments",
+            "shares": "190465103",
+            "sourceId": "OWN-GALAXY-GGI"
           },
           {
-            "name": "Galaxy Group Investments",
-            "shares": "90000000",
-            "sourceId": "OWN-GALAXY"
+            "name": "Michael Novogratz",
+            "shares": "109488",
+            "sourceId": "OWN-GALAXY-NOVOGRATZ"
           }
         ],
-        "notes": "Controlled affiliate counted once; exchangeable LP units included consistently with share reconstruction."
+        "notes": "Controlled affiliate and direct issued shares counted once. Exchangeable Class B units are included consistently with the share reconstruction; undelivered RSUs are excluded."
       },
       "outsideCapital": {
         "status": "Unknown",
