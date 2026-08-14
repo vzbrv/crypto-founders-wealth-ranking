@@ -909,9 +909,6 @@ export function ProjectDetail({ evidence }: { evidence: ProjectEvidence }) {
             Manual identity, classification, circulation, attribution, and
             funding inputs link to their supporting records.
           </p>
-          <a href={`/sources/?project=${evidence.project.slug}`}>
-            Inspect source registry
-          </a>
         </div>
         <div>
           <p className="eyebrow">Freshness</p>

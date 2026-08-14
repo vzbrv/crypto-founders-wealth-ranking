@@ -248,6 +248,9 @@ button {
 .section-heading.compact {
   max-width: 75ch;
 }
+.section-heading.ranking-heading {
+  max-width: none;
+}
 
 .table-shell {
   overflow-x: auto;
@@ -401,14 +404,16 @@ td small {
   border-radius: 0.5rem;
   background: var(--surface-raised);
 }
-.formula-grid dt,
+.formula-grid > div > span,
 .evidence-summary dt {
+  display: block;
   color: var(--muted);
   font-size: 0.78rem;
   font-weight: 700;
 }
-.formula-grid dd,
+.formula-grid > div > strong,
 .evidence-summary dd {
+  display: block;
   margin: 0.3rem 0 0;
   font-size: 1.05rem;
   font-weight: 750;

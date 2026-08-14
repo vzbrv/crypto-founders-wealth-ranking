@@ -47,10 +47,17 @@ function redirectFor(pathname: string) {
 }
 
 describe("ranking route contract", () => {
-  it("redirects removed research routes to sources and removes public links", () => {
-    for (const path of ["/research", "/research/", "/research/dogecoin/"]) {
+  it("redirects removed research and source routes to methodology", () => {
+    for (const path of [
+      "/research",
+      "/research/",
+      "/research/dogecoin/",
+      "/sources",
+      "/sources/",
+      "/sources/dogecoin/",
+    ]) {
       const redirect = redirectFor(path);
-      expect(redirect).toMatchObject({ target: "/sources/", status: 301 });
+      expect(redirect).toMatchObject({ target: "/methodology/", status: 301 });
       expect(redirectFor(redirect?.target ?? "")).toBeNull();
     }
 
@@ -66,6 +73,9 @@ describe("ranking route contract", () => {
     expect(readAppFile("components/site-nav.tsx")).not.toMatch(
       /["'`]\/research(?:["'`]|\/)/,
     );
+    expect(existsSync(resolve(webRoot, "app/sources/page.tsx"))).toBe(false);
+    expect(readAppFile("app/sitemap.ts")).not.toContain('"/sources/"');
+    expect(readAppFile("components/site-nav.tsx")).not.toContain("/sources/");
   });
 
   it("keeps the homepage as the only primary leaderboard", () => {

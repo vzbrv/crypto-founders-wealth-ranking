@@ -8,7 +8,6 @@ import { useEffect, useRef, useState } from "react";
 const links = [
   { href: "/#ranking", label: "Ranking", kind: "ranking" },
   { href: "/methodology/", label: "Methodology", kind: "methodology" },
-  { href: "/sources/", label: "Sources", kind: "sources" },
   { href: "/status/", label: "Status", kind: "status" },
 ] as const;
 
