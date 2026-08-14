@@ -1,6 +1,6 @@
 {
   "name": "@crypto-founders/web",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
     "prebuild": "pnpm --dir ../.. validate:production-data",

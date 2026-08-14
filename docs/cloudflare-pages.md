@@ -4,15 +4,15 @@ This repository uses **Next.js Static HTML Export**, not Vite.
 
 Use these exact Pages settings:
 
-| Setting                | Value                                      |
-| ---------------------- | ------------------------------------------ |
-| Framework preset       | Next.js (Static HTML Export)               |
-| Production branch      | `main`                                     |
-| Root directory         | Repository root (leave the field blank)    |
-| Build command          | `pnpm --filter @crypto-founders/web build` |
-| Build output directory | `apps/web/out`                             |
-| Node.js                | `22`                                       |
-| pnpm                   | `11.9.0`                                   |
+| Setting                | Value                                   |
+| ---------------------- | --------------------------------------- |
+| Framework preset       | Next.js (Static HTML Export)            |
+| Production branch      | `main`                                  |
+| Root directory         | Repository root (leave the field blank) |
+| Build command          | `pnpm build:web:production`             |
+| Build output directory | `apps/web/out`                          |
+| Node.js                | `22`                                    |
+| pnpm                   | `11.9.0`                                |
 
 Set these public build-time environment variables in both Preview and Production as appropriate:
 
@@ -26,3 +26,5 @@ Only `NEXT_PUBLIC_*` values belong in the Pages build. Do not add database crede
 Cloudflare should install with `pnpm install --frozen-lockfile`. If an explicit install command is required, set `PNPM_VERSION=11.9.0` and use that command. The output is fully static and requires no Pages Functions or Next.js server runtime.
 
 Production static route generation reads only reviewed records from `data/production`. Do not set `CRYPTO_FOUNDERS_TEST_FIXTURES` or `CRYPTO_FOUNDERS_LOCAL_FIXTURES` in Cloudflare. Synthetic fixtures are enabled automatically in tests, or explicitly for local development with `CRYPTO_FOUNDERS_LOCAL_FIXTURES=1`.
+
+The production build command validates all required public variables before Next.js runs. It reports missing variable names only and never prints their values.

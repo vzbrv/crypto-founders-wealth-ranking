@@ -8,7 +8,7 @@ import type {
 import { ProviderStatus } from "../../components/provider-status";
 import { HourlySnapshotStatus } from "../../components/hourly-snapshot-status";
 import { SiteFooter, SiteNav } from "../../components/site-nav";
-import { getUnifiedDataset } from "../../lib/research-data";
+import { getUnifiedDataset } from "../../lib/production-data";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/status/" },

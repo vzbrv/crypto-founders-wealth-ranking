@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 
-import { getUnifiedProjectIds } from "../lib/research-data";
+import { getUnifiedProjectIds } from "../lib/production-data";
 import { getSiteUrl } from "../lib/site-metadata";
 import { getProjectSlugs } from "../lib/transparency-data";
 

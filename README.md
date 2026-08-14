@@ -10,6 +10,7 @@ The approved production target is all-free: GitHub for source and curated data, 
 
 ```bash
 pnpm install
+pnpm e2e:install
 pnpm format:check
 pnpm lint
 pnpm typecheck
@@ -21,4 +22,12 @@ pnpm test:e2e
 
 `pnpm build` emits the static site to `apps/web/out`.
 
+Production hosting must use `pnpm build:web:production`. That command fails before compilation when the public Supabase URL, publishable key, or canonical site URL is missing. The normal `pnpm build` remains usable for local development and renders an explicit timestamped bundled-data fallback.
+
 See [docs/architecture.md](docs/architecture.md) for the repository map, [docs/methodology.md](docs/methodology.md) for every ranking formula, live-rank rule, evidence gate, and individual/team attribution rule, [docs/schema.md](docs/schema.md) for review and public-view fields, [docs/deployment.md](docs/deployment.md) for Supabase releases, [docs/cloudflare-pages.md](docs/cloudflare-pages.md) for exact web hosting settings, and [docs/production-checklist.md](docs/production-checklist.md) for human deployment steps.
+
+## Licensing
+
+Source code is licensed under [Apache License 2.0](LICENSE). Data, research, and documentation are licensed under [Creative Commons Attribution 4.0 International](LICENSE-DATA-DOCS.md). Third-party sources retain their own rights; attribution is not an endorsement.
+
+See [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md), [CHANGELOG.md](CHANGELOG.md), and the [release guide](docs/releasing.md) before proposing or publishing changes.

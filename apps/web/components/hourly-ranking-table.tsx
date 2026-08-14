@@ -53,6 +53,7 @@ type LatestStatus = {
 };
 const apiBase = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const apiKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+const endpointConfigured = Boolean(apiBase && apiKey);
 
 async function readView<T>(view: string, query: string): Promise<T[]> {
   if (!apiBase || !apiKey) throw new Error("public data endpoint unavailable");
@@ -171,9 +172,10 @@ export function HourlyRankingTable({
     results: LiveResult[];
   } | null>(null);
   const [latestStatus, setLatestStatus] = useState<LatestStatus | null>(null);
-  const [endpointError, setEndpointError] = useState(false);
+  const [endpointError, setEndpointError] = useState(!endpointConfigured);
 
   useEffect(() => {
+    if (!endpointConfigured) return;
     let active = true;
     const refresh = async () => {
       const nextLatestStatus = await readView<LatestStatus>(
@@ -351,8 +353,9 @@ export function HourlyRankingTable({
         </p>
       ) : (
         <p className="notice warning">
-          Showing the bundled snapshot from {dateTime(snapshotDate)} UTC. No
-          complete immutable live snapshot is available.
+          Live data unavailable. Showing the bundled snapshot published{" "}
+          {dateTime(snapshotDate)} UTC from market observations at{" "}
+          {dateTime(observationDate)} UTC.
         </p>
       )}
       {latestStatus?.status === "failed" && (
@@ -371,7 +374,10 @@ export function HourlyRankingTable({
       )}
       {endpointError && (
         <p className="notice warning" role="alert">
-          Live endpoint refresh failed. The{" "}
+          {endpointConfigured
+            ? "Live endpoint refresh failed."
+            : "This build has no public live-data endpoint configured."}{" "}
+          The{" "}
           {rankingV2
             ? "last verified published v2"
             : live
