@@ -79,7 +79,6 @@ export default function MethodologyPage() {
             included evidence, excluded evidence, disputed evidence, and
             remaining unknowns are visible on each detail page.
           </p>
-          <a href="/sources/">Browse the source registry</a>
         </section>
       </main>
       <SiteFooter />

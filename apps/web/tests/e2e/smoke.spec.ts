@@ -350,21 +350,6 @@ test("shows a reproducible project score and its evidence", async ({
   ).toHaveCount(0);
 });
 
-test("filters the claim-level source registry", async ({ page }) => {
-  await page.goto("/sources/?project=synthetic-horizon");
-
-  await expect(page.getByRole("heading", { name: "Sources" })).toBeVisible();
-  await expect(
-    page.getByText("Showing 20 of 20 claim-source links."),
-  ).toBeVisible();
-  await page
-    .getByRole("combobox", { name: "Claim" })
-    .selectOption("classification");
-  await expect(
-    page.getByText("Showing 1 of 20 claim-source links."),
-  ).toBeVisible();
-});
-
 test("documents the public methodology", async ({ page }) => {
   await page.goto("/methodology/");
 
@@ -382,14 +367,21 @@ test("documents the public methodology", async ({ page }) => {
   ).toBeVisible();
 });
 
-test("redirects removed research routes to sources", async ({ page }) => {
-  for (const path of ["/research", "/research/", "/research/dogecoin/"]) {
+test("redirects removed research and source routes to methodology", async ({
+  page,
+}) => {
+  for (const path of [
+    "/research",
+    "/research/",
+    "/research/dogecoin/",
+    "/sources",
+    "/sources/",
+  ]) {
     await page.goto(path);
-    await expect(page).toHaveURL(/\/sources\/$/);
-    await expect(page.getByRole("heading", { name: "Sources" })).toBeVisible();
+    await expect(page).toHaveURL(/\/methodology\/$/);
     await expect(
-      page.getByRole("heading", { name: "Founding-unit research universe" }),
-    ).toHaveCount(0);
+      page.getByRole("heading", { name: "Methodology" }),
+    ).toBeVisible();
   }
 });
 

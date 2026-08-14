@@ -19,9 +19,7 @@ export default async function UnifiedRankingPage() {
             This index ranks crypto founders and founding teams by estimated
             value created for outside token holders and public-company
             shareholders. It is not founder net worth, personal wealth, or
-            investment advice. The table uses the latest complete live hourly
-            snapshot; until one is published, the historical bundled fallback
-            dated {dataset.snapshotDate} remains visible.
+            investment advice.
           </p>
         </header>
 
@@ -39,7 +37,7 @@ export default async function UnifiedRankingPage() {
           className="panel"
           aria-labelledby="ranking-heading"
         >
-          <div className="section-heading compact">
+          <div className="section-heading ranking-heading">
             <h2 id="ranking-heading">
               Estimated value created for outside holders and shareholders
             </h2>

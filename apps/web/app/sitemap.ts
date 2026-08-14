@@ -7,7 +7,7 @@ import { getProjectSlugs } from "../lib/transparency-data";
 export const dynamic = "force-static";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const routes = ["/", "/methodology/", "/sources/", "/status/"];
+  const routes = ["/", "/methodology/", "/status/"];
   return [
     ...routes,
     ...getProjectSlugs().map((slug) => `/project/${slug}/`),
