@@ -190,7 +190,7 @@ export function HourlySnapshotStatus({
         <p>
           {header
             ? `Published ${formatTimestamp(header.publication_at)}. UTC snapshot: ${formatTimestamp(snapshotDate)}. Market observation: ${formatTimestamp(observationDate)}. Status: ${stateLabel(freshness)}.`
-            : `Showing the bundled snapshot published ${formatTimestamp(fallbackSnapshotDate)} from market observations at ${formatTimestamp(fallbackObservationDate)}. Rank changes populate after the first complete live hourly snapshot is published.`}
+            : `Showing the bundled snapshot published ${formatTimestamp(fallbackSnapshotDate)} from market observations at ${formatTimestamp(fallbackObservationDate)}.`}
         </p>
         {error && (
           <small>
@@ -224,7 +224,7 @@ export function HourlySnapshotStatus({
         <p>
           {header
             ? `Snapshot: ${formatTimestamp(header.utc_hour)}. Market observation: ${formatTimestamp(input?.original_observation_at ?? result?.observation_at ?? fallbackObservationDate)}. Publication: ${formatTimestamp(header.publication_at)}.`
-            : `Published ${formatTimestamp(fallbackSnapshotDate)} from market observations at ${formatTimestamp(fallbackObservationDate)}. Rank changes populate after the first complete live hourly snapshot is published.`}
+            : `Published ${formatTimestamp(fallbackSnapshotDate)} from market observations at ${formatTimestamp(fallbackObservationDate)}.`}
         </p>
         <p>
           Evidence version:{" "}

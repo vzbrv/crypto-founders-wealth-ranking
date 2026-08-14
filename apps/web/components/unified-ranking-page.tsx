@@ -16,14 +16,12 @@ export default async function UnifiedRankingPage() {
           <p className="eyebrow">Crypto Founders Value Created Index</p>
           <h1>Top Crypto Founders Ranked by Value Created for Others.</h1>
           <p>
-            After each complete live hourly snapshot is published, the table
-            refreshes and calculates Rank change against the prior complete
-            published snapshot. The first complete snapshot establishes the
-            baseline, so its deltas are —. Until that publish exists, the
-            historical bundled fallback dated {dataset.snapshotDate} remains
-            visible. The index estimates value created for outside holders and
-            shareholders; it is not founder net worth, personal wealth, or
-            investment advice.
+            This index ranks crypto founders and founding teams by estimated
+            value created for outside token holders and public-company
+            shareholders. It is not founder net worth, personal wealth, or
+            investment advice. The table uses the latest complete live hourly
+            snapshot; until one is published, the historical bundled fallback
+            dated {dataset.snapshotDate} remains visible.
           </p>
         </header>
 
