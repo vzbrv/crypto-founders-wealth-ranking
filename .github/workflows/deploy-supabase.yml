@@ -33,7 +33,7 @@ jobs:
           CURATED_DATA_DIR: data/production
       - run: pnpm validate:database
       - run: pnpm build
-      - uses: supabase/setup-cli@ab058987d8d6c725971f6cf9d0b5c98467e30bd1 # v1.7.1
+      - uses: supabase/setup-cli@46f7f98c7f948ad727d22c1e67fab04c223a0520 # v3.0.0
         with:
           # Pinned below v2.105.0, which ported `supabase link` to a new
           # TypeScript implementation (see supabase/cli release notes,
