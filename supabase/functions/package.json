@@ -9,6 +9,6 @@
   "devDependencies": {
     "decimal.js": "10.6.0",
     "vitest": "4.1.10",
-    "viem": "2.55.10"
+    "viem": "2.55.13"
   }
 }
