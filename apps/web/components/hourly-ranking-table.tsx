@@ -10,7 +10,6 @@ import {
   formatV2Value,
   hasV2ValueRange,
   isNewerPublishedSnapshot,
-  isV2RankProvisional,
   validateCurrentRankingV2,
   type CurrentRankingV2,
 } from "../lib/ranking-v2";
@@ -95,23 +94,6 @@ function dateTime(value: string | null): string {
 
 function titleCase(value: string): string {
   return value.charAt(0).toUpperCase() + value.slice(1).replace(/_/g, " ");
-}
-
-function isFallbackRankProvisional(calculation: UnifiedCalculation): boolean {
-  const review = calculation.entry.uncertaintyReview;
-  return (
-    calculation.upperEstimate &&
-    !(
-      review?.evidenceState === "not_publicly_verifiable" &&
-      review.bestRank === calculation.entry.rank &&
-      review.worstRank === calculation.entry.rank &&
-      review.independentlyReviewed &&
-      review.contradictionFree &&
-      review.deduplicated &&
-      review.sourceIds.length > 0 &&
-      review.notes.trim().length > 0
-    )
-  );
 }
 
 function publicMarketLabel(market: unknown): string | null {
@@ -284,7 +266,6 @@ export function HourlyRankingTable({
         return {
           entryId: result.economic_project_id,
           rank: formatV2Rank(result),
-          rankNote: isV2RankProvisional(result) ? "Provisional rank" : null,
           founderTeam: result.founder_team,
           project: result.project_name,
           marketLabel: null,
@@ -310,7 +291,6 @@ export function HourlyRankingTable({
           return {
             entryId: result.entry_id,
             rank: result.rank,
-            rankNote: result.upper_estimate ? "Provisional rank" : null,
             founderTeam: result.founder_team,
             project: result.project,
             marketLabel: publicMarketLabel(result.market),
@@ -329,9 +309,6 @@ export function HourlyRankingTable({
           return {
             entryId: entry.entryId,
             rank: entry.rank,
-            rankNote: isFallbackRankProvisional(calculation)
-              ? "Provisional rank"
-              : null,
             founderTeam: entry.founderTeam,
             project: entry.project,
             marketLabel:
@@ -436,7 +413,6 @@ export function HourlyRankingTable({
               ({
                 entryId,
                 rank,
-                rankNote,
                 founderTeam,
                 project,
                 marketLabel,
@@ -451,13 +427,6 @@ export function HourlyRankingTable({
                 <tr key={entryId}>
                   <td className="rank" data-label="Estimated rank">
                     {rank}
-                    {rankNote && (
-                      <small>
-                        <span className="badge rank-provisional">
-                          {rankNote}
-                        </span>
-                      </small>
-                    )}
                   </td>
                   <td data-label="Founder / founding team">
                     {href ? (
