@@ -89,6 +89,58 @@ for (const view of [
 }
 
 await check(
+  "read-current-ranking",
+  () =>
+    fetch(
+      new URL(
+        "/rest/v1/public_current_snapshot_results?select=snapshot_id,utc_hour,publication_at,entry_id,rank,final_value_usd,confidence_score,source_ids,observation_at,founder_team,project&order=rank.asc",
+        supabaseUrl,
+      ),
+      { headers: publicHeaders },
+    ),
+  [200],
+  async (response) => {
+    try {
+      const rows = await response.json();
+      const first = rows[0];
+      const validTimestamp = (value) =>
+        typeof value === "string" && Number.isFinite(Date.parse(value));
+      const valid =
+        Array.isArray(rows) &&
+        rows.length === 20 &&
+        new Set(rows.map((row) => row.entry_id)).size === 20 &&
+        rows.every(
+          (row, index) =>
+            row.rank === index + 1 &&
+            row.snapshot_id === first?.snapshot_id &&
+            row.utc_hour === first?.utc_hour &&
+            row.publication_at === first?.publication_at &&
+            row.observation_at === first?.observation_at &&
+            typeof row.founder_team === "string" &&
+            row.founder_team.length > 0 &&
+            typeof row.project === "string" &&
+            row.project.length > 0 &&
+            Number.isFinite(Number(row.final_value_usd)) &&
+            Number.isFinite(row.confidence_score) &&
+            Array.isArray(row.source_ids) &&
+            row.source_ids.length > 0,
+        ) &&
+        validTimestamp(first?.utc_hour) &&
+        validTimestamp(first?.publication_at) &&
+        validTimestamp(first?.observation_at);
+      return {
+        passed: valid,
+        status: valid
+          ? "20 complete, contiguous, source-backed ranking rows"
+          : "expected one complete, contiguous, source-backed 20-row snapshot",
+      };
+    } catch {
+      return { passed: false, status: "response was not valid JSON" };
+    }
+  },
+);
+
+await check(
   "anonymous-write-projects-rejected",
   () =>
     fetch(new URL("/rest/v1/projects", supabaseUrl), {
