@@ -2,7 +2,6 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 
 import {
-  isUnifiedRankProvisional,
   type UnifiedCalculation,
   type UnifiedDataset,
   type UnifiedMarketCompany,
@@ -49,8 +48,6 @@ export function UnifiedCalculationPage({
     : source(tokenMarket?.sourceId);
   const ownershipSource = source(entry.affiliatedOwnership.sourceId);
   const capitalEvents = entry.outsideCapital.events;
-  const rankProvisional = isUnifiedRankProvisional(calculation);
-
   return (
     <>
       <header className="detail-hero">
@@ -72,9 +69,6 @@ export function UnifiedCalculationPage({
           </span>
           {calculation.upperEstimate && (
             <span className="badge estimate-upper">Upper estimate</span>
-          )}
-          {rankProvisional && (
-            <span className="badge rank-provisional">Provisional rank</span>
           )}
         </div>
       </header>
@@ -123,9 +117,8 @@ export function UnifiedCalculationPage({
         </p>
         {calculation.upperEstimate && (
           <p className="warning-text">
-            Upper estimate{rankProvisional ? " and provisional rank" : ""}: one
-            or more ownership or capital deductions remain Unknown or
-            incomplete. Unknown stays null and is not treated as $0.
+            Upper estimate: one or more ownership or capital deductions remain
+            Unknown or incomplete. Unknown stays null and is not treated as $0.
           </p>
         )}
       </section>

@@ -488,6 +488,24 @@ test("shows sanitized provider monitoring state", async ({ page }) => {
       ]),
     }),
   );
+  await page.route("**/rest/v1/public_arkham_provider_status**", (route) =>
+    route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify([
+        {
+          enabled: true,
+          monthly_credit_limit: 1000,
+          credits_used: 125,
+          status: "healthy",
+          last_success_at: now,
+          last_run_status: "succeeded",
+          last_run_completed_at: now,
+          paused_reason: null,
+          updated_at: now,
+        },
+      ]),
+    }),
+  );
   await page.goto("/status/");
 
   await expect(
@@ -497,6 +515,8 @@ test("shows sanitized provider monitoring state", async ({ page }) => {
   await expect(
     page.getByRole("rowheader", { name: "Coinbase Market Data" }),
   ).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Arkham API" })).toBeVisible();
+  await expect(page.getByText("125 of 1,000", { exact: true })).toBeVisible();
 });
 
 test("supports keyboard navigation to main content", async ({ page }) => {
@@ -569,7 +589,7 @@ test("renders the atomic v2 ranking and reports a newer failed run", async ({
   ).toBeVisible();
   await expect(page.getByText("$70M–$90M")).toBeVisible();
   await expect(page.getByText("Rank order: overlapping")).toBeVisible();
-  await expect(page.getByText("Provisional rank")).toBeVisible();
+  await expect(page.getByText("Provisional rank")).toHaveCount(0);
   await expect(
     page.getByText(
       "Latest scheduled run failed. Showing the last verified published v2 snapshot: CoinGecko quota exhausted",

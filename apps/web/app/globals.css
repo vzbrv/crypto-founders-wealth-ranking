@@ -478,7 +478,6 @@ td small {
 .badge.confidence-low,
 .badge.confidence-insufficient,
 .badge.estimate-upper,
-.badge.rank-provisional,
 .status-label.degraded {
   color: var(--danger);
 }

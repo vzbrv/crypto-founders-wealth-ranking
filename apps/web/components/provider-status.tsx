@@ -28,12 +28,25 @@ type ProviderQuotaStatusRow = {
   scheduler_paused_at: string | null;
 };
 
+type ArkhamProviderStatusRow = {
+  enabled: boolean;
+  monthly_credit_limit: number | null;
+  credits_used: number;
+  status: string;
+  last_success_at: string | null;
+  last_run_status: string | null;
+  last_run_completed_at: string | null;
+  paused_reason: string | null;
+  updated_at: string;
+};
+
 type LoadState =
   | { kind: "loading" }
   | {
       kind: "ready";
       rows: ProviderStatusRow[];
       quotaRows: ProviderQuotaStatusRow[];
+      arkhamRows: ArkhamProviderStatusRow[];
     }
   | { kind: "unavailable" };
 
@@ -109,6 +122,39 @@ function parseProviderQuotaStatusRows(
   return rows;
 }
 
+function parseArkhamProviderStatusRows(
+  value: unknown,
+): ArkhamProviderStatusRow[] | null {
+  if (!Array.isArray(value)) return null;
+
+  const rows: ArkhamProviderStatusRow[] = [];
+  for (const row of value) {
+    if (
+      typeof row !== "object" ||
+      row === null ||
+      typeof row.enabled !== "boolean" ||
+      (row.monthly_credit_limit !== null &&
+        typeof row.monthly_credit_limit !== "number") ||
+      typeof row.credits_used !== "number" ||
+      typeof row.status !== "string" ||
+      (row.last_success_at !== null &&
+        typeof row.last_success_at !== "string") ||
+      (row.last_run_status !== null &&
+        typeof row.last_run_status !== "string") ||
+      (row.last_run_completed_at !== null &&
+        typeof row.last_run_completed_at !== "string") ||
+      (row.paused_reason !== null && typeof row.paused_reason !== "string") ||
+      typeof row.updated_at !== "string"
+    ) {
+      return null;
+    }
+
+    rows.push(row as ArkhamProviderStatusRow);
+  }
+
+  return rows;
+}
+
 function formatTime(value: string) {
   const date = new Date(value);
   return Number.isNaN(date.getTime())
@@ -148,12 +194,21 @@ export function ProviderStatus() {
     )
       .then(parseProviderQuotaStatusRows)
       .catch(() => []);
+    const arkhamStatusRequest = request(
+      "/rest/v1/public_arkham_provider_status?select=enabled,monthly_credit_limit,credits_used,status,last_success_at,last_run_status,last_run_completed_at,paused_reason,updated_at&limit=1",
+    )
+      .then(parseArkhamProviderStatusRows)
+      .catch(() => []);
 
-    void Promise.all([providerStatusRequest, quotaStatusRequest])
-      .then(([rows, quotaRows]) => {
-        if (!rows || !quotaRows)
+    void Promise.all([
+      providerStatusRequest,
+      quotaStatusRequest,
+      arkhamStatusRequest,
+    ])
+      .then(([rows, quotaRows, arkhamRows]) => {
+        if (!rows || !quotaRows || !arkhamRows)
           throw new Error("Provider status response is invalid");
-        setState({ kind: "ready", rows, quotaRows });
+        setState({ kind: "ready", rows, quotaRows, arkhamRows });
       })
       .catch((error: unknown) => {
         if (error instanceof DOMException && error.name === "AbortError")
@@ -239,6 +294,66 @@ export function ProviderStatus() {
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+      <h2 id="arkham-provider-heading">Arkham API</h2>
+      {state.arkhamRows.length === 0 ? (
+        <div className="notice" role="status">
+          Arkham API status is unavailable. No health state is inferred.
+        </div>
+      ) : (
+        <div className="table-scroll">
+          <table className="provider-table">
+            <caption className="visually-hidden">
+              Arkham API operational status and credit usage
+            </caption>
+            <thead>
+              <tr>
+                <th scope="col">State</th>
+                <th scope="col">Enabled</th>
+                <th scope="col">Credits used</th>
+                <th scope="col">Last successful run</th>
+                <th scope="col">Latest run</th>
+                <th scope="col">Updated</th>
+              </tr>
+            </thead>
+            <tbody>
+              {state.arkhamRows.map((row) => (
+                <tr key={row.updated_at}>
+                  <td>{row.status}</td>
+                  <td>{row.enabled ? "Yes" : "No"}</td>
+                  <td>
+                    {row.credits_used.toLocaleString()}
+                    {row.monthly_credit_limit === null
+                      ? " (no limit configured)"
+                      : ` of ${row.monthly_credit_limit.toLocaleString()}`}
+                  </td>
+                  <td>
+                    {row.last_success_at
+                      ? formatTime(row.last_success_at)
+                      : "Not recorded"}
+                  </td>
+                  <td>
+                    {row.last_run_status
+                      ? formatProvider(row.last_run_status) +
+                        (row.last_run_completed_at
+                          ? " (" + formatTime(row.last_run_completed_at) + ")"
+                          : "")
+                      : "Not recorded"}
+                  </td>
+                  <td>{formatTime(row.updated_at)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {state.arkhamRows.some((row) => row.paused_reason) && (
+            <div className="notice" role="status">
+              {state.arkhamRows
+                .filter((row) => row.paused_reason)
+                .map((row) => `Paused: ${row.paused_reason}`)
+                .join(" ")}
+            </div>
+          )}
         </div>
       )}
       <h2 id="provider-quota-heading">Free-tier quota protection</h2>
