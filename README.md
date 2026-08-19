@@ -6,6 +6,10 @@ Phases 0–10 contain the complete specified product: curated-data schemas, Deci
 
 The approved production target is all-free: GitHub for source and curated data, a statically exported Next.js site on Cloudflare Pages, and Supabase for PostgreSQL, public read-only REST/Realtime access, Cron, and Edge Functions.
 
+## Naming
+
+The repository slug is retained for link stability. The public product name is Crypto Founders Estimated Value Created Ranking; it does not rank personal wealth.
+
 ## Commands
 
 ```bash

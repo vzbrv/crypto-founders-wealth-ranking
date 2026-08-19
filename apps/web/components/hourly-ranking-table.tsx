@@ -189,6 +189,7 @@ export function HourlyRankingTable({
   } | null>(null);
   const [latestStatus, setLatestStatus] = useState<LatestStatus | null>(null);
   const [endpointError, setEndpointError] = useState(!endpointConfigured);
+  const [loading, setLoading] = useState(endpointConfigured);
 
   useEffect(() => {
     if (!endpointConfigured) return;
@@ -225,6 +226,7 @@ export function HourlyRankingTable({
         setRankingV2(nextV2);
         setLive(null);
         setEndpointError(false);
+        setLoading(false);
         return;
       }
 
@@ -262,6 +264,7 @@ export function HourlyRankingTable({
         }
         setEndpointError(true);
       }
+      setLoading(false);
     };
     void refresh();
     const interval = window.setInterval(() => void refresh(), 60_000);
@@ -347,24 +350,39 @@ export function HourlyRankingTable({
   const snapshotDate = live?.header.utc_hour ?? fallbackSnapshotDate;
   const observationDate =
     live?.header.observation_at ?? fallbackObservationDate;
+  const rankingSource = rankingV2
+    ? "v2"
+    : live
+      ? "legacy"
+      : loading
+        ? "loading"
+        : "fallback";
 
   return (
     <>
       {rankingV2 ? (
-        <p className="notice">
+        <p className="notice" data-ranking-source={rankingSource}>
           Published v2 snapshot · Published {dateTime(rankingV2.publishedAt)}{" "}
           UTC · Economic as of {dateTime(rankingV2.economicAsOf)} UTC ·
           Knowledge cutoff {dateTime(rankingV2.knowledgeCutoff)} UTC.
         </p>
       ) : live ? (
-        <p className="notice">
+        <p className="notice" data-ranking-source={rankingSource}>
           Live immutable snapshot · Published{" "}
           {dateTime(live.header.publication_at)} UTC · Observed{" "}
           {dateTime(observationDate)} UTC · Data freshness:{" "}
           {aggregateFreshness(live.results)}.
         </p>
+      ) : loading ? (
+        <p className="notice" data-ranking-source={rankingSource}>
+          Loading the latest published ranking…
+        </p>
       ) : (
-        <p className="notice warning">
+        <p
+          className="notice warning"
+          data-ranking-source={rankingSource}
+          role="alert"
+        >
           Live data unavailable. Showing the bundled snapshot published{" "}
           {dateTime(snapshotDate)} UTC from market observations at{" "}
           {dateTime(observationDate)} UTC.
