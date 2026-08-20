@@ -66,20 +66,17 @@ describe("research dataset import", () => {
     expect(data.provisionalMarketObservations).toHaveLength(25);
     expect(data.provisionalCapitalEvents).toHaveLength(19);
     expect(data.provisionalExcludedEvidence).toHaveLength(10);
-    expect(data.sources).toHaveLength(87);
+    expect(data.sources).toHaveLength(133);
     expect(
       data.candidates
         .filter(({ publicationStatus }) => publicationStatus === "Ready")
         .map(({ projectId }) => projectId),
-    ).toEqual(["dogecoin", "litecoin"]);
+    ).toEqual([]);
     expect(
       data.candidates
         .filter(({ canonicalRank }) => canonicalRank !== null)
         .map(({ projectId, canonicalRank }) => ({ projectId, canonicalRank })),
-    ).toEqual([
-      { projectId: "dogecoin", canonicalRank: 1 },
-      { projectId: "litecoin", canonicalRank: 2 },
-    ]);
+    ).toEqual([]);
   });
 
   it("builds a sourced top 10 while preserving incomplete deductions", () => {
@@ -275,10 +272,12 @@ describe("research dataset import", () => {
       publicationStatus: "Research",
     });
     expect(dogecoin).toMatchObject({
-      knownFounderTeamExcludedUsd: "0",
+      knownFounderTeamExcludedUsd: null,
       verifiedExternalCapitalUsd: "0",
       otherDeductionsUsd: "0",
-      publicationStatus: "Ready",
+      canonicalOutsideWealthUsd: null,
+      canonicalRank: null,
+      publicationStatus: "Research",
     });
     expect(calculateProvisionalOutsideWealth("100", [null, "10", "0"])).toBe(
       "90",
@@ -378,7 +377,7 @@ describe("research dataset import", () => {
     ).toBe(true);
     const dogecoin = ranking.find(({ projectId }) => projectId === "dogecoin");
     const bitcoin = ranking.find(({ projectId }) => projectId === "bitcoin");
-    expect(dogecoin).toMatchObject({ canonicalRank: 1, provisionalRank: 8 });
+    expect(dogecoin).toMatchObject({ canonicalRank: null, provisionalRank: 8 });
     expect(bitcoin?.canonicalRank).toBeNull();
   });
 

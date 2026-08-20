@@ -121,6 +121,21 @@ The public ranking shows recognizable individuals and the documented team when
 the founding unit is collective. Popularity affects presentation only; it never
 changes `V`.
 
+### Attributed balances versus beneficial ownership
+
+An attributed balance is the exact on-chain balance of a disclosed or labelled
+address set at a named block and timestamp. Explorer or Arkham labels can support
+this limited claim.
+
+Founder beneficial ownership is complete only when a filing, signed disclosure,
+or exhaustive address attestation establishes the controlled set. Labels,
+allocation schedules, and vesting tables do not prove completeness.
+
+SEC totals must be decomposed into direct shares, controlled trusts, shared
+interests, 60-day derivatives, and economically empty voting shares to prevent
+double counting. Historical divestment statements do not prove a current zero
+balance; unresolved values remain `Unknown` (`null`).
+
 The stricter multi-project engine assigns every project to one canonical founding
 unit by default. If reliable sources justify an allocation among units, fractions
 must be in `[0, 1]` and sum to `1` for that project:
