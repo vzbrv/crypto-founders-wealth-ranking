@@ -64,9 +64,9 @@ describe("research dataset import", () => {
     expect(data.wallets).toHaveLength(32);
     expect(data.capitalRecords).toHaveLength(20);
     expect(data.provisionalMarketObservations).toHaveLength(25);
-    expect(data.provisionalCapitalEvents).toHaveLength(13);
+    expect(data.provisionalCapitalEvents).toHaveLength(19);
     expect(data.provisionalExcludedEvidence).toHaveLength(10);
-    expect(data.sources).toHaveLength(84);
+    expect(data.sources).toHaveLength(87);
     expect(
       data.candidates
         .filter(({ publicationStatus }) => publicationStatus === "Ready")
@@ -177,7 +177,13 @@ describe("research dataset import", () => {
       { projectId: "xrp", amountUsd: "200000000" },
       { projectId: "xrp", amountUsd: "500000000" },
       { projectId: "chainlink", amountUsd: "32000000" },
+      { projectId: "sui", amountUsd: "36000000" },
       { projectId: "sui", amountUsd: "300000000" },
+      { projectId: "stellar", amountUsd: "3000000" },
+      { projectId: "hedera", amountUsd: "124000000" },
+      { projectId: "avalanche", amountUsd: "60390000" },
+      { projectId: "avalanche", amountUsd: "230000000" },
+      { projectId: "avalanche", amountUsd: "250000000" },
       { projectId: "uniswap", amountUsd: "165000000" },
       { projectId: "near", amountUsd: "150000000" },
       { projectId: "ondo", amountUsd: "20000000" },
