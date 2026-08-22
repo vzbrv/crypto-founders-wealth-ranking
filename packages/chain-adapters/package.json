@@ -11,6 +11,6 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "viem": "2.55.18"
+    "viem": "2.55.19"
   }
 }
