@@ -40,15 +40,15 @@
     "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test:unit && pnpm validate:database && pnpm validate:unified-data && pnpm build"
   },
   "devDependencies": {
-    "@eslint/js": "9.39.5",
+    "@eslint/js": "10.0.1",
     "@playwright/test": "1.62.1",
     "@types/node": "26.2.0",
-    "eslint": "9.39.5",
-    "eslint-config-next": "16.3.1",
+    "eslint": "10.9.0",
+    "eslint-config-next": "16.3.2",
     "prettier": "3.9.6",
     "turbo": "2.10.11",
     "tsx": "4.23.12",
-    "typescript": "6.0.3",
+    "typescript": "7.0.2",
     "typescript-eslint": "8.67.0",
     "vitest": "4.1.11"
   }
