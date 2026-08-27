@@ -364,8 +364,8 @@
         "notes": "No reviewed capital amount accepted."
       },
       "confidence": {
-        "score": 65,
-        "label": "Medium",
+        "score": 50,
+        "label": "Low",
         "components": [
           {
             "key": "founderAttribution",
@@ -391,7 +391,7 @@
           {
             "key": "outsideCapitalCompleteness",
             "label": "Outside-capital completeness",
-            "score": 15,
+            "score": 0,
             "maxScore": 15,
             "detail": "Fair-launch evidence does not establish a deductible amount."
           },
@@ -629,8 +629,8 @@
         "notes": "No complete reviewed capital deduction."
       },
       "confidence": {
-        "score": 65,
-        "label": "Medium",
+        "score": 50,
+        "label": "Low",
         "components": [
           {
             "key": "founderAttribution",
@@ -656,7 +656,7 @@
           {
             "key": "outsideCapitalCompleteness",
             "label": "Outside-capital completeness",
-            "score": 15,
+            "score": 0,
             "maxScore": 15,
             "detail": "No accepted amount."
           },
@@ -1256,8 +1256,8 @@
         "notes": "Fair launch does not establish a deductible amount."
       },
       "confidence": {
-        "score": 65,
-        "label": "Medium",
+        "score": 50,
+        "label": "Low",
         "components": [
           {
             "key": "founderAttribution",
@@ -1283,7 +1283,7 @@
           {
             "key": "outsideCapitalCompleteness",
             "label": "Outside-capital completeness",
-            "score": 15,
+            "score": 0,
             "maxScore": 15,
             "detail": "No accepted amount."
           },
@@ -1343,8 +1343,8 @@
         "notes": "No reviewed capital deduction."
       },
       "confidence": {
-        "score": 65,
-        "label": "Medium",
+        "score": 50,
+        "label": "Low",
         "components": [
           {
             "key": "founderAttribution",
@@ -1370,7 +1370,7 @@
           {
             "key": "outsideCapitalCompleteness",
             "label": "Outside-capital completeness",
-            "score": 15,
+            "score": 0,
             "maxScore": 15,
             "detail": "No accepted amount."
           },
@@ -1942,8 +1942,8 @@
         "notes": "No reviewed capital deduction."
       },
       "confidence": {
-        "score": 65,
-        "label": "Medium",
+        "score": 50,
+        "label": "Low",
         "components": [
           {
             "key": "founderAttribution",
@@ -1969,7 +1969,7 @@
           {
             "key": "outsideCapitalCompleteness",
             "label": "Outside-capital completeness",
-            "score": 15,
+            "score": 0,
             "maxScore": 15,
             "detail": "No accepted amount."
           },
