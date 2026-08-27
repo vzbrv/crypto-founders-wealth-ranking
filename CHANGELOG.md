@@ -2,6 +2,12 @@
 
 All notable changes are documented here. This project follows Semantic Versioning for product releases; calculation and data-contract versions are recorded separately.
 
+## Unreleased
+
+- Prevented unknown ownership and outside-capital evidence from receiving full unified confidence completeness credit.
+- Corrected five provisional confidence records without changing values or ranks.
+- Documented the July 30 evidence gaps and ownership/financing research priority.
+
 ## 1.0.0 - 2026-08-13
 
 - Established the canonical production ranking data path.
