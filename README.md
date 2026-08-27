@@ -10,6 +10,16 @@ The approved production target is all-free: GitHub for source and curated data, 
 
 The repository slug is retained for link stability. The public product name is Crypto Founders Estimated Value Created Ranking; it does not rank personal wealth.
 
+## Evidence status
+
+The bundled July 30, 2026 unified dataset is provisional: 18 of 20 entries are
+upper estimates, 16 have unknown affiliated ownership, 16 have unknown outside
+capital, and only 2 are High confidence. Unknown deductions remain null and
+unapplied; they are not zero. Research should resolve ownership and financing
+evidence for the highest-ranked entries before increasing market-price update
+frequency. See the [production data notes](data/production/README.md) and
+[methodology](docs/methodology.md).
+
 ## Commands
 
 ```bash

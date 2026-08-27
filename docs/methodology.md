@@ -45,6 +45,35 @@ This provisional unknown handling is specific to the current unified top-20
 ranking. The stricter project engine described below leaves a score unavailable
 when a required deduction is unknown.
 
+### Unified evidence confidence
+
+Unified confidence scores sum these components:
+
+| Component                                | Maximum points |
+| ---------------------------------------- | -------------: |
+| Founder attribution                      |             20 |
+| Gross market value reconstruction        |             30 |
+| Founder/affiliate ownership completeness |             25 |
+| Outside-capital completeness             |             15 |
+| Source quality                           |              5 |
+| Snapshot alignment                       |              3 |
+| Double-counting risk                     |              2 |
+| **Total**                                |        **100** |
+
+Scores below 65 are Low. Scores from 65 upward are Medium unless they qualify as
+High. High requires at least 85 points; an upper estimate also requires the
+rank-invariance review described below. Unknown affiliated
+ownership cannot receive 25 of 25 ownership-completeness points. Unknown outside
+capital cannot receive 15 of 15 outside-capital-completeness points. Partial
+credit can describe reviewed bounds or evidence quality, but it does not change
+an `Unknown` deduction to accepted; status, notes, and sources remain
+authoritative.
+
+Research priority follows ranking impact: resolve beneficial ownership and
+outside-capital evidence for the highest-ranked upper estimates first. More
+frequent market prices improve freshness but do not resolve unknown deductions
+or, by themselves, increase evidence confidence.
+
 ### Gross value
 
 For a token or network, gross value is the sourced circulating market
