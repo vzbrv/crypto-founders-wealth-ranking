@@ -126,6 +126,46 @@ describe("unified ranking dataset", () => {
     ).toBe(false);
   });
 
+  it("rejects full completeness credit for unresolved evidence", async () => {
+    const dataset = await loadUnifiedData(
+      path.join(repositoryRoot, "data/research"),
+    );
+    const unknownOwnershipDataset = structuredClone(dataset);
+    const bitcoin = unknownOwnershipDataset.entries.find(
+      (entry) => entry.entryId === "bitcoin",
+    );
+    if (!bitcoin) throw new Error("test fixture must include Bitcoin");
+    const ownershipCompleteness = bitcoin.confidence.components.find(
+      (component) => component.key === "ownershipCompleteness",
+    );
+    if (!ownershipCompleteness)
+      throw new Error("test fixture must include ownership completeness");
+    ownershipCompleteness.score = ownershipCompleteness.maxScore;
+    bitcoin.confidence.score += ownershipCompleteness.maxScore;
+    bitcoin.confidence.label = "Medium";
+    expect(validateUnifiedDataset(unknownOwnershipDataset)).toContain(
+      "bitcoin unknown ownership cannot receive full completeness credit",
+    );
+
+    const unknownCapitalDataset = structuredClone(dataset);
+    const ethereum = unknownCapitalDataset.entries.find(
+      (entry) => entry.entryId === "ethereum",
+    );
+    if (!ethereum) throw new Error("test fixture must include Ethereum");
+    const capitalCompleteness = ethereum.confidence.components.find(
+      (component) => component.key === "outsideCapitalCompleteness",
+    );
+    if (!capitalCompleteness)
+      throw new Error("test fixture must include capital completeness");
+    ethereum.confidence.score +=
+      capitalCompleteness.maxScore - capitalCompleteness.score;
+    capitalCompleteness.score = capitalCompleteness.maxScore;
+    ethereum.confidence.label = "Medium";
+    expect(validateUnifiedDataset(unknownCapitalDataset)).toContain(
+      "ethereum unknown outside capital cannot receive full completeness credit",
+    );
+  });
+
   it("rejects Accepted token ownership instead of silently ignoring it", async () => {
     const dataset = await loadUnifiedData(
       path.join(repositoryRoot, "data/research"),

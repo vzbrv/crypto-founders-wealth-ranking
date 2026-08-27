@@ -440,6 +440,26 @@ export function validateUnifiedDataset(dataset: UnifiedDataset): string[] {
       (sum, component) => sum + component.maxScore,
       0,
     );
+    const ownershipCompleteness = entry.confidence.components.find(
+      (component) => component.key === "ownershipCompleteness",
+    );
+    const outsideCapitalCompleteness = entry.confidence.components.find(
+      (component) => component.key === "outsideCapitalCompleteness",
+    );
+    if (
+      entry.affiliatedOwnership.status === "Unknown" &&
+      ownershipCompleteness?.score === ownershipCompleteness?.maxScore
+    )
+      errors.push(
+        `${entry.entryId} unknown ownership cannot receive full completeness credit`,
+      );
+    if (
+      entry.outsideCapital.status === "Unknown" &&
+      outsideCapitalCompleteness?.score === outsideCapitalCompleteness?.maxScore
+    )
+      errors.push(
+        `${entry.entryId} unknown outside capital cannot receive full completeness credit`,
+      );
     if (
       componentTotal !== entry.confidence.score ||
       componentMax !== 100 ||
