@@ -335,6 +335,159 @@
       "url": "https://www.sec.gov/Archives/edgar/data/1859392/000185939226000041/glxy2025arsfinal.pdf",
       "quality": "SEC filing",
       "notes": "Used to document the missing complete historical capital reconstruction."
+    },
+    {
+      "id": "CRYPTO-RANK-API",
+      "category": "Market data",
+      "name": "CryptoRank public API documentation",
+      "date": null,
+      "url": "https://api.cryptorank.io/v2/documentation/",
+      "quality": "Specialist / API documentation",
+      "notes": "Discovery source for token market unlock funding and investor fields; use raw response and timestamp."
+    },
+    {
+      "id": "CRYPTO-RANK-UNLOCKS",
+      "category": "Supply",
+      "name": "CryptoRank token unlocks",
+      "date": null,
+      "url": "https://cryptorank.io/token-unlock",
+      "quality": "Specialist / market data",
+      "notes": "Unlock schedule and allocation context; does not prove founder beneficial ownership or complete financing."
+    },
+    {
+      "id": "TOKENOMIST-OVERVIEW",
+      "category": "Supply",
+      "name": "Tokenomist methodology and data overview",
+      "date": null,
+      "url": "https://docs.tokenomist.ai/overview",
+      "quality": "Specialist / documentation",
+      "notes": "Token allocation vesting and unlock discovery; reconcile with issuer filings and named snapshot."
+    },
+    {
+      "id": "TOKENOMIST-API",
+      "category": "Supply",
+      "name": "Tokenomist API introduction",
+      "date": null,
+      "url": "https://docs.tokenomist.ai/api-documents/introduction",
+      "quality": "Specialist / API documentation",
+      "notes": "Programmatic unlock/allocation source; credentials and raw response required for reproducibility."
+    },
+    {
+      "id": "DEFILLAMA-RAISES",
+      "category": "Capital",
+      "name": "DeFiLlama Raises database",
+      "date": null,
+      "url": "https://defillama.com/raises?chain=None",
+      "quality": "Reliable secondary / funding database",
+      "notes": "Funding discovery with round amount lead valuation chains and investors; coverage is community-maintained and not complete by itself."
+    },
+    {
+      "id": "HYPE-SEC-S1A4",
+      "category": "Founder holdings",
+      "name": "Hyperliquid SEC S-1 amendment 4",
+      "date": null,
+      "url": "https://www.sec.gov/Archives/edgar/data/2107730/000119312526243167/hype_s-1_amendment_4.htm",
+      "quality": "Primary / SEC filing",
+      "notes": "Discloses allocation buckets and explicitly says no comprehensive holder registry; no individual founder split."
+    },
+    {
+      "id": "HYPE-SEC-S1A1",
+      "category": "Capital",
+      "name": "Hyperliquid SEC S-1 amendment 1",
+      "date": null,
+      "url": "https://www.sec.gov/Archives/edgar/data/2107730/000119312526163263/hype_s-1_amendment_1.htm",
+      "quality": "Primary / SEC filing",
+      "notes": "Founder attribution and reported self-funding/no external capital claim; not an exhaustive financing ledger."
+    },
+    {
+      "id": "BNB-SEC-S1A3",
+      "category": "Founder holdings",
+      "name": "BNB SEC S-1 amendment 3",
+      "date": null,
+      "url": "https://www.sec.gov/Archives/edgar/data/2106762/000119312526254665/bnb_s-1_amendment_3.htm",
+      "quality": "Primary / SEC filing",
+      "notes": "Discloses angel founding-employee and ICO allocation buckets; no named founder split or current wallet set."
+    },
+    {
+      "id": "XRP-GRAYSCALE-10K",
+      "category": "Founder holdings",
+      "name": "Grayscale XRP Trust 10-K",
+      "date": null,
+      "url": "https://www.sec.gov/Archives/edgar/data/2037427/000119312526104419/424b3_gxrp_10-k_12312025.htm",
+      "quality": "Primary / SEC filing",
+      "notes": "Reports third-party Larsen cluster estimate and McCaleb divestment claim with explicit sponsor non-verification; not exhaustive."
+    },
+    {
+      "id": "XRP-SEC-8K-2024",
+      "category": "Founder attribution",
+      "name": "Ripple SEC 8-K founder disclosure",
+      "date": null,
+      "url": "https://www.sec.gov/Archives/edgar/data/1729997/000095017024002470/gdlc-20240104.htm",
+      "quality": "Primary / SEC filing",
+      "notes": "Identifies XRP creators; provides no current founder holdings ledger."
+    },
+    {
+      "id": "ADA-SEC-COMPLAINT",
+      "category": "Capital",
+      "name": "SEC Cardano enforcement complaint",
+      "date": null,
+      "url": "https://www.sec.gov/file/comp-pr2023-237",
+      "quality": "Primary / SEC filing",
+      "notes": "Records founding entities historical ADA sale and approximate proceeds; no current founder beneficial ownership."
+    },
+    {
+      "id": "CANTON-FAQ",
+      "category": "Supply",
+      "name": "Canton Network FAQ",
+      "date": null,
+      "url": "https://www.canton.network/faq",
+      "quality": "Primary / project site",
+      "notes": "No pre-mine pre-sale special founder or VC allocation claim; does not prove current founder ownership."
+    },
+    {
+      "id": "CANTON-2025-FUNDING",
+      "category": "Capital",
+      "name": "Digital Asset Canton funding announcement",
+      "date": "2025-06-24",
+      "url": "https://www.canton.network/canton-network-press-releases/digital-asset-raises-135-million-to-accelerate-adoption-of-canton-network?hs_amp=true",
+      "quality": "Primary / project release",
+      "notes": "$135m strategic funding for Digital Asset/network adoption; entity scope is not automatically Canton founder equity or token ownership."
+    },
+    {
+      "id": "DOGE-TRANSPARENCY",
+      "category": "Founder holdings",
+      "name": "Dogecoin transparency filing",
+      "date": null,
+      "url": "https://blockworks.com/token-transparency/filing/dogecoin",
+      "quality": "Reliable secondary / transparency filing",
+      "notes": "No legal issuer and proof-of-work issuance; founder attribution and Foundation treasury context but no exhaustive creator address inventory."
+    },
+    {
+      "id": "LTC-GRAYSCALE-10K",
+      "category": "Founder holdings",
+      "name": "Grayscale Litecoin Trust 10-K",
+      "date": null,
+      "url": "https://www.sec.gov/Archives/edgar/data/1732406/000173240625000005/ltcn-20250630.htm",
+      "quality": "Primary / SEC filing",
+      "notes": "Records Charlie Lee statement of near-total 2017 divestment; strong negative evidence but not exhaustive current zero-balance proof."
+    },
+    {
+      "id": "HBAR-SEC-10K",
+      "category": "Founder holdings",
+      "name": "Hedera SEC 10-K",
+      "date": null,
+      "url": "https://www.sec.gov/Archives/edgar/data/2039458/000199937126007353/hbar-10k_123125.htm",
+      "quality": "Primary / SEC filing",
+      "notes": "Discloses founders/employees/advisors/service-provider allocation bucket; no named founder balances or complete beneficiary register."
+    },
+    {
+      "id": "AVAX-SEC-S1A6",
+      "category": "Founder holdings",
+      "name": "Avalanche SEC S-1 amendment 6",
+      "date": null,
+      "url": "https://www.sec.gov/Archives/edgar/data/2035053/000119312526096950/avax_s-1_amendment_6.htm",
+      "quality": "Primary / SEC filing",
+      "notes": "Discloses 72m AVAX retained by core developers/Ava Labs and public sale; no individual founder split/current wallet set."
     }
   ],
   "entries": [
@@ -418,9 +571,10 @@
           }
         ]
       },
-      "includedEvidence": ["2026-07-30 circulating market value observation."],
+      "includedEvidence": ["2026-07-30 circulating market value observation.", "CryptoRank API documentation and token-unlock schedule used for market/unlock discovery."],
       "excludedEvidence": [
-        "Founder holdings and unquantified launch evidence."
+        "Founder holdings and unquantified launch evidence.",
+        "CryptoRank unlock/allocation data does not prove exhaustive founder holdings or a complete capital ledger."
       ],
       "disputedEvidence": [],
       "unknowns": ["Founder holdings", "Outside capital"],
@@ -507,9 +661,10 @@
           }
         ]
       },
-      "includedEvidence": ["2026-07-30 circulating market value observation."],
+      "includedEvidence": ["2026-07-30 circulating market value observation.", "CryptoRank API documentation and Tokenomist overview used for allocation/unlock discovery."],
       "excludedEvidence": [
-        "Approximate early sale amounts without a complete reconciliation."
+        "Approximate early sale amounts without a complete reconciliation.",
+        "Specialist allocation/unlock data is not an exhaustive founder ownership or capital ledger."
       ],
       "disputedEvidence": [],
       "unknowns": ["Founder holdings", "Outside capital"],
@@ -596,8 +751,8 @@
           }
         ]
       },
-      "includedEvidence": ["2026-07-30 circulating market value observation."],
-      "excludedEvidence": ["Rough founder-capital estimate."],
+      "includedEvidence": ["2026-07-30 circulating market value observation.", "BNB SEC S-1/A3 allocation buckets; CryptoRank unlock context; DeFiLlama Raises funding discovery."],
+      "excludedEvidence": ["Rough founder-capital estimate.", "SEC allocation buckets are not a named current founder wallet set; DeFiLlama is not a complete financing ledger."],
       "disputedEvidence": ["Conflicting public estimates of launch capital."],
       "unknowns": ["Founder holdings", "Outside capital"],
       "upperEstimate": true,
@@ -683,8 +838,8 @@
           }
         ]
       },
-      "includedEvidence": ["2026-07-30 circulating market value observation."],
-      "excludedEvidence": ["Unreconciled escrow and founder estimates."],
+      "includedEvidence": ["2026-07-30 circulating market value observation.", "Grayscale XRP Trust 10-K and Ripple SEC 8-K identify founder-related disclosure; DeFiLlama Raises used for funding discovery."],
+      "excludedEvidence": ["Unreconciled escrow and founder estimates.", "Grayscale notes third-party/non-verified holdings estimates; no exhaustive current founder address or capital ledger."],
       "disputedEvidence": [],
       "unknowns": ["Founder holdings", "Outside capital"],
       "upperEstimate": true,
@@ -782,9 +937,10 @@
       },
       "includedEvidence": [
         "2026-07-30 circulating market value observation.",
-        "314,159,265 USD Solana Labs private token sale."
+        "314,159,265 USD Solana Labs private token sale.",
+        "CryptoRank unlock context, Tokenomist allocation discovery, and DeFiLlama Raises funding discovery."
       ],
-      "excludedEvidence": ["Unknown founder and affiliate holdings."],
+      "excludedEvidence": ["Unknown founder and affiliate holdings.", "Specialist/community sources do not complete the founder/affiliate register or all outside-capital events."],
       "disputedEvidence": [],
       "unknowns": ["Founder holdings", "Other outside capital"],
       "upperEstimate": true,
@@ -915,6 +1071,7 @@
         "Class A and Class B/other outstanding shares.",
         "Armstrong and Ehrsam ownership.",
         "Aggregate pre-listing preferred proceeds."
+        ,"CryptoRank API and DeFiLlama Raises corroborative discovery."
       ],
       "excludedEvidence": [
         "Post-listing financing and secondary transactions from pre-listing capital deduction."
@@ -1004,8 +1161,8 @@
           }
         ]
       },
-      "includedEvidence": ["2026-07-30 circulating market value observation."],
-      "excludedEvidence": [],
+      "includedEvidence": ["2026-07-30 circulating market value observation.", "CryptoRank unlock context and DeFiLlama Raises funding discovery."],
+      "excludedEvidence": ["These sources do not establish exhaustive founder/affiliate holdings or complete outside capital."],
       "disputedEvidence": [],
       "unknowns": ["Founder holdings", "Outside capital"],
       "upperEstimate": true,
@@ -1133,7 +1290,8 @@
         ]
       },
       "includedEvidence": [
-        "Two share classes, founder ownership and documented capital."
+        "Two share classes, founder ownership and documented capital.",
+        "CryptoRank API and DeFiLlama Raises corroborative discovery."
       ],
       "excludedEvidence": [
         "USDC supply as company equity; post-listing financing as pre-listing capital."
@@ -1223,8 +1381,8 @@
           }
         ]
       },
-      "includedEvidence": ["2026-07-30 circulating market value observation."],
-      "excludedEvidence": [],
+      "includedEvidence": ["2026-07-30 circulating market value observation.", "Hyperliquid SEC S-1 amendments 1 and 4; Tokenomist allocation discovery; DeFiLlama Raises funding discovery."],
+      "excludedEvidence": ["SEC filing discloses allocation buckets but no comprehensive holder registry; funding discovery is not exhaustive."],
       "disputedEvidence": [],
       "unknowns": ["Founder holdings", "Outside capital"],
       "upperEstimate": true,
@@ -1310,8 +1468,8 @@
           }
         ]
       },
-      "includedEvidence": ["2026-07-30 circulating market value observation."],
-      "excludedEvidence": ["Fair-launch narrative as a numerical deduction."],
+      "includedEvidence": ["2026-07-30 circulating market value observation.", "Dogecoin transparency filing and CryptoRank API used for issuance/holder discovery."],
+      "excludedEvidence": ["Fair-launch narrative as a numerical deduction.", "No exhaustive creator-address attestation or complete outside-capital ledger."],
       "disputedEvidence": [],
       "unknowns": ["Founder holdings", "Outside capital"],
       "upperEstimate": true,
@@ -1397,8 +1555,8 @@
           }
         ]
       },
-      "includedEvidence": ["2026-07-30 circulating market value observation."],
-      "excludedEvidence": [],
+      "includedEvidence": ["2026-07-30 circulating market value observation.", "Tokenomist and CryptoRank unlock discovery plus DeFiLlama Raises funding discovery."],
+      "excludedEvidence": ["These sources do not prove a complete founder/affiliate ownership register or capital ledger."],
       "disputedEvidence": [],
       "unknowns": ["Founder holdings", "Outside capital"],
       "upperEstimate": true,
@@ -1484,8 +1642,8 @@
           }
         ]
       },
-      "includedEvidence": ["2026-07-30 circulating market value observation."],
-      "excludedEvidence": [],
+      "includedEvidence": ["2026-07-30 circulating market value observation.", "SEC Cardano complaint, Tokenomist allocation discovery, and DeFiLlama Raises funding discovery."],
+      "excludedEvidence": ["Historical founding-entity sale evidence is not a complete current founder ownership or capital ledger."],
       "disputedEvidence": [],
       "unknowns": ["Founder holdings", "Outside capital"],
       "upperEstimate": true,
@@ -1571,8 +1729,8 @@
           }
         ]
       },
-      "includedEvidence": ["2026-07-30 circulating market value observation."],
-      "excludedEvidence": [],
+      "includedEvidence": ["2026-07-30 circulating market value observation.", "CryptoRank, Tokenomist, and DeFiLlama Raises used for allocation and funding discovery."],
+      "excludedEvidence": ["Specialist/community data does not establish a complete founder/affiliate register or capital ledger."],
       "disputedEvidence": [],
       "unknowns": ["Founder holdings", "Outside capital"],
       "upperEstimate": true,
@@ -1658,8 +1816,8 @@
           }
         ]
       },
-      "includedEvidence": ["2026-07-30 circulating market value observation."],
-      "excludedEvidence": [],
+      "includedEvidence": ["2026-07-30 circulating market value observation.", "Canton FAQ and Digital Asset 2025 funding announcement; DeFiLlama Raises funding discovery."],
+      "excludedEvidence": ["Canton funding is entity-scoped strategic funding, not automatically founder equity/token ownership; no founder beneficial-owner register."],
       "disputedEvidence": [],
       "unknowns": [
         "Founder attribution detail",
@@ -1776,7 +1934,8 @@
         ]
       },
       "includedEvidence": [
-        "Two share classes, founder holdings and July 30 close."
+        "Two share classes, founder holdings and July 30 close.",
+        "DeFiLlama Raises used as corroborative funding discovery only."
       ],
       "excludedEvidence": [
         "IPO filing proceeds as a substitute for complete lifetime pre-listing capital."
@@ -1901,7 +2060,8 @@
         ]
       },
       "includedEvidence": [
-        "Class A and exchangeable equivalent units, founder/affiliate ownership, July 30 close."
+        "Class A and exchangeable equivalent units, founder/affiliate ownership, July 30 close.",
+        "DeFiLlama Raises used as corroborative funding discovery only."
       ],
       "excludedEvidence": [
         "Unreconciled historical financing and FX estimates."
@@ -1996,8 +2156,8 @@
           }
         ]
       },
-      "includedEvidence": ["2026-07-30 circulating market value observation."],
-      "excludedEvidence": [],
+      "includedEvidence": ["2026-07-30 circulating market value observation.", "Grayscale Litecoin Trust 10-K and CryptoRank API used for founder/divestment and market/unlock discovery."],
+      "excludedEvidence": ["Historical near-total divestment is not proof of current zero balance; no complete capital ledger."],
       "disputedEvidence": [],
       "unknowns": ["Founder holdings", "Outside capital"],
       "upperEstimate": true,
@@ -2083,8 +2243,8 @@
           }
         ]
       },
-      "includedEvidence": ["2026-07-30 circulating market value observation."],
-      "excludedEvidence": [],
+      "includedEvidence": ["2026-07-30 circulating market value observation.", "Hedera SEC 10-K and DeFiLlama Raises used for allocation/funding discovery."],
+      "excludedEvidence": ["Founder/employee allocation bucket has no named current balances or complete beneficiary register."],
       "disputedEvidence": [],
       "unknowns": ["Founder holdings", "Outside capital"],
       "upperEstimate": true,
@@ -2170,8 +2330,8 @@
           }
         ]
       },
-      "includedEvidence": ["2026-07-30 circulating market value observation."],
-      "excludedEvidence": [],
+      "includedEvidence": ["2026-07-30 circulating market value observation.", "Avalanche SEC S-1/A6 allocation buckets; CryptoRank unlock context; DeFiLlama Raises funding discovery."],
+      "excludedEvidence": ["Ava Labs/core-developer bucket has no individual founder split or current wallet set."],
       "disputedEvidence": [],
       "unknowns": ["Founder holdings", "Outside capital"],
       "upperEstimate": true,
@@ -2269,10 +2429,12 @@
       },
       "includedEvidence": [
         "2026-07-30 circulating market value observation.",
-        "300,000,000 USD Mysten Labs Series B initial close."
+        "300,000,000 USD Mysten Labs Series B initial close.",
+        "Sui token schedule, Tokenomist allocation discovery, and DeFiLlama Raises funding discovery."
       ],
       "excludedEvidence": [
-        "FTX stake repurchase treated as a capital/equity transaction rather than additional original outside capital."
+        "FTX stake repurchase treated as a capital/equity transaction rather than additional original outside capital.",
+        "Token schedule does not prove exhaustive founder/affiliate ownership or all outside-capital events."
       ],
       "disputedEvidence": [],
       "unknowns": ["Founder holdings", "Other outside capital"],
