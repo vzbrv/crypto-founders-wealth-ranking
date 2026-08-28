@@ -9,3 +9,11 @@ tron-ico-usd,tron,Scenario only,TRON-ICO,No directly verified USD amount and ful
 tron-justin-estimate,tron,Excluded,ARK-JUSTIN,Estimated TRX holdings are not address-reproducible verified affiliated circulating holdings.
 chainlink-ico-context,chainlink,Unknown,LINK-ICO,Whitepaper context does not itself provide a directly supported USD amount beyond the accepted sale report.
 cardano-ico-usd,cardano,Scenario only,ADA-ICO,BTC conversion and complete financing coverage remain unresolved.
+hyperliquid-s1-registry,hyperliquid,Unknown,HYPE-SEC-S1A4,SEC filing explicitly says no comprehensive holder registry; no complete founder ownership.
+dogecoin-transparency,dogecoin,Unknown,DOGE-TRANSPARENCY,Secondary transparency filing identifies founder/history but no exhaustive founder address attestation.
+stellar-foundation-accounts,stellar,Unknown,XLM-MANDATE-2019,Foundation mandate/account context is not founder beneficial ownership.
+canton-network-funding,canton,Excluded,CANTON-2025-FUNDING,Digital Asset strategic funding is sponsor/equity scope and not Canton Coin holder capital.
+litecoin-divestment,litecoin,Unknown,LTC-GRAYSCALE-10K,Near-total divestment is negative evidence; not exhaustive current zero-balance proof.
+hedera-allocation,hedera,Unknown,HBAR-SEC-10K,13.17% founders/employees/advisors/service-provider allocation is not individual/current founder holdings.
+avalanche-core-developers,avalanche,Unknown,AVAX-SEC-S1A6,72m retained by core developers/Ava Labs but no individual splits/current wallet set.
+sui-tokenomics,sui,Unknown,SUI-TOKEN-SCHEDULE,Allocation schedule is not current founder beneficial ownership.
